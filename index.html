@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Mesai Takip</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
+<style>
+:root {
+  --bg: #0f0f0f;
+  --bg2: #171717;
+  --bg3: #1f1f1f;
+  --bg4: #2a2a2a;
+  --border: #2e2e2e;
+  --border2: #3a3a3a;
+  --text: #f0f0f0;
+  --text2: #a0a0a0;
+  --text3: #666;
+  --accent: #e8ff47;
+  --accent-dim: #c8df2a;
+  --accent-bg: rgba(232,255,71,0.08);
+  --accent-bg2: rgba(232,255,71,0.15);
+  --green: #4ade80;
+  --green-bg: rgba(74,222,128,0.1);
+  --red: #f87171;
+  --red-bg: rgba(248,113,113,0.1);
+  --blue: #60a5fa;
+  --blue-bg: rgba(96,165,250,0.1);
+  --orange: #fb923c;
+  --orange-bg: rgba(251,146,60,0.1);
+  --r: 12px;
+  --r2: 16px;
+  --font: 'DM Sans', sans-serif;
+  --mono: 'DM Mono', monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font)}
+body{display:flex;flex-direction:column;max-width:430px;margin:0 auto;position:relative}
+
+/* ── SCREEN SYSTEM ── */
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;transition:transform 0.35s cubic-bezier(.4,0,.2,1),opacity 0.35s;overflow:hidden}
+.screen.hidden{transform:translateX(100%);opacity:0;pointer-events:none}
+.screen.slide-left{transform:translateX(-40%);opacity:0;pointer-events:none}
+
+/* ── SCROLL CONTENT ── */
+.scroll-area{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:24px}
+.scroll-area::-webkit-scrollbar{display:none}
+
+/* ── TOP BAR ── */
+.topbar{display:flex;align-items:center;padding:52px 20px 16px;gap:12px;flex-shrink:0}
+.topbar-back{width:36px;height:36px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);font-size:18px;flex-shrink:0}
+.topbar-title{font-size:17px;font-weight:600;flex:1}
+.topbar-action{width:36px;height:36px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);font-size:18px;flex-shrink:0}
+
+/* ── HOME SCREEN ── */
+#homeScreen{background:var(--bg)}
+
+.home-header{padding:60px 24px 24px;background:var(--bg)}
+.home-greeting{font-size:13px;color:var(--text3);font-weight:400;margin-bottom:4px;letter-spacing:0.04em;text-transform:uppercase}
+.home-date{font-size:28px;font-weight:600;line-height:1.2;margin-bottom:2px}
+.home-date span{color:var(--accent)}
+.home-dayname{font-size:14px;color:var(--text2)}
+
+/* Today card */
+.today-card{margin:0 16px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden}
+.today-card-header{padding:16px 18px 12px;border-bottom:1px solid var(--border)}
+.today-card-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px}
+.today-status{display:flex;align-items:center;gap:8px}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--text3);flex-shrink:0}
+.status-dot.active{background:var(--green);box-shadow:0 0 8px var(--green)}
+.status-dot.done{background:var(--accent)}
+.status-text{font-size:15px;font-weight:500}
+.today-times{padding:14px 18px;display:flex;gap:12px}
+.time-chip{flex:1;background:var(--bg3);border-radius:10px;padding:10px 12px}
+.time-chip-label{font-size:10px;color:var(--text3);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.04em}
+.time-chip-val{font-size:20px;font-weight:500;font-family:var(--mono);color:var(--text)}
+.time-chip-val.empty{color:var(--text3)}
+.today-mesai-row{padding:0 18px 14px;display:flex;align-items:center;gap:8px}
+.mesai-hrs{font-size:13px;color:var(--text2)}
+.mesai-earn{margin-left:auto;font-size:15px;font-weight:600;color:var(--accent)}
+
+/* Action buttons */
+.action-row{padding:0 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.action-btn{padding:16px;border-radius:var(--r2);border:none;cursor:pointer;display:flex;flex-direction:column;align-items:flex-start;gap:6px;font-family:var(--font);transition:transform 0.1s,opacity 0.1s;active:scale(0.97)}
+.action-btn:active{transform:scale(0.97);opacity:0.85}
+.action-btn.primary{background:var(--accent);color:#0f0f0f}
+.action-btn.secondary{background:var(--bg2);color:var(--text);border:1px solid var(--border)}
+.action-btn.danger{background:var(--red-bg);color:var(--red);border:1px solid rgba(248,113,113,0.2)}
+.action-btn i{font-size:22px}
+.action-btn span{font-size:14px;font-weight:600}
+.action-btn small{font-size:11px;opacity:0.6;font-weight:400}
+
+/* Monthly summary */
+.section-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;padding:0 20px;margin-bottom:10px}
+.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 16px;margin-bottom:16px}
+.sum-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px}
+.sum-card-label{font-size:11px;color:var(--text3);margin-bottom:6px}
+.sum-card-val{font-size:20px;font-weight:600;font-family:var(--mono)}
+.sum-card-val.green{color:var(--green)}
+.sum-card-val.accent{color:var(--accent)}
+.sum-card-val.blue{color:var(--blue)}
+.sum-card-sub{font-size:11px;color:var(--text3);margin-top:2px}
+
+/* Nav bar */
+.nav-bar{flex-shrink:0;background:var(--bg2);border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(3,1fr);padding:8px 0 28px}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;cursor:pointer;color:var(--text3);transition:color 0.2s;border:none;background:none;font-family:var(--font)}
+.nav-item.active{color:var(--accent)}
+.nav-item i{font-size:22px}
+.nav-item span{font-size:10px;font-weight:500;letter-spacing:0.02em}
+
+/* ── CALENDAR SCREEN ── */
+#calScreen{background:var(--bg)}
+.month-nav{display:flex;align-items:center;padding:0 20px 16px;gap:8px}
+.month-nav-btn{width:36px;height:36px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);font-size:18px}
+.month-nav-label{flex:1;text-align:center;font-size:16px;font-weight:600}
+
+/* Salary badge */
+.salary-row{margin:0 16px 12px;background:var(--accent-bg);border:1px solid rgba(232,255,71,0.2);border-radius:var(--r);padding:10px 14px;display:flex;align-items:center;gap:10px;cursor:pointer}
+.salary-row i{color:var(--accent);font-size:18px}
+.salary-info{flex:1}
+.salary-label{font-size:11px;color:var(--accent);opacity:0.7;margin-bottom:1px}
+.salary-val{font-size:15px;font-weight:600;color:var(--accent);font-family:var(--mono)}
+.salary-edit{font-size:12px;color:var(--accent);opacity:0.5}
+
+/* Day list */
+.day-item{margin:0 16px 6px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden}
+.day-item.today-item{border-color:rgba(232,255,71,0.4)}
+.day-item.weekend-item{opacity:0.7}
+.day-row{display:flex;align-items:center;padding:12px 14px;gap:12px;cursor:pointer}
+.day-num-box{width:42px;height:42px;border-radius:10px;background:var(--bg3);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0}
+.day-item.today-item .day-num-box{background:var(--accent)}
+.day-item.today-item .day-num-box .dn{color:#0f0f0f}
+.day-item.today-item .day-num-box .dd{color:#0f0f0f;opacity:0.6}
+.day-item.weekend-item .day-num-box{background:rgba(248,113,113,0.1)}
+.dn{font-size:17px;font-weight:700;line-height:1;color:var(--text)}
+.dd{font-size:10px;color:var(--text3);margin-top:1px}
+.day-main{flex:1;min-width:0}
+.day-name-text{font-size:14px;font-weight:500;color:var(--text)}
+.day-item.weekend-item .day-name-text{color:var(--red)}
+.day-sub-text{font-size:12px;color:var(--text3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.day-right-info{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0}
+.day-earn-badge{font-size:12px;font-weight:600;color:var(--green);background:var(--green-bg);padding:3px 8px;border-radius:99px}
+.day-hrs-badge{font-size:11px;color:var(--text3)}
+.day-chevron{color:var(--text3);font-size:16px;transition:transform 0.2s;flex-shrink:0}
+.day-chevron.open{transform:rotate(180deg)}
+
+/* Day detail */
+.day-detail{display:none;border-top:1px solid var(--border);padding:14px}
+.day-detail.open{display:block}
+.det-sec{margin-bottom:14px}
+.det-sec-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;font-weight:500}
+.inp-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.inp-group{display:flex;flex-direction:column;gap:4px}
+.inp-group label{font-size:12px;color:var(--text2)}
+.inp-group input[type=time],
+.inp-group input[type=number],
+.inp-group input[type=text]{width:100%;padding:12px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:16px;font-family:var(--font);outline:none;transition:border-color 0.2s}
+.inp-group input:focus{border-color:var(--accent);background:var(--bg4)}
+.inp-group input[type=time]{font-family:var(--mono);letter-spacing:0.05em}
+
+/* Mola items */
+.mola-list{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+.mola-item{display:grid;grid-template-columns:1fr 1fr auto;gap:6px;align-items:center;background:var(--bg3);border-radius:10px;padding:8px 10px}
+.mola-item input[type=time]{width:100%;background:transparent;border:none;color:var(--text);font-size:14px;font-family:var(--mono);outline:none;padding:0}
+.mola-del{width:28px;height:28px;border-radius:50%;background:var(--red-bg);border:none;color:var(--red);font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.mola-del-min{width:28px;height:28px;border-radius:50%;background:var(--red-bg);border:none;color:var(--red);font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.add-mola-btn{display:flex;align-items:center;gap:6px;background:var(--bg3);border:1px dashed var(--border2);border-radius:10px;padding:9px 14px;color:var(--text3);font-size:13px;cursor:pointer;width:100%;font-family:var(--font)}
+.add-mola-btn:hover{color:var(--text2);border-color:var(--border2)}
+
+/* Toggle pills */
+.toggle-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.toggle-pill{padding:11px 4px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text3);font-size:12px;text-align:center;cursor:pointer;transition:all 0.15s;user-select:none;display:flex;flex-direction:column;align-items:center;gap:4px;font-family:var(--font)}
+.toggle-pill i{font-size:20px}
+.toggle-pill.on-green{background:var(--green-bg);border-color:rgba(74,222,128,0.3);color:var(--green)}
+.toggle-pill.on-blue{background:var(--blue-bg);border-color:rgba(96,165,250,0.3);color:var(--blue)}
+.toggle-pill.on-orange{background:var(--orange-bg);border-color:rgba(251,146,60,0.3);color:var(--orange)}
+
+/* Override row */
+.override-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+/* Day total */
+.det-total{background:var(--accent-bg);border:1px solid rgba(232,255,71,0.15);border-radius:10px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;margin-top:4px}
+.det-total-label{font-size:12px;color:var(--accent);opacity:0.7}
+.det-total-val{font-size:18px;font-weight:700;color:var(--accent);font-family:var(--mono)}
+
+/* ── SETTINGS SCREEN ── */
+#settingsScreen{background:var(--bg)}
+.settings-section{margin:0 16px 16px}
+.settings-section-title{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;padding:0 4px}
+.settings-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden}
+.settings-row{padding:14px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border)}
+.settings-row:last-child{border-bottom:none}
+.settings-row-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.settings-row-icon.accent{background:var(--accent-bg);color:var(--accent)}
+.settings-row-icon.green{background:var(--green-bg);color:var(--green)}
+.settings-row-icon.blue{background:var(--blue-bg);color:var(--blue)}
+.settings-row-icon.red{background:var(--red-bg);color:var(--red)}
+.settings-row-text{flex:1}
+.settings-row-label{font-size:14px;font-weight:500}
+.settings-row-sub{font-size:12px;color:var(--text3);margin-top:1px}
+.settings-row-input{width:110px;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:15px;font-family:var(--font);outline:none;text-align:right}
+.settings-row-input:focus{border-color:var(--accent)}
+.settings-btn{width:100%;padding:14px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);color:var(--text);font-size:14px;font-weight:500;font-family:var(--font);cursor:pointer;display:flex;align-items:center;gap:10px;margin:0 0 8px}
+.settings-btn i{font-size:20px;color:var(--text2)}
+.settings-btn.accent-btn{background:var(--accent-bg);border-color:rgba(232,255,71,0.2);color:var(--accent)}
+.settings-btn.accent-btn i{color:var(--accent)}
+.settings-btn.red-btn{background:var(--red-bg);border-color:rgba(248,113,113,0.2);color:var(--red)}
+.settings-btn.red-btn i{color:var(--red)}
+
+/* ── BOTTOM SHEET MODAL ── */
+.sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.25s}
+.sheet-overlay.show{opacity:1;pointer-events:all}
+.sheet{background:var(--bg2);border-radius:20px 20px 0 0;padding:20px 20px 36px;width:100%;max-width:430px;transform:translateY(100%);transition:transform 0.3s cubic-bezier(.4,0,.2,1)}
+.sheet-overlay.show .sheet{transform:translateY(0)}
+.sheet-handle{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 18px}
+.sheet-title{font-size:17px;font-weight:600;margin-bottom:4px}
+.sheet-sub{font-size:13px;color:var(--text3);margin-bottom:20px}
+.sheet input[type=time]{width:100%;padding:16px 18px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-size:24px;font-family:var(--mono);outline:none;margin-bottom:14px;text-align:center;letter-spacing:0.05em}
+.sheet input[type=time]:focus{border-color:var(--accent)}
+.sheet-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sheet-btn-confirm{padding:16px;border-radius:var(--r);background:var(--accent);color:#0f0f0f;border:none;font-size:16px;font-weight:600;cursor:pointer;font-family:var(--font)}
+.sheet-btn-skip{padding:16px;border-radius:var(--r);background:var(--bg3);color:var(--text);border:1px solid var(--border);font-size:16px;cursor:pointer;font-family:var(--font)}
+
+/* Salary modal */
+.sheet-inp-label{font-size:12px;color:var(--text2);margin-bottom:6px}
+.sheet-input-big{width:100%;padding:16px 18px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-size:24px;font-family:var(--mono);outline:none;margin-bottom:16px;text-align:right}
+.sheet-input-big:focus{border-color:var(--accent)}
+.sheet-note{font-size:12px;color:var(--text3);padding:10px 14px;background:var(--bg3);border-radius:8px;margin-bottom:14px;line-height:1.5}
+
+/* Toast */
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--bg3);border:1px solid var(--border2);border-radius:99px;padding:10px 20px;font-size:13px;color:var(--text);z-index:300;opacity:0;pointer-events:none;transition:all 0.3s;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<!-- ══════════════ HOME SCREEN ══════════════ -->
+<div class="screen" id="homeScreen">
+  <div class="scroll-area">
+    <div class="home-header">
+      <div class="home-greeting">Hoş geldin</div>
+      <div class="home-date" id="homeDateText">Yükleniyor</div>
+      <div class="home-dayname" id="homeDayName"></div>
+    </div>
+
+    <div class="today-card">
+      <div class="today-card-header">
+        <div class="today-card-label">Bugünün Mesaisi</div>
+        <div class="today-status">
+          <div class="status-dot" id="statusDot"></div>
+          <div class="status-text" id="statusText">Mesai yok</div>
+        </div>
+      </div>
+      <div class="today-times">
+        <div class="time-chip">
+          <div class="time-chip-label">Giriş</div>
+          <div class="time-chip-val" id="homeGirisVal"><span class="empty">—</span></div>
+        </div>
+        <div class="time-chip">
+          <div class="time-chip-label">Çıkış</div>
+          <div class="time-chip-val" id="homeCikisVal"><span class="empty">—</span></div>
+        </div>
+        <div class="time-chip">
+          <div class="time-chip-label">Süre</div>
+          <div class="time-chip-val" id="homeSureVal"><span class="empty">—</span></div>
+        </div>
+      </div>
+      <div class="today-mesai-row">
+        <span class="mesai-hrs" id="homeDetailsText"></span>
+        <span class="mesai-earn" id="homeTodayEarn"></span>
+      </div>
+    </div>
+
+    <div class="action-row" id="actionRow"></div>
+
+    <div class="section-label" id="monthSummaryLabel"></div>
+    <div class="summary-grid">
+      <div class="sum-card">
+        <div class="sum-card-label">Toplam Mesai</div>
+        <div class="sum-card-val green" id="sumSaat">0s</div>
+        <div class="sum-card-sub" id="sumMesaiTL">—</div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-card-label">Yol + Yemek</div>
+        <div class="sum-card-val blue" id="sumEkstra">0₺</div>
+        <div class="sum-card-sub" id="sumEkstraSub">—</div>
+      </div>
+      <div class="sum-card" style="grid-column:span 2">
+        <div class="sum-card-label">Bu Ay Toplam (Maaş dahil)</div>
+        <div class="sum-card-val accent" id="sumToplam">—</div>
+        <div class="sum-card-sub" id="sumToplamSub">—</div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="nav-bar">
+    <button class="nav-item active" onclick="goHome()"><i class="ti ti-home"></i><span>Ana Ekran</span></button>
+    <button class="nav-item" onclick="goCalendar()"><i class="ti ti-calendar"></i><span>Takvim</span></button>
+    <button class="nav-item" onclick="goSettings()"><i class="ti ti-settings"></i><span>Ayarlar</span></button>
+  </nav>
+</div>
+
+<!-- ══════════════ CALENDAR SCREEN ══════════════ -->
+<div class="screen hidden" id="calScreen">
+  <div class="topbar" style="padding-bottom:8px">
+    <div class="topbar-title">Takvim</div>
+    <button class="topbar-action" onclick="goSettings()" title="Ayarlar"><i class="ti ti-settings"></i></button>
+  </div>
+
+  <div class="month-nav">
+    <button class="month-nav-btn" onclick="changeMonth(-1)"><i class="ti ti-chevron-left"></i></button>
+    <span class="month-nav-label" id="calMonthLabel"></span>
+    <button class="month-nav-btn" onclick="changeMonth(1)"><i class="ti ti-chevron-right"></i></button>
+  </div>
+
+  <div class="salary-row" onclick="openSalaryModal()">
+    <i class="ti ti-currency-lira"></i>
+    <div class="salary-info">
+      <div class="salary-label">Bu Ay Maaş</div>
+      <div class="salary-val" id="calSalaryVal">—</div>
+    </div>
+    <span class="salary-edit"><i class="ti ti-edit"></i> Düzenle</span>
+  </div>
+
+  <div class="scroll-area" id="calDayList"></div>
+</div>
+
+<!-- ══════════════ SETTINGS SCREEN ══════════════ -->
+<div class="screen hidden" id="settingsScreen">
+  <div class="topbar">
+    <button class="topbar-back" onclick="goHome()"><i class="ti ti-arrow-left"></i></button>
+    <div class="topbar-title">Ayarlar</div>
+  </div>
+  <div class="scroll-area">
+    <div class="settings-section">
+      <div class="settings-section-title">Varsayılan Değerler</div>
+      <div class="settings-card">
+        <div class="settings-row">
+          <div class="settings-row-icon accent"><i class="ti ti-clock"></i></div>
+          <div class="settings-row-text"><div class="settings-row-label">Çalışma Bitiş Saati</div><div class="settings-row-sub">Mesai bu saatten sonra sayılır</div></div>
+          <input class="settings-row-input" type="time" id="stNormalBitis" value="18:00" onchange="saveSettings()">
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-icon green"><i class="ti ti-multiplier-2x"></i></div>
+          <div class="settings-row-text"><div class="settings-row-label">Varsayılan Mesai Çarpanı</div><div class="settings-row-sub">Günlük override edilebilir</div></div>
+          <input class="settings-row-input" type="number" id="stCarpan" value="1.5" step="0.25" onchange="saveSettings()">
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-icon blue"><i class="ti ti-bus"></i></div>
+          <div class="settings-row-text"><div class="settings-row-label">Hafta Sonu Yol (₺/gün)</div><div class="settings-row-sub">Cumartesi ve Pazar</div></div>
+          <input class="settings-row-input" type="number" id="stYol" value="100" onchange="saveSettings()">
+        </div>
+        <div class="settings-row" style="border-bottom:none">
+          <div class="settings-row-icon" style="background:var(--orange-bg);color:var(--orange)"><i class="ti ti-soup"></i></div>
+          <div class="settings-row-text"><div class="settings-row-label">Mesai Yemek (₺/gün)</div><div class="settings-row-sub">Mesaili günlerde</div></div>
+          <input class="settings-row-input" type="number" id="stYemek" value="0" onchange="saveSettings()">
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">Veri Yönetimi</div>
+      <button class="settings-btn accent-btn" onclick="exportData()"><i class="ti ti-download"></i> JSON Yedek Al</button>
+      <button class="settings-btn" onclick="importData()"><i class="ti ti-upload"></i> Yedekten Yükle</button>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="handleImport(event)">
+      <button class="settings-btn red-btn" onclick="confirmClearData()"><i class="ti ti-trash"></i> Tüm Verileri Sil</button>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">Hakkında</div>
+      <div class="settings-card">
+        <div class="settings-row" style="border-bottom:none">
+          <div class="settings-row-text">
+            <div class="settings-row-label">Mesai Takip v1.0</div>
+            <div class="settings-row-sub">Veriler bu cihaza kaydedilir. Düzenli yedek almanız önerilir.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ MODALS ══════════════ -->
+<!-- Giriş Modal -->
+<div class="sheet-overlay" id="girisSheet" onclick="sheetOutsideClick(event,'girisSheet')">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="girisSheetTitle">Mesai Başlangıcı</div>
+    <div class="sheet-sub" id="girisSheetSub">Mesaiye başlama saatini gir</div>
+    <input type="time" id="girisInput">
+    <div class="sheet-btns">
+      <button class="sheet-btn-skip" onclick="closeSheet('girisSheet')">Vazgeç</button>
+      <button class="sheet-btn-confirm" onclick="confirmGiris()">Onayla →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Çıkış Modal -->
+<div class="sheet-overlay" id="cikisSheet" onclick="sheetOutsideClick(event,'cikisSheet')">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Mesai Bitişi</div>
+    <div class="sheet-sub" id="cikisSheetSub">Çıkış saatini gir</div>
+    <input type="time" id="cikisInput">
+    <div class="sheet-btns">
+      <button class="sheet-btn-skip" onclick="closeSheet('cikisSheet');renderAll()">Sonra girerim</button>
+      <button class="sheet-btn-confirm" onclick="confirmCikis()">Kaydet ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- Maaş Modal -->
+<div class="sheet-overlay" id="salarySheet" onclick="sheetOutsideClick(event,'salarySheet')">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Maaş Ayarı</div>
+    <div class="sheet-sub" id="salarySheetSub"></div>
+    <div class="sheet-note" id="salaryNote"></div>
+    <div class="sheet-inp-label">Bu ay net maaş (₺)</div>
+    <input class="sheet-input-big" type="number" id="salaryInput" placeholder="0">
+    <div class="sheet-btns">
+      <button class="sheet-btn-skip" onclick="closeSheet('salarySheet')">Vazgeç</button>
+      <button class="sheet-btn-confirm" onclick="confirmSalary()">Kaydet ✓</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════
+// DATA MODEL
+// ═══════════════════════════════════════════
+const MONTHS = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+const DAYS_FULL = ['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
+const DAYS_SHORT = ['Paz','Pzt','Sal','Çar','Per','Cum','Cmt'];
+const today = new Date();
+const todayKey = fmtKey(today.getFullYear(), today.getMonth(), today.getDate());
+
+let curY = today.getFullYear();
+let curM = today.getMonth();
+let openDays = {};
+let modalKey = null;
+let autoSaveTimer = null;
+
+// ── Settings ──
+let cfg = {
+  normalBitis: '18:00',
+  carpan: 1.5,
+  yol: 100,
+  yemek: 0
+};
+
+// ── Per-month salary ──
+// salaries['2026-4'] = 30000
+let salaries = {};
+
+// ── Day data ──
+// dayData[key] = { giris, cikis, molalar:[{bas,bit}], molaMin:0, carpanOverride:null, yol:null, yemekOn:false, tatil:false, aciklama:'' }
+let dayData = {};
+
+// ── Auto-backup tracking ──
+let lastAutoBackup = null;
+
+// ═══════════════════════════════════════════
+// PERSISTENCE
+// ═══════════════════════════════════════════
+function loadAll() {
+  try {
+    const raw = localStorage.getItem('mesaiApp_v2');
+    if (raw) {
+      const d = JSON.parse(raw);
+      cfg = Object.assign(cfg, d.cfg || {});
+      salaries = d.salaries || {};
+      dayData = d.dayData || {};
+    }
+  } catch(e) { console.warn('Load error', e); }
+  applySettings();
+}
+
+function saveAll() {
+  try {
+    const payload = JSON.stringify({ cfg, salaries, dayData, savedAt: new Date().toISOString() });
+    localStorage.setItem('mesaiApp_v2', payload);
+    // Auto-backup once per day
+    const today_str = today.toISOString().slice(0,10);
+    if (lastAutoBackup !== today_str) {
+      lastAutoBackup = today_str;
+      scheduleAutoBackup(payload);
+    }
+  } catch(e) { showToast('Kaydetme hatası: ' + e.message); }
+}
+
+function scheduleAutoBackup(payload) {
+  // Auto download on first save of the day (if there's actual data)
+  if (Object.keys(dayData).length > 0) {
+    triggerDownload(payload, 'mesai-oto-yedek-' + new Date().toISOString().slice(0,10) + '.json');
+  }
+}
+
+function debounceSave() {
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(() => saveAll(), 500);
+}
+
+function exportData() {
+  const payload = JSON.stringify({ cfg, salaries, dayData, exportedAt: new Date().toISOString() }, null, 2);
+  triggerDownload(payload, 'mesai-yedek-' + new Date().toISOString().slice(0,10) + '.json');
+  showToast('Yedek dosyası indirildi');
+}
+
+function triggerDownload(content, filename) {
+  try {
+    const blob = new Blob([content], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  } catch(e) {}
+}
+
+function importData() { document.getElementById('importFile').click(); }
+
+function handleImport(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const d = JSON.parse(ev.target.result);
+      if (d.dayData) {
+        cfg = Object.assign(cfg, d.cfg || {});
+        salaries = d.salaries || {};
+        dayData = d.dayData || {};
+        saveAll(); applySettings(); renderAll();
+        showToast('Yedek başarıyla yüklendi ✓');
+      } else { showToast('Geçersiz yedek dosyası'); }
+    } catch(err) { showToast('Dosya okunamadı'); }
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+function confirmClearData() {
+  if (confirm('Tüm veriler silinecek. Emin misin? Bu işlem geri alınamaz.')) {
+    dayData = {}; salaries = {};
+    saveAll(); renderAll();
+    showToast('Tüm veriler silindi');
+  }
+}
+
+// ═══════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════
+function fmtKey(y, m, d) { return `${y}-${m}-${d}`; }
+function monthKey(y, m) { return `${y}-${m}`; }
+function getDays(y, m) { return new Date(y, m+1, 0).getDate(); }
+function parseTime(s) { if (!s) return null; const [h,mi] = s.split(':').map(Number); return h*60+mi; }
+function fmtMin(m) { const h=Math.floor(m/60),mn=m%60; return h>0&&mn>0?`${h}s ${mn}dk`:h>0?`${h}s`:`${mn}dk`; }
+function fmtMoney(n) { return Math.round(n).toLocaleString('tr-TR') + '₺'; }
+function fmtHrs(m) { return Math.round(m/60*100)/100; }
+
+function getSalary(y, m) {
+  const mk = monthKey(y, m);
+  if (salaries[mk] != null) return salaries[mk];
+  // walk back up to 12 months to find last known salary
+  for (let i = 1; i <= 12; i++) {
+    let pm = m - i, py = y;
+    if (pm < 0) { pm += 12; py--; }
+    const pk = monthKey(py, pm);
+    if (salaries[pk] != null) return salaries[pk];
+  }
+  return 30000; // default
+}
+
+function getDay(key) {
+  return dayData[key] || {};
+}
+
+function calcDay(key) {
+  const d = getKey(key);
+  const r = getDay(key);
+  const isWeekend = d.isWeekend;
+  const maas = getSalary(d.y, d.m);
+  const aylik = cfg.carpan ? 225 : 225; // kept fixed; could be settings
+  const saatlikUcret = maas / 225;
+  const carpan = r.carpanOverride != null ? r.carpanOverride : cfg.carpan;
+  const normalBitis = parseTime(cfg.normalBitis) || 18*60;
+
+  let netMin = 0;
+  if (r.giris && r.cikis) {
+    const g = parseTime(r.giris), c = parseTime(r.cikis);
+    if (c > g) {
+      let rawMin;
+      if (isWeekend) { rawMin = c - g; }
+      else { const bas = Math.max(g, normalBitis); rawMin = c > bas ? c - bas : 0; }
+      // subtract mola minutes
+      const molaMin = getMolaMin(r, g, c);
+      netMin = Math.max(0, rawMin - molaMin);
+    }
+  }
+  const mesaiSaat = fmtHrs(netMin);
+  const tutar = netMin > 0 ? Math.round(saatlikUcret * carpan * mesaiSaat) : 0;
+
+  let yol = 0;
+  if (isWeekend) { yol = r.yol !== false ? (cfg.yol||0) : 0; }
+  else if (r.yol === true) { yol = cfg.yol || 0; }
+
+  const yemek = (netMin > 0 && r.yemekOn) ? (cfg.yemek || 0) : 0;
+  return { netMin, mesaiSaat, tutar, yol, yemek };
+}
+
+function getMolaMin(r, girisMin, cikisMin) {
+  let total = 0;
+  // Range-based molas
+  if (r.molalar && r.molalar.length) {
+    for (const mo of r.molalar) {
+      const mb = parseTime(mo.bas), me = parseTime(mo.bit);
+      if (mb != null && me != null && me > mb) {
+        // clamp to shift
+        const start = Math.max(mb, girisMin), end = Math.min(me, cikisMin);
+        if (end > start) total += end - start;
+      }
+    }
+  }
+  // Flat minute mola
+  if (r.molaMin) total += parseInt(r.molaMin) || 0;
+  return total;
+}
+
+function getKey(key) {
+  const parts = key.split('-');
+  const y = parseInt(parts[0]), m = parseInt(parts[1]), d = parseInt(parts[2]);
+  const dt = new Date(y, m, d);
+  return { y, m, d, dt, dow: dt.getDay(), isWeekend: dt.getDay()===0||dt.getDay()===6 };
+}
+
+function calcMonth(y, m) {
+  const days = getDays(y, m);
+  let totMin=0, totTutar=0, totYol=0, totYemek=0;
+  for (let d=1; d<=days; d++) {
+    const k = fmtKey(y, m, d);
+    const c = calcDay(k);
+    totMin += c.netMin; totTutar += c.tutar; totYol += c.yol; totYemek += c.yemek;
+  }
+  return { totMin, totTutar, totYol, totYemek };
+}
+
+// ═══════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════
+let currentScreen = 'home';
+
+function goHome() {
+  setScreen('homeScreen', 'home');
+  setNavActive(0);
+  renderHome();
+}
+
+function goCalendar() {
+  setScreen('calScreen', 'cal');
+  setNavActive(1);
+  curY = today.getFullYear(); curM = today.getMonth();
+  renderCalendar();
+}
+
+function goSettings() {
+  setScreen('settingsScreen', 'settings');
+  setNavActive(2);
+}
+
+function setScreen(id, name) {
+  document.querySelectorAll('.screen').forEach(s => {
+    s.classList.add('hidden');
+    s.classList.remove('slide-left');
+  });
+  const el = document.getElementById(id);
+  el.classList.remove('hidden', 'slide-left');
+  currentScreen = name;
+}
+
+function setNavActive(idx) {
+  document.querySelectorAll('.nav-item').forEach((n,i) => {
+    n.classList.toggle('active', i === idx);
+  });
+}
+
+// ═══════════════════════════════════════════
+// HOME RENDER
+// ═══════════════════════════════════════════
+function renderHome() {
+  // Date header
+  const months_abbr = MONTHS;
+  document.getElementById('homeDateText').innerHTML =
+    `${today.getDate()} <span>${months_abbr[today.getMonth()]}</span> ${today.getFullYear()}`;
+  document.getElementById('homeDayName').textContent = DAYS_FULL[today.getDay()];
+
+  // Today card
+  const r = getDay(todayKey);
+  const c = calcDay(todayKey);
+  const dot = document.getElementById('statusDot');
+  const statusText = document.getElementById('statusText');
+
+  if (r.giris && r.cikis) {
+    dot.className = 'status-dot done';
+    statusText.textContent = 'Tamamlandı';
+  } else if (r.giris) {
+    dot.className = 'status-dot active';
+    statusText.textContent = 'Devam ediyor…';
+  } else {
+    dot.className = 'status-dot';
+    statusText.textContent = 'Mesai girilmedi';
+  }
+
+  document.getElementById('homeGirisVal').innerHTML = r.giris ? `<span>${r.giris}</span>` : '<span class="empty">—</span>';
+  document.getElementById('homeCikisVal').innerHTML = r.cikis ? `<span>${r.cikis}</span>` : '<span class="empty">—</span>';
+  const sureEl = document.getElementById('homeSureVal');
+  if (c.netMin > 0) sureEl.innerHTML = `<span>${fmtMin(c.netMin)}</span>`;
+  else sureEl.innerHTML = '<span class="empty">—</span>';
+
+  const detParts = [];
+  if (c.yol > 0) detParts.push('Yol: ' + fmtMoney(c.yol));
+  if (c.yemek > 0) detParts.push('Yemek: ' + fmtMoney(c.yemek));
+  document.getElementById('homeDetailsText').textContent = detParts.join(' · ');
+  document.getElementById('homeTodayEarn').textContent = (c.tutar + c.yol + c.yemek) > 0 ? fmtMoney(c.tutar + c.yol + c.yemek) : '';
+
+  // Action buttons
+  const ar = document.getElementById('actionRow');
+  const isWeekend = today.getDay()===0||today.getDay()===6;
+  ar.innerHTML = '';
+  if (!r.giris) {
+    ar.innerHTML += `<button class="action-btn primary" onclick="openGirisSheet()" style="grid-column:span 2">
+      <i class="ti ti-player-play" aria-hidden="true"></i>
+      <span>Mesaiye Başla</span>
+      <small>Giriş saatini kaydet</small>
+    </button>`;
+  } else if (!r.cikis) {
+    ar.innerHTML += `<button class="action-btn primary" onclick="openCikisSheet('${todayKey}')">
+      <i class="ti ti-player-stop" aria-hidden="true"></i>
+      <span>Mesaiden Çık</span>
+      <small>Çıkış saatini kaydet</small>
+    </button>
+    <button class="action-btn secondary" onclick="goCalendar()">
+      <i class="ti ti-calendar" aria-hidden="true"></i>
+      <span>Takvim</span>
+      <small>Geçmiş günler</small>
+    </button>`;
+  } else {
+    ar.innerHTML += `<button class="action-btn secondary" onclick="goCalendar()">
+      <i class="ti ti-calendar" aria-hidden="true"></i>
+      <span>Takvim</span>
+      <small>Geçmiş günler</small>
+    </button>
+    <button class="action-btn secondary" onclick="openDayDetailFromHome()">
+      <i class="ti ti-edit" aria-hidden="true"></i>
+      <span>Düzenle</span>
+      <small>Bugünü düzenle</small>
+    </button>`;
+  }
+
+  // Month summary
+  const mk = monthKey(today.getFullYear(), today.getMonth());
+  document.getElementById('monthSummaryLabel').textContent = MONTHS[today.getMonth()] + ' Özeti';
+  const mc = calcMonth(today.getFullYear(), today.getMonth());
+  const maas = getSalary(today.getFullYear(), today.getMonth());
+  document.getElementById('sumSaat').textContent = fmtMin(mc.totMin);
+  document.getElementById('sumMesaiTL').textContent = fmtMoney(mc.totTutar) + ' mesai';
+  document.getElementById('sumEkstra').textContent = fmtMoney(mc.totYol + mc.totYemek);
+  const yolSay = countYol(), yemekSay = countYemek();
+  document.getElementById('sumEkstraSub').textContent = [yolSay>0?`${yolSay}g yol`:'', yemekSay>0?`${yemekSay}g yemek`:''].filter(Boolean).join(', ') || '—';
+  const toplam = maas + mc.totTutar + mc.totYol + mc.totYemek;
+  document.getElementById('sumToplam').textContent = fmtMoney(toplam);
+  document.getElementById('sumToplamSub').textContent = fmtMoney(maas) + ' maaş + ' + fmtMoney(mc.totTutar + mc.totYol + mc.totYemek) + ' ek';
+}
+
+function countYol() {
+  let c=0; const days=getDays(today.getFullYear(),today.getMonth());
+  for(let d=1;d<=days;d++){const r=getDay(fmtKey(today.getFullYear(),today.getMonth(),d));const dt=new Date(today.getFullYear(),today.getMonth(),d);const iw=dt.getDay()===0||dt.getDay()===6;if((iw&&r.yol!==false)||(r.yol===true))c++;}
+  return c;
+}
+function countYemek(){let c=0;const days=getDays(today.getFullYear(),today.getMonth());for(let d=1;d<=days;d++){const r=getDay(fmtKey(today.getFullYear(),today.getMonth(),d));if(r.yemekOn)c++;}return c;}
+
+function openDayDetailFromHome() {
+  goCalendar();
+  setTimeout(() => {
+    openDayCard(todayKey);
+    const el = document.getElementById('dc-' + todayKey);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 200);
+}
+
+// ═══════════════════════════════════════════
+// CALENDAR RENDER
+// ═══════════════════════════════════════════
+function changeMonth(d) {
+  curM += d;
+  if (curM > 11) { curM = 0; curY++; }
+  if (curM < 0) { curM = 11; curY--; }
+  openDays = {};
+  renderCalendar();
+}
+
+function renderCalendar() {
+  document.getElementById('calMonthLabel').textContent = MONTHS[curM] + ' ' + curY;
+  const sal = getSalary(curY, curM);
+  document.getElementById('calSalaryVal').textContent = fmtMoney(sal);
+
+  const days = getDays(curY, curM);
+  const list = document.getElementById('calDayList');
+  list.innerHTML = '';
+
+  for (let d = 1; d <= days; d++) {
+    const key = fmtKey(curY, curM, d);
+    const dt = new Date(curY, curM, d);
+    const dow = dt.getDay();
+    const isWeekend = dow===0||dow===6;
+    const isToday = key === todayKey;
+    const r = getDay(key);
+    const c = calcDay(key);
+    const isOpen = !!openDays[key];
+
+    let cls = 'day-item';
+    if (isToday) cls += ' today-item';
+    else if (isWeekend) cls += ' weekend-item';
+
+    let subText = '';
+    if (r.giris && r.cikis) subText = r.giris + ' – ' + r.cikis + (c.netMin > 0 ? ' · ' + fmtMin(c.netMin) + ' mesai' : '');
+    else if (r.giris) subText = 'Giriş: ' + r.giris + ' (çıkış girilmedi)';
+    else if (isToday) subText = 'Dokunarak mesai gir';
+    else subText = isWeekend ? 'Hafta sonu' : 'Mesai girilmedi';
+
+    const molaHtml = buildMolaHtml(key, r);
+    const carpanVal = r.carpanOverride != null ? r.carpanOverride : cfg.carpan;
+    const yolOn = isWeekend ? (r.yol !== false) : (r.yol === true);
+    const yemekOn = !!r.yemekOn;
+    const tatilOn = !!r.tatil;
+
+    const div = document.createElement('div');
+    div.className = cls;
+    div.id = 'dc-' + key;
+    div.innerHTML = `
+      <div class="day-row" onclick="toggleDayCard('${key}')">
+        <div class="day-num-box"><span class="dn">${d}</span><span class="dd">${DAYS_SHORT[dow]}</span></div>
+        <div class="day-main">
+          <div class="day-name-text">${DAYS_FULL[dow]}</div>
+          <div class="day-sub-text">${subText}</div>
+        </div>
+        <div class="day-right-info">
+          ${c.netMin>0?`<span class="day-earn-badge">${fmtMoney(c.tutar+c.yol+c.yemek)}</span>`:''}
+          ${c.netMin>0?`<span class="day-hrs-badge">${fmtMin(c.netMin)}</span>`:''}
+        </div>
+        <i class="ti ti-chevron-down day-chevron ${isOpen?'open':''}" aria-hidden="true" id="chev-${key}"></i>
+      </div>
+      <div class="day-detail ${isOpen?'open':''}" id="dd-${key}">
+        <div class="det-sec">
+          <div class="det-sec-label">Mesai Saatleri</div>
+          <div class="inp-row">
+            <div class="inp-group"><label>Giriş</label>
+              <input type="time" value="${r.giris||''}" onchange="setDayField('${key}','giris',this.value)">
+            </div>
+            <div class="inp-group"><label>Çıkış</label>
+              <input type="time" value="${r.cikis||''}" onchange="setDayField('${key}','cikis',this.value)">
+            </div>
+          </div>
+        </div>
+
+        <div class="det-sec">
+          <div class="det-sec-label">Mola / Eksik Süre</div>
+          <div class="mola-list" id="mola-list-${key}">${molaHtml}</div>
+          <div class="inp-row" style="margin-bottom:8px">
+            <button class="add-mola-btn" onclick="addMola('${key}')"><i class="ti ti-plus"></i> Saat aralığı ekle</button>
+            <div class="inp-group"><label>Sabit dk (ör. 30)</label>
+              <input type="number" min="0" placeholder="0" value="${r.molaMin||''}" onchange="setDayField('${key}','molaMin',this.value)">
+            </div>
+          </div>
+        </div>
+
+        <div class="det-sec">
+          <div class="det-sec-label">Ekstralar</div>
+          <div class="toggle-row">
+            <div class="toggle-pill ${yolOn?'on-green':''}" onclick="toggleDayExtra('${key}','yol',${isWeekend})" id="yolpill-${key}">
+              <i class="ti ti-bus" aria-hidden="true"></i>${yolOn?'Yol ✓':'Yol'}
+            </div>
+            <div class="toggle-pill ${yemekOn?'on-orange':''}" onclick="toggleDayExtra('${key}','yemek',false)" id="yemekpill-${key}">
+              <i class="ti ti-soup" aria-hidden="true"></i>${yemekOn?'Yemek ✓':'Yemek'}
+            </div>
+            <div class="toggle-pill ${tatilOn?'on-blue':''}" onclick="toggleDayExtra('${key}','tatil',false)" id="tatilpill-${key}">
+              <i class="ti ti-beach" aria-hidden="true"></i>${tatilOn?'Tatil ✓':'Tatil'}
+            </div>
+          </div>
+        </div>
+
+        <div class="det-sec">
+          <div class="det-sec-label">Bu Güne Özel</div>
+          <div class="override-row">
+            <div class="inp-group"><label>Mesai Çarpanı</label>
+              <input type="number" step="0.25" min="1" value="${carpanVal}" onchange="setDayOverride('${key}','carpanOverride',parseFloat(this.value))">
+            </div>
+            <div class="inp-group"><label>Not</label>
+              <input type="text" value="${r.aciklama||''}" placeholder="not..." onchange="setDayField('${key}','aciklama',this.value)">
+            </div>
+          </div>
+        </div>
+
+        ${(c.netMin>0||c.yol>0||c.yemek>0)?`
+        <div class="det-total">
+          <div>
+            <div class="det-total-label">Gün Toplamı</div>
+            <div style="font-size:11px;color:var(--accent);opacity:0.5;margin-top:2px">${c.netMin>0?fmtMin(c.netMin)+' mesai':''}${c.yol>0?' · '+fmtMoney(c.yol)+' yol':''}${c.yemek>0?' · '+fmtMoney(c.yemek)+' yemek':''}</div>
+          </div>
+          <div class="det-total-val">${fmtMoney(c.tutar+c.yol+c.yemek)}</div>
+        </div>`:''}
+      </div>
+    `;
+    list.appendChild(div);
+  }
+
+  // Scroll to today
+  setTimeout(() => {
+    const tc = document.querySelector('.today-item');
+    if (tc) tc.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 100);
+}
+
+function buildMolaHtml(key, r) {
+  if (!r.molalar || !r.molalar.length) return '';
+  return r.molalar.map((mo, idx) => `
+    <div class="mola-item">
+      <input type="time" value="${mo.bas||''}" placeholder="başlangıç" onchange="updateMola('${key}',${idx},'bas',this.value)">
+      <input type="time" value="${mo.bit||''}" placeholder="bitiş" onchange="updateMola('${key}',${idx},'bit',this.value)">
+      <button class="mola-del" onclick="removeMola('${key}',${idx})"><i class="ti ti-x"></i></button>
+    </div>`).join('');
+}
+
+function toggleDayCard(key) {
+  openDays[key] = !openDays[key];
+  const dd = document.getElementById('dd-'+key);
+  const ch = document.getElementById('chev-'+key);
+  if (dd) { dd.classList.toggle('open', !!openDays[key]); }
+  if (ch) { ch.classList.toggle('open', !!openDays[key]); }
+}
+
+function openDayCard(key) {
+  openDays[key] = true;
+  const dd = document.getElementById('dd-'+key);
+  const ch = document.getElementById('chev-'+key);
+  if (dd) { dd.classList.add('open'); }
+  if (ch) { ch.classList.add('open'); }
+}
+
+function setDayField(key, field, val) {
+  if (!dayData[key]) dayData[key] = {};
+  dayData[key][field] = val;
+  debounceSave();
+  refreshDayCard(key);
+}
+
+function setDayOverride(key, field, val) {
+  if (!dayData[key]) dayData[key] = {};
+  dayData[key][field] = val;
+  debounceSave();
+  refreshDayCard(key);
+}
+
+function toggleDayExtra(key, field, isWeekend) {
+  if (!dayData[key]) dayData[key] = {};
+  const r = dayData[key];
+  if (field === 'yol') {
+    if (isWeekend) r.yol = r.yol === false ? true : false;
+    else r.yol = r.yol === true ? false : true;
+  } else if (field === 'yemek') {
+    r.yemekOn = !r.yemekOn;
+  } else if (field === 'tatil') {
+    r.tatil = !r.tatil;
+  }
+  debounceSave();
+  refreshDayCard(key);
+}
+
+function addMola(key) {
+  if (!dayData[key]) dayData[key] = {};
+  if (!dayData[key].molalar) dayData[key].molalar = [];
+  dayData[key].molalar.push({ bas: '', bit: '' });
+  debounceSave();
+  const container = document.getElementById('mola-list-'+key);
+  if (container) container.innerHTML = buildMolaHtml(key, dayData[key]);
+}
+
+function removeMola(key, idx) {
+  if (!dayData[key] || !dayData[key].molalar) return;
+  dayData[key].molalar.splice(idx, 1);
+  debounceSave();
+  const container = document.getElementById('mola-list-'+key);
+  if (container) container.innerHTML = buildMolaHtml(key, dayData[key]);
+  refreshDayCard(key);
+}
+
+function updateMola(key, idx, field, val) {
+  if (!dayData[key] || !dayData[key].molalar) return;
+  dayData[key].molalar[idx][field] = val;
+  debounceSave();
+  refreshDayCard(key);
+}
+
+function refreshDayCard(key) {
+  // Lightweight: just update the summary/total & header badge without full re-render
+  const c = calcDay(key);
+  const r = getDay(key);
+  // Update header sub-text and badge
+  const dc = document.getElementById('dc-'+key);
+  if (!dc) return;
+  const sub = dc.querySelector('.day-sub-text');
+  const rightInfo = dc.querySelector('.day-right-info');
+  const { d, isWeekend } = getKey(key);
+
+  if (sub) {
+    if (r.giris && r.cikis) sub.textContent = r.giris + ' – ' + r.cikis + (c.netMin > 0 ? ' · ' + fmtMin(c.netMin) + ' mesai' : '');
+    else if (r.giris) sub.textContent = 'Giriş: ' + r.giris + ' (çıkış girilmedi)';
+    else sub.textContent = isWeekend ? 'Hafta sonu' : 'Mesai girilmedi';
+  }
+  if (rightInfo) {
+    rightInfo.innerHTML = c.netMin > 0 ?
+      `<span class="day-earn-badge">${fmtMoney(c.tutar+c.yol+c.yemek)}</span><span class="day-hrs-badge">${fmtMin(c.netMin)}</span>` : '';
+  }
+  // Update det-total
+  const det = document.getElementById('dd-'+key);
+  if (det) {
+    let totalDiv = det.querySelector('.det-total');
+    if (c.netMin>0||c.yol>0||c.yemek>0) {
+      const html = `<div class="det-total">
+        <div>
+          <div class="det-total-label">Gün Toplamı</div>
+          <div style="font-size:11px;color:var(--accent);opacity:0.5;margin-top:2px">${c.netMin>0?fmtMin(c.netMin)+' mesai':''}${c.yol>0?' · '+fmtMoney(c.yol)+' yol':''}${c.yemek>0?' · '+fmtMoney(c.yemek)+' yemek':''}</div>
+        </div>
+        <div class="det-total-val">${fmtMoney(c.tutar+c.yol+c.yemek)}</div>
+      </div>`;
+      if (totalDiv) totalDiv.outerHTML = html;
+      else det.insertAdjacentHTML('beforeend', html);
+    } else if (totalDiv) { totalDiv.remove(); }
+  }
+  // Update toggle pills
+  const isW = getKey(key).isWeekend;
+  const yolOn = isW ? (r.yol !== false) : (r.yol === true);
+  const yolPill = document.getElementById('yolpill-'+key);
+  if (yolPill) { yolPill.className='toggle-pill'+(yolOn?' on-green':''); yolPill.innerHTML=`<i class="ti ti-bus" aria-hidden="true"></i>${yolOn?'Yol ✓':'Yol'}`; }
+  const yemekPill = document.getElementById('yemekpill-'+key);
+  if (yemekPill) { yemekPill.className='toggle-pill'+(r.yemekOn?' on-orange':''); yemekPill.innerHTML=`<i class="ti ti-soup" aria-hidden="true"></i>${r.yemekOn?'Yemek ✓':'Yemek'}`; }
+  const tatilPill = document.getElementById('tatilpill-'+key);
+  if (tatilPill) { tatilPill.className='toggle-pill'+(r.tatil?' on-blue':''); tatilPill.innerHTML=`<i class="ti ti-beach" aria-hidden="true"></i>${r.tatil?'Tatil ✓':'Tatil'}`; }
+}
+
+// ═══════════════════════════════════════════
+// SHEETS (MODALS)
+// ═══════════════════════════════════════════
+function openSheet(id) { document.getElementById(id).classList.add('show'); }
+function closeSheet(id) { document.getElementById(id).classList.remove('show'); }
+function sheetOutsideClick(e, id) { if (e.target === document.getElementById(id)) closeSheet(id); }
+
+// Giriş sheet
+function openGirisSheet(key) {
+  modalKey = key || todayKey;
+  const { d, m, dow } = getKey(modalKey);
+  document.getElementById('girisSheetTitle').textContent = DAYS_FULL[dow] + ', ' + d + ' ' + MONTHS[m];
+  document.getElementById('girisSheetSub').textContent = 'Mesaiye başlama saatini gir';
+  document.getElementById('girisInput').value = cfg.normalBitis || '18:00';
+  openSheet('girisSheet');
+}
+
+function confirmGiris() {
+  const val = document.getElementById('girisInput').value;
+  if (!val) { closeSheet('girisSheet'); return; }
+  if (!dayData[modalKey]) dayData[modalKey] = {};
+  dayData[modalKey].giris = val;
+  debounceSave();
+  const key = modalKey;
+  closeSheet('girisSheet');
+  // Auto-open çıkış sheet
+  setTimeout(() => openCikisSheet(key), 350);
+  if (currentScreen === 'home') renderHome();
+  else renderCalendar();
+}
+
+// Çıkış sheet
+function openCikisSheet(key) {
+  modalKey = key;
+  const r = getDay(key);
+  const g = parseTime(r.giris);
+  const def = g ? g + 120 : 20*60;
+  const dh = Math.floor(def/60)%24, dm = def%60;
+  document.getElementById('cikisInput').value = String(dh).padStart(2,'0') + ':' + String(dm).padStart(2,'0');
+  document.getElementById('cikisSheetSub').textContent = r.giris ? 'Giriş: ' + r.giris : '';
+  openSheet('cikisSheet');
+}
+
+function confirmCikis() {
+  const val = document.getElementById('cikisInput').value;
+  if (val && modalKey) {
+    if (!dayData[modalKey]) dayData[modalKey] = {};
+    dayData[modalKey].cikis = val;
+    debounceSave();
+  }
+  closeSheet('cikisSheet');
+  renderAll();
+}
+
+// Salary sheet
+function openSalaryModal() {
+  const mk = monthKey(curY, curM);
+  const existing = salaries[mk];
+  const inherited = getSalary(curY, curM);
+  document.getElementById('salarySheetSub').textContent = MONTHS[curM] + ' ' + curY + ' maaşı';
+  const noteEl = document.getElementById('salaryNote');
+  if (existing == null) {
+    noteEl.textContent = 'Bu ay için kayıtlı maaş yok. Önceki aydan alınan değer: ' + fmtMoney(inherited);
+  } else {
+    noteEl.textContent = 'Bu ay için kayıtlı maaş var. Değiştirmek için yeni değer gir.';
+  }
+  document.getElementById('salaryInput').value = existing != null ? existing : inherited;
+  openSheet('salarySheet');
+}
+
+function confirmSalary() {
+  const val = parseFloat(document.getElementById('salaryInput').value);
+  if (!isNaN(val) && val > 0) {
+    salaries[monthKey(curY, curM)] = val;
+    debounceSave();
+    document.getElementById('calSalaryVal').textContent = fmtMoney(val);
+    showToast(MONTHS[curM] + ' maaşı güncellendi ✓');
+  }
+  closeSheet('salarySheet');
+}
+
+// ═══════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════
+function applySettings() {
+  document.getElementById('stNormalBitis').value = cfg.normalBitis || '18:00';
+  document.getElementById('stCarpan').value = cfg.carpan || 1.5;
+  document.getElementById('stYol').value = cfg.yol != null ? cfg.yol : 100;
+  document.getElementById('stYemek').value = cfg.yemek || 0;
+}
+
+function saveSettings() {
+  cfg.normalBitis = document.getElementById('stNormalBitis').value || '18:00';
+  cfg.carpan = parseFloat(document.getElementById('stCarpan').value) || 1.5;
+  cfg.yol = parseFloat(document.getElementById('stYol').value) || 0;
+  cfg.yemek = parseFloat(document.getElementById('stYemek').value) || 0;
+  debounceSave();
+  showToast('Ayarlar kaydedildi ✓');
+}
+
+// ═══════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════
+function renderAll() {
+  if (currentScreen === 'home') renderHome();
+  else if (currentScreen === 'cal') renderCalendar();
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+loadAll();
+renderHome();
+</script>
+</body>
+</html>
