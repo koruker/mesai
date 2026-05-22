@@ -79,7 +79,7 @@ body{display:flex;flex-direction:column;width:100%;position:relative}
 .action-btn:active{transform:scale(.97);opacity:.85}
 .action-btn.primary{background:var(--accent);color:#0f0f0f}
 .action-btn.secondary{background:var(--bg2);color:var(--text);border:1px solid var(--border)}
-.action-btn i{font-size:22px}
+.action-btn i{font-size:22px;display:block;min-width:24px}
 .action-btn span{font-size:14px;font-weight:600}
 .action-btn small{font-size:11px;opacity:.6;font-weight:400}
 
@@ -339,6 +339,11 @@ body{display:flex;flex-direction:column;width:100%;position:relative}
           <input class="settings-row-input" type="number" id="stCarpan" value="1.5" step="0.25" onchange="saveSettings()">
         </div>
         <div class="settings-row">
+          <div class="settings-row-icon" style="background:#2a2a2a;color:#a0a0a0"><i class="ti ti-calendar-stats"></i></div>
+          <div class="settings-row-text"><div class="settings-row-label">Aylık Çalışma Saati</div><div class="settings-row-sub">Maaş ÷ bu sayı = saatlik ücret</div></div>
+          <input class="settings-row-input" type="number" id="stAylikSaat" value="225" onchange="saveSettings()">
+        </div>
+        <div class="settings-row">
           <div class="settings-row-icon blue"><i class="ti ti-bus"></i></div>
           <div class="settings-row-text"><div class="settings-row-label">Hafta Sonu Yol (₺/gün)</div></div>
           <input class="settings-row-input" type="number" id="stYol" value="100" onchange="saveSettings()">
@@ -421,7 +426,7 @@ let openDays = {}, modalKey = null, saveTimer = null;
 let spreadsheetId = null, accessToken = null, userInfo = null;
 let isSyncing = false, pendingSync = false;
 
-let cfg = { normalBitis:'18:00', carpan:1.5, yol:100, yemek:0 };
+let cfg = { normalBitis:'18:00', carpan:1.5, yol:100, yemek:0, aylikSaat:225 };
 let salaries = {};
 let dayData = {};
 
@@ -465,7 +470,7 @@ function getMolaMin(r,g,c){
 function calcDay(key){
   const info=getKeyInfo(key), r=getDay(key);
   const maas=getSalary(info.y,info.m);
-  const saatlik=maas/225;
+  const saatlik=maas/(cfg.aylikSaat||225);
   const carpan=r.carpanOverride!=null?r.carpanOverride:cfg.carpan;
   const normalBitis=parseTime(cfg.normalBitis)||18*60;
   let netMin=0;
@@ -644,7 +649,7 @@ async function pushToSheets(){
     await sheetsReq('PUT',`/${spreadsheetId}/values/Veriler!A1:K${rows.length}?valueInputOption=RAW`,{values:rows});
 
     // Push settings
-    const sRows=[['key','value'],['normalBitis',cfg.normalBitis],['carpan',cfg.carpan],['yol',cfg.yol],['yemek',cfg.yemek]];
+    const sRows=[['key','value'],['normalBitis',cfg.normalBitis],['carpan',cfg.carpan],['yol',cfg.yol],['yemek',cfg.yemek],['aylikSaat',cfg.aylikSaat||225]];
     await sheetsReq('PUT',`/${spreadsheetId}/values/Ayarlar!A1:B${sRows.length}?valueInputOption=RAW`,{values:sRows});
 
     // Push salaries
@@ -694,6 +699,7 @@ async function pullFromSheets(){
       else if(k==='carpan') cfg.carpan=parseFloat(v)||1.5;
       else if(k==='yol') cfg.yol=parseFloat(v)||0;
       else if(k==='yemek') cfg.yemek=parseFloat(v)||0;
+      else if(k==='aylikSaat') cfg.aylikSaat=parseFloat(v)||225;
     }
 
     // Parse salaries
@@ -782,6 +788,7 @@ function applySettings(){
   document.getElementById('stCarpan').value=cfg.carpan||1.5;
   document.getElementById('stYol').value=cfg.yol!=null?cfg.yol:100;
   document.getElementById('stYemek').value=cfg.yemek||0;
+  document.getElementById('stAylikSaat').value=cfg.aylikSaat||225;
 }
 
 function saveSettings(){
@@ -789,8 +796,10 @@ function saveSettings(){
   cfg.carpan=parseFloat(document.getElementById('stCarpan').value)||1.5;
   cfg.yol=parseFloat(document.getElementById('stYol').value)||0;
   cfg.yemek=parseFloat(document.getElementById('stYemek').value)||0;
+  cfg.aylikSaat=parseFloat(document.getElementById('stAylikSaat').value)||225;
   saveLocal(); debounceSync();
   showToast('Ayarlar kaydedildi ✓');
+  renderAll();
 }
 
 // ═══════════════ NAVIGATION ═══════════════
@@ -852,17 +861,17 @@ function renderHome(){
   const ar=document.getElementById('actionRow'); ar.innerHTML='';
   if(!r.giris){
     ar.innerHTML=`<button class="action-btn primary" onclick="openGirisSheet()" style="grid-column:span 2">
-      <i class="ti ti-player-play"></i><span>Mesaiye Başla</span><small>Giriş saatini kaydet</small></button>`;
+      <i class="ti ti-player-play" style="font-size:24px"></i><span style="font-size:15px;font-weight:600">Mesaiye Başla</span><small style="font-size:12px;opacity:0.65">Giriş saatini kaydet</small></button>`;
   } else if(!r.cikis){
     ar.innerHTML=`<button class="action-btn primary" onclick="openCikisSheet('${todayKey}')">
-      <i class="ti ti-player-stop"></i><span>Mesaiden Çık</span><small>Çıkış saatini kaydet</small></button>
+      <i class="ti ti-player-stop" style="font-size:24px"></i><span style="font-size:15px;font-weight:600">Mesaiden Çık</span><small style="font-size:12px;opacity:0.65">Çıkış saatini kaydet</small></button>
       <button class="action-btn secondary" onclick="goCalendar()">
-      <i class="ti ti-calendar"></i><span>Takvim</span><small>Geçmiş günler</small></button>`;
+      <i class="ti ti-calendar" style="font-size:24px"></i><span style="font-size:15px;font-weight:600">Takvim</span><small style="font-size:12px;opacity:0.65">Geçmiş günler</small></button>`;
   } else {
     ar.innerHTML=`<button class="action-btn secondary" onclick="goCalendar()">
-      <i class="ti ti-calendar"></i><span>Takvim</span><small>Geçmiş günler</small></button>
+      <i class="ti ti-calendar" style="font-size:24px"></i><span style="font-size:15px;font-weight:600">Takvim</span><small style="font-size:12px;opacity:0.65">Geçmiş günler</small></button>
       <button class="action-btn secondary" onclick="openDayFromHome()">
-      <i class="ti ti-edit"></i><span>Düzenle</span><small>Bugünü düzenle</small></button>`;
+      <i class="ti ti-edit" style="font-size:24px"></i><span style="font-size:15px;font-weight:600">Düzenle</span><small style="font-size:12px;opacity:0.65">Bugünü düzenle</small></button>`;
   }
 
   document.getElementById('monthSummaryLabel').textContent=MONTHS[today.getMonth()]+' Özeti';
@@ -1071,6 +1080,7 @@ function confirmSalary(){
     saveLocal(); debounceSync();
     document.getElementById('calSalaryVal').textContent=fmtMoney(val);
     showToast(MONTHS[curM]+' maaşı güncellendi ✓');
+    renderAll();
   }
   closeSheet('salarySheet');
 }
