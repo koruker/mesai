@@ -79,7 +79,7 @@ body{display:flex;flex-direction:column;width:100%;position:relative}
 .action-btn:active{transform:scale(.97);opacity:.85}
 .action-btn.primary{background:var(--accent);color:#0f0f0f}
 .action-btn.secondary{background:var(--bg2);color:var(--text);border:1px solid var(--border)}
-.action-btn i{font-size:22px;display:block;min-width:24px}
+.action-btn i{font-size:24px;display:block;min-width:24px;line-height:1}
 .action-btn span{font-size:14px;font-weight:600}
 .action-btn small{font-size:11px;opacity:.6;font-weight:400}
 
@@ -231,18 +231,14 @@ body{display:flex;flex-direction:column;width:100%;position:relative}
     <div class="login-logo"><i class="ti ti-clock-bolt"></i></div>
     <div>
       <div class="login-title">Mesai Takip</div>
-      <div class="login-sub" style="margin-top:8px">Veriler Google Sheets'te saklanır. Her cihazdan erişebilirsin.</div>
-    </div>
-    <div class="login-features">
-      <div class="login-feat"><i class="ti ti-brand-google-drive"></i><span>Veriler kendi Google Drive'ında</span></div>
-      <div class="login-feat"><i class="ti ti-devices"></i><span>Her cihazdan erişim</span></div>
-      <div class="login-feat"><i class="ti ti-lock"></i><span>Sadece sen görebilirsin</span></div>
+      <div class="login-sub" style="margin-top:8px">Mesai takibini Google Sheets'te tut.</div>
     </div>
     <button class="google-btn" onclick="signIn()">
       <img src="https://www.google.com/favicon.ico" alt="G">
       Google ile Giriş Yap
     </button>
-    <div class="login-note">Google hesabın ile giriş yaparak kendi Drive'ında "Mesai Takip" adlı bir Spreadsheet oluşturulur.</div>
+    <div class="login-note">Veriler kendi Google hesabında saklanır, başka kimse erişemez.</div>
+    <div style="font-size:11px;color:var(--text3);margin-top:8px;opacity:0.5">Mesai Takip <span id="versionBadge"></span></div>
   </div>
 </div>
 
@@ -312,6 +308,11 @@ body{display:flex;flex-direction:column;width:100%;position:relative}
     <span class="salary-edit"><i class="ti ti-edit"></i> Düzenle</span>
   </div>
   <div class="scroll-area" id="calDayList"></div>
+  <nav class="nav-bar">
+    <button class="nav-item" onclick="goHome()"><i class="ti ti-home"></i><span>Ana Ekran</span></button>
+    <button class="nav-item active"><i class="ti ti-calendar"></i><span>Takvim</span></button>
+    <button class="nav-item" onclick="goSettings()"><i class="ti ti-settings"></i><span>Ayarlar</span></button>
+  </nav>
 </div>
 
 <!-- SETTINGS -->
@@ -346,11 +347,11 @@ body{display:flex;flex-direction:column;width:100%;position:relative}
         <div class="settings-row">
           <div class="settings-row-icon blue"><i class="ti ti-bus"></i></div>
           <div class="settings-row-text"><div class="settings-row-label">Hafta Sonu Yol (₺/gün)</div></div>
-          <input class="settings-row-input" type="number" id="stYol" value="100" onchange="saveSettings()">
+          <input class="settings-row-input" type="number" id="stYol" value="0" onchange="saveSettings()">
         </div>
         <div class="settings-row">
           <div class="settings-row-icon" style="background:var(--orange-bg);color:var(--orange)"><i class="ti ti-soup"></i></div>
-          <div class="settings-row-text"><div class="settings-row-label">Mesai Yemek (₺/gün)</div></div>
+          <div class="settings-row-text"><div class="settings-row-label">Varsayılan Yemek (₺/gün)</div><div class="settings-row-sub">Günlük override edilebilir</div></div>
           <input class="settings-row-input" type="number" id="stYemek" value="0" onchange="saveSettings()">
         </div>
       </div>
@@ -410,6 +411,7 @@ body{display:flex;flex-direction:column;width:100%;position:relative}
 
 <script>
 // ═══════════════ CONFIG ═══════════════
+const VERSION = 'v1.3';
 const CLIENT_ID = '390842439862-ks2rqj0cgh4t0aefea31cei42rea2usg.apps.googleusercontent.com';
 const SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
 const SHEET_TITLE = 'Mesai Takip';
@@ -426,7 +428,7 @@ let openDays = {}, modalKey = null, saveTimer = null;
 let spreadsheetId = null, accessToken = null, userInfo = null;
 let isSyncing = false, pendingSync = false;
 
-let cfg = { normalBitis:'18:00', carpan:1.5, yol:100, yemek:0, aylikSaat:225 };
+let cfg = { normalBitis:'18:00', carpan:1.5, yol:0, yemek:0, aylikSaat:225 };
 let salaries = {};
 let dayData = {};
 
@@ -484,9 +486,9 @@ function calcDay(key){
   const mesaiSaat=fmtHrs(netMin);
   const tutar=netMin>0?Math.round(saatlik*carpan*mesaiSaat):0;
   let yol=0;
-  if(info.isWeekend) yol=r.yol!==false?(cfg.yol||0):0;
-  else if(r.yol===true) yol=cfg.yol||0;
-  const yemek=(netMin>0&&r.yemekOn)?(cfg.yemek||0):0;
+  // yol is always a manual per-day amount (r.yolTutar), no auto default
+  if(r.yolTutar) yol=parseFloat(r.yolTutar)||0;
+  const yemek=r.yemekTutar?parseFloat(r.yemekTutar)||0:0;
   return{netMin,mesaiSaat,tutar,yol,yemek};
 }
 
@@ -643,8 +645,8 @@ async function pushToSheets(){
     const rows=[['key','giris','cikis','molalar','molaMin','carpanOverride','yol','yemekOn','tatil','aciklama','updatedAt']];
     for(const[k,v] of Object.entries(dayData)){
       rows.push([k,v.giris||'',v.cikis||'',JSON.stringify(v.molalar||[]),v.molaMin||'',
-        v.carpanOverride!=null?v.carpanOverride:'',v.yol!=null?String(v.yol):'',
-        v.yemekOn?'1':'',v.tatil?'1':'',v.aciklama||'',new Date().toISOString()]);
+        v.carpanOverride!=null?v.carpanOverride:'',v.yolTutar||'',
+        v.yemekTutar||'',v.tatil?'1':'',v.aciklama||'',new Date().toISOString()]);
     }
     await sheetsReq('PUT',`/${spreadsheetId}/values/Veriler!A1:K${rows.length}?valueInputOption=RAW`,{values:rows});
 
@@ -679,15 +681,15 @@ async function pullFromSheets(){
     const vRows=(vSheet.values||[]).slice(1);
     const newDayData={};
     for(const row of vRows){
-      const[k,giris,cikis,molalar,molaMin,carpanOverride,yol,yemekOn,tatil,aciklama]=row;
+      const[k,giris,cikis,molalar,molaMin,carpanOverride,yolTutar,yemekTutar,tatil,aciklama]=row;
       if(!k) continue;
       newDayData[k]={
         giris:giris||'',cikis:cikis||'',
         molalar:molalar?JSON.parse(molalar):[],
         molaMin:molaMin||'',
         carpanOverride:carpanOverride!==''&&carpanOverride!=null?parseFloat(carpanOverride):null,
-        yol:yol===''||yol==null?null:yol==='true'||yol==='1'?true:yol==='false'||yol==='0'?false:null,
-        yemekOn:yemekOn==='1',tatil:tatil==='1',aciklama:aciklama||''
+        yolTutar:yolTutar||'',yemekTutar:yemekTutar||'',
+        tatil:tatil==='1',aciklama:aciklama||''
       };
     }
     dayData=newDayData;
@@ -908,8 +910,6 @@ function renderCalendar(){
       r.giris?'Giriş: '+r.giris+' (çıkış girilmedi)':isToday?'Dokunarak mesai gir':isWeekend?'Hafta sonu':'Mesai girilmedi';
     const molaHtml=buildMolaHtml(key,r);
     const carpanVal=r.carpanOverride!=null?r.carpanOverride:cfg.carpan;
-    const yolOn=isWeekend?(r.yol!==false):(r.yol===true);
-
     const div=document.createElement('div');
     div.className='day-item'+(isToday?' today-item':isWeekend?' weekend-item':'');
     div.id='dc-'+key;
@@ -943,10 +943,17 @@ function renderCalendar(){
         </div>
         <div class="det-sec">
           <div class="det-sec-label">Ekstralar</div>
-          <div class="toggle-row">
-            <div class="toggle-pill ${yolOn?'on-green':''}" onclick="toggleDayExtra('${key}','yol',${isWeekend})" id="yolpill-${key}"><i class="ti ti-bus"></i>${yolOn?'Yol ✓':'Yol'}</div>
-            <div class="toggle-pill ${r.yemekOn?'on-orange':''}" onclick="toggleDayExtra('${key}','yemek',false)" id="yemekpill-${key}"><i class="ti ti-soup"></i>${r.yemekOn?'Yemek ✓':'Yemek'}</div>
+          <div class="inp-row" style="margin-bottom:8px">
+            <div class="inp-group"><label><i class="ti ti-bus" style="vertical-align:-2px"></i> Yol (₺)</label>
+              <input type="number" min="0" placeholder="0" value="${r.yolTutar||''}" onchange="setDayField('${key}','yolTutar',this.value)">
+            </div>
+            <div class="inp-group"><label><i class="ti ti-soup" style="vertical-align:-2px"></i> Yemek (₺)</label>
+              <input type="number" min="0" placeholder="0" value="${r.yemekTutar||''}" onchange="setDayField('${key}','yemekTutar',this.value)">
+            </div>
+          </div>
+          <div class="toggle-row" style="grid-template-columns:1fr 1fr">
             <div class="toggle-pill ${r.tatil?'on-blue':''}" onclick="toggleDayExtra('${key}','tatil',false)" id="tatilpill-${key}"><i class="ti ti-beach"></i>${r.tatil?'Tatil ✓':'Tatil'}</div>
+            <div class="toggle-pill" style="opacity:0;pointer-events:none"></div>
           </div>
         </div>
         <div class="det-sec">
@@ -1009,11 +1016,7 @@ function refreshDayCard(key){
       <div class="det-total-val">${fmtMoney(c.tutar+c.yol+c.yemek)}</div></div>`:'';
     if(tot) tot.outerHTML=totHtml||''; else if(totHtml) det.insertAdjacentHTML('beforeend',totHtml);
   }
-  const yolOn=info.isWeekend?(r.yol!==false):(r.yol===true);
-  const yp=document.getElementById('yolpill-'+key);
-  if(yp){yp.className='toggle-pill'+(yolOn?' on-green':'');yp.innerHTML=`<i class="ti ti-bus"></i>${yolOn?'Yol ✓':'Yol'}`;}
-  const ymp=document.getElementById('yemekpill-'+key);
-  if(ymp){ymp.className='toggle-pill'+(r.yemekOn?' on-orange':'');ymp.innerHTML=`<i class="ti ti-soup"></i>${r.yemekOn?'Yemek ✓':'Yemek'}`;}
+
   const tp=document.getElementById('tatilpill-'+key);
   if(tp){tp.className='toggle-pill'+(r.tatil?' on-blue':'');tp.innerHTML=`<i class="ti ti-beach"></i>${r.tatil?'Tatil ✓':'Tatil'}`;}
 }
@@ -1105,6 +1108,7 @@ function showToast(msg){
 
 // ═══════════════ INIT ═══════════════
 loadLocal();
+document.querySelectorAll('#versionBadge').forEach(el => el.textContent = VERSION);
 
 // Wait for Google API
 window.addEventListener('load',()=>{
