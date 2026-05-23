@@ -1,408 +1,538 @@
 <!DOCTYPE html>
+
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Mesai Takip</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
-:root{--bg:#0f0f0f;--bg2:#171717;--bg3:#1f1f1f;--bg4:#2a2a2a;--border:#2e2e2e;--border2:#3a3a3a;--text:#f0f0f0;--text2:#a0a0a0;--text3:#666;--accent:#e8ff47;--accent-bg:rgba(232,255,71,0.08);--green:#4ade80;--green-bg:rgba(74,222,128,0.1);--red:#f87171;--red-bg:rgba(248,113,113,0.1);--blue:#60a5fa;--blue-bg:rgba(96,165,250,0.1);--orange:#fb923c;--orange-bg:rgba(251,146,60,0.1);--r:12px;--r2:16px;--font:'DM Sans',sans-serif;--mono:'DM Mono',monospace}
+:root{
+  --bg:#111318;--bg2:#1c1f27;--bg3:#252932;--bg4:#2e3340;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --text:#f5f6fa;--text2:#9ba3b8;--text3:#5a6278;
+  --blue:#4f8ef7;--blue-dim:rgba(79,142,247,0.15);--blue-border:rgba(79,142,247,0.3);
+  --green:#34c77b;--green-dim:rgba(52,199,123,0.12);--green-border:rgba(52,199,123,0.25);
+  --red:#ff5f5f;--red-dim:rgba(255,95,95,0.12);
+  --yellow:#f5c842;--yellow-dim:rgba(245,200,66,0.12);
+  --orange:#ff8c42;--orange-dim:rgba(255,140,66,0.12);
+  --purple:#a78bfa;--purple-dim:rgba(167,139,250,0.12);
+  --r:14px;--r2:20px;--r3:28px;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bot:env(safe-area-inset-bottom,0px);
+}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font);width:100%}
-body{display:flex;flex-direction:column;width:100%;position:relative}
-.screen{position:fixed;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;transition:transform .35s cubic-bezier(.4,0,.2,1),opacity .35s;overflow:hidden}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;width:100%;-webkit-font-smoothing:antialiased}
+body{display:flex;flex-direction:column;position:relative}
+
+/* ── SCREENS ── */
+.screen{position:fixed;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;transition:transform .3s cubic-bezier(.4,0,.2,1),opacity .3s;overflow:hidden;background:var(–bg)}
 .screen.hidden{transform:translateX(100%);opacity:0;pointer-events:none}
-.scroll-area{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:24px}
-.scroll-area::-webkit-scrollbar{display:none}
+.scroll{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+.scroll::-webkit-scrollbar{display:none}
 
-/* LOGIN SCREEN */
-#loginScreen{background:var(--bg);justify-content:center;align-items:center}
-.login-box{padding:40px 32px;display:flex;flex-direction:column;align-items:center;gap:24px;width:100%}
-.login-logo{width:72px;height:72px;background:var(--accent-bg);border:1px solid rgba(232,255,71,0.2);border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:32px;color:var(--accent)}
-.login-title{font-size:26px;font-weight:600;text-align:center}
-.login-sub{font-size:14px;color:var(--text3);text-align:center;line-height:1.6}
-.login-features{width:100%;display:flex;flex-direction:column;gap:10px;margin:8px 0}
-.login-feat{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r)}
-.login-feat i{font-size:20px;color:var(--accent)}
-.login-feat span{font-size:13px;color:var(--text2)}
-.google-btn{width:100%;padding:16px;background:#fff;border:none;border-radius:var(--r2);display:flex;align-items:center;justify-content:center;gap:12px;font-size:15px;font-weight:600;color:#1f1f1f;cursor:pointer;font-family:var(--font);transition:opacity .15s}
-.google-btn:active{opacity:.85}
-.google-btn img{width:22px;height:22px}
-.login-note{font-size:11px;color:var(--text3);text-align:center;line-height:1.5}
+/* ── LOGIN ── */
+#loginScreen{justify-content:flex-end;align-items:stretch}
+.login-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 50% -20%,rgba(79,142,247,0.18) 0%,transparent 65%)}
+.login-content{position:relative;padding:0 24px calc(40px + var(–safe-bot));display:flex;flex-direction:column;gap:20px}
+.login-app-name{text-align:center;padding:40px 0 8px}
+.login-app-name h1{font-size:32px;font-weight:700;letter-spacing:-0.5px}
+.login-app-name h1 span{color:var(–blue)}
+.login-app-name p{font-size:14px;color:var(–text3);margin-top:6px}
+.login-version{font-size:11px;color:var(–text3);text-align:center;margin-top:-12px}
+.login-card{background:var(–bg2);border:1px solid var(–border);border-radius:var(–r2);padding:20px}
+.login-card p{font-size:13px;color:var(–text2);line-height:1.55;text-align:center}
+.google-btn{width:100%;padding:17px 20px;background:#fff;border:none;border-radius:var(–r);display:flex;align-items:center;justify-content:center;gap:10px;font-size:15px;font-weight:600;color:#1a1a2e;cursor:pointer;font-family:‘Inter’,sans-serif;transition:opacity .15s,transform .1s}
+.google-btn:active{opacity:.85;transform:scale(.99)}
+.google-btn img{width:20px;height:20px}
 
-/* TOPBAR */
-.topbar{display:flex;align-items:center;padding:52px 20px 16px;gap:12px;flex-shrink:0}
-.topbar-back{width:36px;height:36px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);font-size:18px;flex-shrink:0}
+/* ── TOP BAR ── */
+.topbar{padding:calc(var(–safe-top) + 16px) 20px 12px;display:flex;align-items:center;gap:12px;flex-shrink:0;background:var(–bg)}
 .topbar-title{font-size:17px;font-weight:600;flex:1}
-.topbar-action{width:36px;height:36px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);font-size:18px;flex-shrink:0}
+.icon-btn{width:38px;height:38px;border-radius:50%;background:var(–bg3);border:1px solid var(–border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(–text2);font-size:16px;flex-shrink:0;transition:background .15s}
+.icon-btn:active{background:var(–bg4)}
+.icon-btn svg{width:18px;height:18px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
 
-/* HOME */
-#homeScreen{background:var(--bg)}
-.home-header{padding:60px 24px 20px}
-.home-top-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.home-greeting{font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
-.home-date{font-size:26px;font-weight:600;line-height:1.2}
-.home-date span{color:var(--accent)}
-.home-dayname{font-size:13px;color:var(--text2)}
-.user-avatar{width:38px;height:38px;border-radius:50%;border:2px solid var(--border2);object-fit:cover;cursor:pointer}
-.sync-indicator{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text3);padding:4px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:99px;cursor:pointer;margin-bottom:12px;align-self:flex-start}
-.sync-indicator.syncing{color:var(--accent)}
-.sync-indicator.error{color:var(--red)}
-.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--green)}
-.sync-indicator.syncing .sync-dot{background:var(--accent);animation:pulse 1s infinite}
-.sync-indicator.error .sync-dot{background:var(--red)}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+/* ── HOME ── */
+.home-hero{padding:0 20px 20px}
+.home-date-row{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
+.home-date-block{}
+.home-greeting{font-size:12px;color:var(–text3);font-weight:500;letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px}
+.home-date{font-size:28px;font-weight:700;letter-spacing:-0.5px;line-height:1}
+.home-date em{color:var(–blue);font-style:normal}
+.home-day{font-size:13px;color:var(–text2);margin-top:4px}
+.avatar-btn{width:42px;height:42px;border-radius:50%;overflow:hidden;border:2px solid var(–border2);cursor:pointer;flex-shrink:0}
+.avatar-btn img{width:100%;height:100%;object-fit:cover}
+.avatar-placeholder{width:100%;height:100%;background:var(–blue-dim);display:flex;align-items:center;justify-content:center;color:var(–blue);font-size:18px}
 
 /* TODAY CARD */
-.today-card{margin:0 16px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden}
-.today-card-header{padding:14px 18px 10px;border-bottom:1px solid var(--border)}
-.today-card-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
-.today-status{display:flex;align-items:center;gap:8px}
-.status-dot{width:8px;height:8px;border-radius:50%;background:var(--text3);flex-shrink:0}
-.status-dot.active{background:var(--green);box-shadow:0 0 8px var(--green)}
-.status-dot.done{background:var(--accent)}
-.status-text{font-size:15px;font-weight:500}
-.today-times{padding:12px 18px;display:flex;gap:10px}
-.time-chip{flex:1;background:var(--bg3);border-radius:10px;padding:10px 12px}
-.time-chip-label{font-size:10px;color:var(--text3);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em}
-.time-chip-val{font-size:19px;font-weight:500;font-family:var(--mono)}
-.time-chip-val.empty{color:var(--text3)}
-.today-earn-row{padding:0 18px 12px;display:flex;align-items:center}
-.today-detail-text{font-size:12px;color:var(--text3)}
-.today-earn{margin-left:auto;font-size:15px;font-weight:600;color:var(--accent)}
+.today-card{background:var(–bg2);border:1px solid var(–border);border-radius:var(–r2);margin:0 16px 14px;overflow:hidden}
+.tc-header{padding:14px 18px 0;display:flex;align-items:center;justify-content:space-between}
+.tc-badge{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(–text3)}
+.tc-status{display:flex;align-items:center;gap:6px}
+.tc-dot{width:7px;height:7px;border-radius:50%;background:var(–text3)}
+.tc-dot.live{background:var(–green);box-shadow:0 0 0 3px rgba(52,199,123,.2);animation:breathe 2s infinite}
+.tc-dot.done{background:var(–blue)}
+@keyframes breathe{0%,100%{box-shadow:0 0 0 3px rgba(52,199,123,.2)}50%{box-shadow:0 0 0 6px rgba(52,199,123,.08)}}
+.tc-status-text{font-size:13px;font-weight:500;color:var(–text2)}
+.tc-times{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(–border);margin:14px 0 0}
+.tc-time{background:var(–bg2);padding:14px 16px}
+.tc-time-label{font-size:10px;font-weight:600;color:var(–text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px}
+.tc-time-val{font-size:22px;font-weight:700;letter-spacing:-0.5px;color:var(–text);font-variant-numeric:tabular-nums}
+.tc-time-val.muted{color:var(–text3);font-weight:400}
+.tc-earn{padding:12px 18px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(–border)}
+.tc-earn-detail{font-size:12px;color:var(–text3)}
+.tc-earn-total{font-size:16px;font-weight:700;color:var(–green)}
 
-/* ACTIONS */
-.action-row{padding:0 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
-.action-btn{padding:16px;border-radius:var(--r2);border:none;cursor:pointer;display:flex;flex-direction:column;align-items:flex-start;gap:6px;font-family:var(--font);transition:transform .1s,opacity .1s}
-.action-btn:active{transform:scale(.97);opacity:.85}
-.action-btn.primary{background:var(--accent);color:#0f0f0f}
-.action-btn.secondary{background:var(--bg2);color:var(--text);border:1px solid var(--border)}
-.action-btn i{font-size:24px;display:block;min-width:24px;line-height:1}
-.action-btn span{font-size:14px;font-weight:600}
-.action-btn small{font-size:11px;opacity:.6;font-weight:400}
+/* ACTION BUTTONS */
+.actions{padding:0 16px;margin-bottom:14px;display:flex;flex-direction:column;gap:10px}
+.btn-main{width:100%;padding:18px 20px;border-radius:var(–r2);border:none;cursor:pointer;display:flex;align-items:center;gap:14px;font-family:‘Inter’,sans-serif;transition:transform .1s,opacity .1s}
+.btn-main:active{transform:scale(.98);opacity:.9}
+.btn-main.start{background:linear-gradient(135deg,#4f8ef7,#6b6ef7)}
+.btn-main.stop{background:linear-gradient(135deg,#ff5f5f,#ff8c42)}
+.btn-main.edit{background:var(–bg2);border:1px solid var(–border)}
+.btn-main-icon{width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.btn-main-icon svg{width:22px;height:22px;stroke:#fff;stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.btn-main.edit .btn-main-icon{background:var(–bg3)}
+.btn-main.edit .btn-main-icon svg{stroke:var(–text2)}
+.btn-main-text{flex:1;text-align:left}
+.btn-main-text strong{display:block;font-size:16px;font-weight:700;color:#fff;margin-bottom:2px}
+.btn-main.edit .btn-main-text strong{color:var(–text)}
+.btn-main-text small{font-size:12px;color:rgba(255,255,255,.6);font-weight:400}
+.btn-main.edit .btn-main-text small{color:var(–text3)}
+.btn-main-arrow{color:rgba(255,255,255,.5);font-size:18px}
+.btn-main.edit .btn-main-arrow{color:var(–text3)}
 
-/* SUMMARY */
-.section-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;padding:0 20px;margin-bottom:10px}
-.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 16px;margin-bottom:16px}
-.sum-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px}
-.sum-card-label{font-size:11px;color:var(--text3);margin-bottom:6px}
-.sum-card-val{font-size:20px;font-weight:600;font-family:var(--mono)}
-.sum-card-val.green{color:var(--green)}
-.sum-card-val.accent{color:var(--accent)}
-.sum-card-val.blue{color:var(--blue)}
-.sum-card-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn-sec{padding:16px 14px;border-radius:var(–r);background:var(–bg2);border:1px solid var(–border);cursor:pointer;display:flex;flex-direction:column;align-items:flex-start;gap:8px;font-family:‘Inter’,sans-serif;transition:background .15s,transform .1s}
+.btn-sec:active{transform:scale(.97);background:var(–bg3)}
+.btn-sec-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center}
+.btn-sec-icon svg{width:18px;height:18px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.btn-sec-icon.cal{background:var(–blue-dim);color:var(–blue)}
+.btn-sec-icon.sync{background:var(–green-dim);color:var(–green)}
+.btn-sec strong{display:block;font-size:14px;font-weight:600;color:var(–text)}
+.btn-sec small{font-size:11px;color:var(–text3)}
 
-/* NAV */
-.nav-bar{flex-shrink:0;background:var(--bg2);border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(3,1fr);padding:8px 0 28px}
-.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;cursor:pointer;color:var(--text3);transition:color .2s;border:none;background:none;font-family:var(--font)}
-.nav-item.active{color:var(--accent)}
-.nav-item i{font-size:22px}
-.nav-item span{font-size:10px;font-weight:500;letter-spacing:.02em}
+/* MONTH SUMMARY */
+.section-head{padding:4px 20px 10px;font-size:12px;font-weight:600;color:var(–text3);letter-spacing:.05em;text-transform:uppercase}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 16px;margin-bottom:16px}
+.stat-card{background:var(–bg2);border:1px solid var(–border);border-radius:var(–r);padding:16px}
+.stat-card.wide{grid-column:span 2}
+.stat-label{font-size:11px;font-weight:500;color:var(–text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em}
+.stat-val{font-size:22px;font-weight:700;letter-spacing:-0.5px;line-height:1}
+.stat-val.blue{color:var(–blue)}
+.stat-val.green{color:var(–green)}
+.stat-val.yellow{color:var(–yellow)}
+.stat-sub{font-size:11px;color:var(–text3);margin-top:4px}
 
-/* CALENDAR */
-#calScreen{background:var(--bg)}
-.month-nav{display:flex;align-items:center;padding:0 20px 14px;gap:8px}
-.month-nav-btn{width:36px;height:36px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);font-size:18px}
-.month-nav-label{flex:1;text-align:center;font-size:16px;font-weight:600}
-.salary-row{margin:0 16px 12px;background:var(--accent-bg);border:1px solid rgba(232,255,71,0.2);border-radius:var(--r);padding:10px 14px;display:flex;align-items:center;gap:10px;cursor:pointer}
-.salary-row i{color:var(--accent);font-size:18px}
-.salary-info{flex:1}
-.salary-label{font-size:11px;color:var(--accent);opacity:.7;margin-bottom:1px}
-.salary-val{font-size:15px;font-weight:600;color:var(--accent);font-family:var(--mono)}
-.salary-edit{font-size:12px;color:var(--accent);opacity:.5}
-.day-item{margin:0 16px 6px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden}
-.day-item.today-item{border-color:rgba(232,255,71,0.4)}
-.day-item.weekend-item{opacity:.75}
-.day-row{display:flex;align-items:center;padding:12px 14px;gap:12px;cursor:pointer}
-.day-num-box{width:42px;height:42px;border-radius:10px;background:var(--bg3);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0}
-.day-item.today-item .day-num-box{background:var(--accent)}
-.day-item.today-item .dn,.day-item.today-item .dd{color:#0f0f0f}
-.day-item.weekend-item .day-num-box{background:rgba(248,113,113,.1)}
-.dn{font-size:17px;font-weight:700;line-height:1;color:var(--text)}
-.dd{font-size:10px;color:var(--text3);margin-top:1px}
-.day-main{flex:1;min-width:0}
-.day-name-text{font-size:14px;font-weight:500}
-.day-item.weekend-item .day-name-text{color:var(--red)}
-.day-item.today-item .day-name-text{color:var(--accent)}
-.day-sub-text{font-size:12px;color:var(--text3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.day-right-info{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0}
-.day-earn-badge{font-size:12px;font-weight:600;color:var(--green);background:var(--green-bg);padding:3px 8px;border-radius:99px}
-.day-hrs-badge{font-size:11px;color:var(--text3)}
-.day-chevron{color:var(--text3);font-size:16px;transition:transform .2s;flex-shrink:0}
-.day-chevron.open{transform:rotate(180deg)}
+/* ── NAV ── */
+.nav{flex-shrink:0;background:var(–bg2);border-top:1px solid var(–border);padding:8px 0 calc(8px + var(–safe-bot));display:flex}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;cursor:pointer;border:none;background:none;font-family:‘Inter’,sans-serif;color:var(–text3);transition:color .2s}
+.nav-btn.active{color:var(–blue)}
+.nav-btn svg{width:22px;height:22px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.nav-btn span{font-size:10px;font-weight:600;letter-spacing:.03em}
+
+/* ── CALENDAR ── */
+#calScreen .topbar{border-bottom:1px solid var(–border)}
+.month-nav{display:flex;align-items:center;padding:12px 20px 8px;gap:8px}
+.month-btn{width:36px;height:36px;border-radius:50%;background:var(–bg3);border:1px solid var(–border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(–text2);transition:background .15s}
+.month-btn:active{background:var(–bg4)}
+.month-btn svg{width:16px;height:16px;stroke:currentColor;stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.month-lbl{flex:1;text-align:center;font-size:16px;font-weight:700}
+.salary-pill{margin:0 16px 10px;padding:12px 16px;background:var(–blue-dim);border:1px solid var(–blue-border);border-radius:var(–r);display:flex;align-items:center;gap:12px;cursor:pointer}
+.salary-pill svg{width:18px;height:18px;stroke:var(–blue);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.salary-pill-info{flex:1}
+.salary-pill-label{font-size:11px;font-weight:600;color:var(–blue);opacity:.7;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
+.salary-pill-val{font-size:16px;font-weight:700;color:var(–blue)}
+.salary-pill-edit{font-size:12px;color:var(–blue);opacity:.5;display:flex;align-items:center;gap:4px}
+.salary-pill-edit svg{width:14px;height:14px;stroke:currentColor;stroke-width:2;fill:none}
+
+/* DAY CARDS */
+.day-card{margin:0 16px 6px;background:var(–bg2);border:1px solid var(–border);border-radius:var(–r2);overflow:hidden;transition:border-color .2s}
+.day-card.is-today{border-color:var(–blue-border)}
+.day-card.is-weekend{opacity:.8}
+.day-row{display:flex;align-items:center;padding:13px 16px;gap:13px;cursor:pointer;min-height:72px}
+.day-num{width:46px;height:46px;border-radius:13px;background:var(–bg3);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s}
+.day-card.is-today .day-num{background:var(–blue)}
+.day-card.is-today .day-num .dn,.day-card.is-today .day-num .dd{color:#fff}
+.day-card.is-weekend .day-num{background:var(–red-dim)}
+.day-card.is-weekend .day-num .dn,.day-card.is-weekend .day-num .dd{color:var(–red)}
+.dn{font-size:18px;font-weight:700;line-height:1;color:var(–text)}
+.dd{font-size:10px;font-weight:500;color:var(–text3);margin-top:1px;text-transform:uppercase}
+.day-info{flex:1;min-width:0}
+.day-name{font-size:14px;font-weight:600;color:var(–text);margin-bottom:3px}
+.day-card.is-today .day-name{color:var(–blue)}
+.day-card.is-weekend .day-name{color:var(–red)}
+.day-sub{font-size:12px;color:var(–text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.day-meta{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.earn-pill{background:var(–green-dim);border:1px solid var(–green-border);color:var(–green);font-size:12px;font-weight:700;padding:4px 10px;border-radius:8px}
+.hrs-lbl{font-size:11px;color:var(–text3)}
+.chevron{color:var(–text3);transition:transform .2s;flex-shrink:0}
+.chevron svg{width:16px;height:16px;stroke:currentColor;stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.chevron.open svg{transform:rotate(180deg)}
 
 /* DAY DETAIL */
-.day-detail{display:none;border-top:1px solid var(--border);padding:14px}
+.day-detail{display:none;border-top:1px solid var(–border);padding:16px}
 .day-detail.open{display:block}
-.det-sec{margin-bottom:14px}
-.det-sec-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;font-weight:500}
-.inp-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.inp-group{display:flex;flex-direction:column;gap:4px}
-.inp-group label{font-size:12px;color:var(--text2)}
-.inp-group input[type=time],.inp-group input[type=number],.inp-group input[type=text]{width:100%;padding:12px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:16px;font-family:var(--font);outline:none;transition:border-color .2s}
-.inp-group input:focus{border-color:var(--accent);background:var(--bg4)}
-.inp-group input[type=time]{font-family:var(--mono);letter-spacing:.05em}
-.mola-list{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
-.mola-item{display:grid;grid-template-columns:1fr 1fr auto;gap:6px;align-items:center;background:var(--bg3);border-radius:10px;padding:8px 10px}
-.mola-item input[type=time]{width:100%;background:transparent;border:none;color:var(--text);font-size:14px;font-family:var(--mono);outline:none;padding:0}
-.mola-del{width:28px;height:28px;border-radius:50%;background:var(--red-bg);border:none;color:var(--red);font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer}
-.add-mola-btn{display:flex;align-items:center;gap:6px;background:var(--bg3);border:1px dashed var(--border2);border-radius:10px;padding:9px 14px;color:var(--text3);font-size:13px;cursor:pointer;width:100%;font-family:var(--font)}
-.toggle-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
-.toggle-pill{padding:11px 4px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text3);font-size:12px;text-align:center;cursor:pointer;transition:all .15s;user-select:none;display:flex;flex-direction:column;align-items:center;gap:4px;font-family:var(--font)}
-.toggle-pill i{font-size:20px}
-.toggle-pill.on-green{background:var(--green-bg);border-color:rgba(74,222,128,.3);color:var(--green)}
-.toggle-pill.on-blue{background:var(--blue-bg);border-color:rgba(96,165,250,.3);color:var(--blue)}
-.toggle-pill.on-orange{background:var(--orange-bg);border-color:rgba(251,146,60,.3);color:var(--orange)}
-.override-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.det-total{background:var(--accent-bg);border:1px solid rgba(232,255,71,.15);border-radius:10px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;margin-top:4px}
-.det-total-label{font-size:12px;color:var(--accent);opacity:.7}
-.det-total-val{font-size:18px;font-weight:700;color:var(--accent);font-family:var(--mono)}
+.det-section{margin-bottom:16px}
+.det-label{font-size:10px;font-weight:700;color:var(–text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:12px;font-weight:500;color:var(–text2)}
+.field input[type=time],.field input[type=number],.field input[type=text]{
+width:100%;padding:13px 14px;background:var(–bg3);border:1px solid var(–border);
+border-radius:var(–r);color:var(–text);font-size:15px;font-family:‘Inter’,sans-serif;
+outline:none;transition:border-color .2s,background .2s}
+.field input:focus{border-color:var(–blue);background:var(–bg4)}
+.field input[type=time]{font-variant-numeric:tabular-nums;letter-spacing:.04em}
 
-/* SETTINGS */
-#settingsScreen{background:var(--bg)}
-.settings-section{margin:0 16px 16px}
-.settings-section-title{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;padding:0 4px}
-.settings-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden}
-.settings-row{padding:14px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border)}
-.settings-row:last-child{border-bottom:none}
-.settings-row-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
-.settings-row-icon.accent{background:var(--accent-bg);color:var(--accent)}
-.settings-row-icon.green{background:var(--green-bg);color:var(--green)}
-.settings-row-icon.blue{background:var(--blue-bg);color:var(--blue)}
-.settings-row-icon.red{background:var(--red-bg);color:var(--red)}
-.settings-row-text{flex:1}
-.settings-row-label{font-size:14px;font-weight:500}
-.settings-row-sub{font-size:12px;color:var(--text3);margin-top:1px}
-.settings-row-input{width:110px;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:15px;font-family:var(--font);outline:none;text-align:right}
-.settings-row-input:focus{border-color:var(--accent)}
-.settings-btn{width:100%;padding:14px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);color:var(--text);font-size:14px;font-weight:500;font-family:var(--font);cursor:pointer;display:flex;align-items:center;gap:10px;margin:0 0 8px}
-.settings-btn i{font-size:20px;color:var(--text2)}
-.settings-btn.accent-btn{background:var(--accent-bg);border-color:rgba(232,255,71,.2);color:var(--accent)}
-.settings-btn.accent-btn i{color:var(--accent)}
-.settings-btn.red-btn{background:var(--red-bg);border-color:rgba(248,113,113,.2);color:var(--red)}
-.settings-btn.red-btn i{color:var(--red)}
-.user-info-card{margin:0 16px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:16px;display:flex;align-items:center;gap:14px}
-.user-info-card img{width:48px;height:48px;border-radius:50%;border:2px solid var(--border2)}
-.user-info-name{font-size:15px;font-weight:500}
-.user-info-email{font-size:12px;color:var(--text3);margin-top:2px}
+/* MOLA */
+.mola-list{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+.mola-row{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:center;background:var(–bg3);border-radius:var(–r);padding:10px 12px}
+.mola-row input[type=time]{width:100%;background:transparent;border:none;color:var(–text);font-size:14px;font-variant-numeric:tabular-nums;outline:none;padding:0;font-family:‘Inter’,sans-serif}
+.mola-del{width:30px;height:30px;border-radius:50%;background:var(–red-dim);border:none;color:var(–red);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.mola-del svg{width:14px;height:14px;stroke:currentColor;stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.add-mola{width:100%;padding:11px 14px;background:transparent;border:1.5px dashed var(–border2);border-radius:var(–r);color:var(–text3);font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:8px;font-family:‘Inter’,sans-serif;transition:border-color .2s,color .2s}
+.add-mola:active{color:var(–text2);border-color:var(–text3)}
+.add-mola svg{width:16px;height:16px;stroke:currentColor;stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
 
-/* SHEET MODAL */
-.sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
-.sheet-overlay.show{opacity:1;pointer-events:all}
-.sheet{background:var(--bg2);border-radius:20px 20px 0 0;padding:20px 20px 36px;width:100%;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1)}
-.sheet-overlay.show .sheet{transform:translateY(0)}
-.sheet-handle{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 18px}
-.sheet-title{font-size:17px;font-weight:600;margin-bottom:4px}
-.sheet-sub{font-size:13px;color:var(--text3);margin-bottom:20px}
-.sheet input[type=time]{width:100%;padding:16px 18px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-size:24px;font-family:var(--mono);outline:none;margin-bottom:14px;text-align:center;letter-spacing:.05em}
-.sheet input[type=time]:focus{border-color:var(--accent)}
-.sheet-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.sheet-btn-confirm{padding:16px;border-radius:var(--r);background:var(--accent);color:#0f0f0f;border:none;font-size:16px;font-weight:600;cursor:pointer;font-family:var(--font)}
-.sheet-btn-skip{padding:16px;border-radius:var(--r);background:var(--bg3);color:var(--text);border:1px solid var(--border);font-size:16px;cursor:pointer;font-family:var(--font)}
-.sheet-inp-label{font-size:12px;color:var(--text2);margin-bottom:6px}
-.sheet-input-big{width:100%;padding:16px 18px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-size:24px;font-family:var(--mono);outline:none;margin-bottom:16px;text-align:right}
-.sheet-input-big:focus{border-color:var(--accent)}
-.sheet-note{font-size:12px;color:var(--text3);padding:10px 14px;background:var(--bg3);border-radius:8px;margin-bottom:14px;line-height:1.5}
+/* EXTRAS */
+.extras-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.extra-chip{padding:12px 8px;border-radius:var(–r);background:var(–bg3);border:1px solid var(–border);text-align:center;cursor:pointer;transition:all .15s;user-select:none}
+.extra-chip svg{width:20px;height:20px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;display:block;margin:0 auto 4px}
+.extra-chip span{font-size:11px;font-weight:600;color:var(–text3)}
+.extra-chip.on-blue{background:var(–blue-dim);border-color:var(–blue-border)}
+.extra-chip.on-blue svg,.extra-chip.on-blue span{color:var(–blue)}
 
-/* LOADING */
-#loadingScreen{background:var(--bg);justify-content:center;align-items:center;flex-direction:column;gap:16px}
-.spinner{width:36px;height:36px;border:3px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+/* DAY TOTAL */
+.day-total-bar{background:linear-gradient(135deg,var(–blue-dim),var(–green-dim));border:1px solid var(–blue-border);border-radius:var(–r);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;margin-top:4px}
+.day-total-left .dtl-label{font-size:11px;font-weight:600;color:var(–text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.day-total-left .dtl-detail{font-size:12px;color:var(–text3)}
+.day-total-right{font-size:22px;font-weight:800;color:var(–green);letter-spacing:-0.5px}
+
+/* ── SETTINGS ── */
+#settingsScreen .topbar{border-bottom:1px solid var(–border)}
+.user-hero{padding:16px 20px 20px;display:flex;align-items:center;gap:16px}
+.user-hero img{width:56px;height:56px;border-radius:50%;border:2px solid var(–border2)}
+.user-hero-name{font-size:17px;font-weight:700}
+.user-hero-email{font-size:13px;color:var(–text3);margin-top:2px}
+.settings-group{margin:0 16px 16px}
+.settings-group-label{font-size:11px;font-weight:600;color:var(–text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;padding:0 4px}
+.settings-list{background:var(–bg2);border:1px solid var(–border);border-radius:var(–r2);overflow:hidden}
+.settings-item{display:flex;align-items:center;padding:14px 16px;gap:14px;border-bottom:1px solid var(–border)}
+.settings-item:last-child{border-bottom:none}
+.si-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.si-icon svg{width:18px;height:18px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.si-icon.blue{background:var(–blue-dim);color:var(–blue)}
+.si-icon.green{background:var(–green-dim);color:var(–green)}
+.si-icon.yellow{background:var(–yellow-dim);color:var(–yellow)}
+.si-icon.orange{background:var(–orange-dim);color:var(–orange)}
+.si-icon.purple{background:var(–purple-dim);color:var(–purple)}
+.si-text{flex:1}
+.si-label{font-size:14px;font-weight:500}
+.si-sub{font-size:12px;color:var(–text3);margin-top:1px}
+.si-input{width:100px;padding:8px 12px;background:var(–bg3);border:1px solid var(–border);border-radius:10px;color:var(–text);font-size:15px;font-family:‘Inter’,sans-serif;outline:none;text-align:right;font-weight:600}
+.si-input:focus{border-color:var(–blue)}
+.settings-action{width:100%;padding:15px 18px;background:var(–bg2);border:1px solid var(–border);border-radius:var(–r);color:var(–text);font-size:14px;font-weight:600;font-family:‘Inter’,sans-serif;cursor:pointer;display:flex;align-items:center;gap:12px;margin-bottom:10px;transition:background .15s}
+.settings-action:active{background:var(–bg3)}
+.settings-action svg{width:20px;height:20px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.settings-action.blue{color:var(–blue)}
+.settings-action.red{color:var(–red)}
+
+/* ── SHEET MODAL ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:200;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s;backdrop-filter:blur(4px)}
+.overlay.show{opacity:1;pointer-events:all}
+.sheet{background:var(–bg2);border-radius:24px 24px 0 0;padding:0 0 calc(24px + var(–safe-bot));width:100%;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1)}
+.overlay.show .sheet{transform:translateY(0)}
+.sheet-drag{width:36px;height:4px;background:var(–bg4);border-radius:2px;margin:12px auto 0}
+.sheet-head{padding:18px 22px 12px}
+.sheet-head h3{font-size:18px;font-weight:700;margin-bottom:3px}
+.sheet-head p{font-size:13px;color:var(–text3)}
+.sheet-body{padding:0 22px 16px}
+.sheet-inp-label{font-size:12px;font-weight:500;color:var(–text2);margin-bottom:6px}
+.sheet-time{width:100%;padding:18px;background:var(–bg3);border:1px solid var(–border);border-radius:var(–r);color:var(–text);font-size:28px;font-weight:700;font-family:‘Inter’,sans-serif;outline:none;margin-bottom:14px;text-align:center;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.sheet-time:focus{border-color:var(–blue)}
+.sheet-num{width:100%;padding:18px;background:var(–bg3);border:1px solid var(–border);border-radius:var(–r);color:var(–text);font-size:28px;font-weight:700;font-family:‘Inter’,sans-serif;outline:none;margin-bottom:16px;text-align:right;font-variant-numeric:tabular-nums}
+.sheet-num:focus{border-color:var(–blue)}
+.sheet-note{font-size:12px;color:var(–text3);background:var(–bg3);border-radius:10px;padding:10px 14px;margin-bottom:14px;line-height:1.55}
+.sheet-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sh-confirm{padding:16px;border-radius:var(–r);background:var(–blue);color:#fff;border:none;font-size:15px;font-weight:700;cursor:pointer;font-family:‘Inter’,sans-serif;transition:opacity .15s}
+.sh-confirm:active{opacity:.85}
+.sh-cancel{padding:16px;border-radius:var(–r);background:var(–bg3);color:var(–text);border:1px solid var(–border);font-size:15px;cursor:pointer;font-family:‘Inter’,sans-serif}
+
+/* ── LOADING ── */
+#loadingScreen{justify-content:center;align-items:center;gap:16px}
+.loader{width:40px;height:40px;border:3px solid var(–border2);border-top-color:var(–blue);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.loading-text{font-size:14px;color:var(--text3)}
+.loader-text{font-size:14px;color:var(–text3)}
 
 /* TOAST */
-.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--bg3);border:1px solid var(--border2);border-radius:99px;padding:10px 20px;font-size:13px;color:var(--text);z-index:300;opacity:0;pointer-events:none;transition:all .3s;white-space:nowrap}
+.toast{position:fixed;bottom:calc(90px + var(–safe-bot));left:50%;transform:translateX(-50%) translateY(10px);background:var(–bg3);border:1px solid var(–border2);border-radius:99px;padding:10px 20px;font-size:13px;font-weight:500;color:var(–text);z-index:400;opacity:0;pointer-events:none;transition:all .25s;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.4)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
+
 </head>
 <body>
 
 <!-- LOADING -->
+
 <div class="screen" id="loadingScreen">
-  <div class="spinner"></div>
-  <div class="loading-text">Yükleniyor…</div>
+  <div class="loader"></div>
+  <div class="loader-text">Yükleniyor…</div>
 </div>
 
 <!-- LOGIN -->
+
 <div class="screen hidden" id="loginScreen">
-  <div class="login-box">
-    <div class="login-logo"><i class="ti ti-clock-bolt"></i></div>
-    <div>
-      <div class="login-title">Mesai Takip</div>
-      <div class="login-sub" style="margin-top:8px">Mesai takibini Google Sheets'te tut.</div>
+  <div class="login-bg"></div>
+  <div style="flex:1"></div>
+  <div class="login-content">
+    <div class="login-app-name">
+      <h1>Mesai <span>Takip</span></h1>
+      <p>Mesai saatlerini kolayca kaydet ve hesapla</p>
+    </div>
+    <div class="login-version">Sürüm <span id="vBadge1"></span></div>
+    <div class="login-card">
+      <p>Veriler kendi Google Drive hesabında saklanır — sadece sen görebilirsin.</p>
     </div>
     <button class="google-btn" onclick="signIn()">
-      <img src="https://www.google.com/favicon.ico" alt="G">
+      <img src="https://www.google.com/favicon.ico" alt="">
       Google ile Giriş Yap
     </button>
-    <div class="login-note">Veriler kendi Google hesabında saklanır, başka kimse erişemez.</div>
-    <div style="font-size:11px;color:var(--text3);margin-top:8px;opacity:0.5">Mesai Takip <span id="versionBadge"></span></div>
   </div>
 </div>
 
 <!-- HOME -->
+
 <div class="screen hidden" id="homeScreen">
-  <div class="scroll-area">
-    <div class="home-header">
-      <div class="home-top-row">
-        <div>
-          <div class="home-greeting">Hoş geldin</div>
-          <div class="home-date" id="homeDateText">—</div>
-          <div class="home-dayname" id="homeDayName"></div>
-        </div>
-        <img class="user-avatar" id="userAvatar" src="" alt="" onclick="goSettings()" style="display:none">
-      </div>
-      <div class="sync-indicator" id="syncIndicator" onclick="syncNow()">
-        <div class="sync-dot"></div>
-        <span id="syncText">Senkronize</span>
+  <div class="scroll">
+    <div class="topbar" style="padding-bottom:0">
+      <div style="flex:1"></div>
+      <div class="icon-btn" onclick="syncNow()" title="Senkronize et">
+        <svg viewBox="0 0 24 24"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
       </div>
     </div>
 
-    <div class="today-card">
-      <div class="today-card-header">
-        <div class="today-card-label">Bugünün Mesaisi</div>
-        <div class="today-status"><div class="status-dot" id="statusDot"></div><div class="status-text" id="statusText">Mesai yok</div></div>
-      </div>
-      <div class="today-times">
-        <div class="time-chip"><div class="time-chip-label">Giriş</div><div class="time-chip-val" id="homeGirisVal"><span class="empty">—</span></div></div>
-        <div class="time-chip"><div class="time-chip-label">Çıkış</div><div class="time-chip-val" id="homeCikisVal"><span class="empty">—</span></div></div>
-        <div class="time-chip"><div class="time-chip-label">Süre</div><div class="time-chip-val" id="homeSureVal"><span class="empty">—</span></div></div>
-      </div>
-      <div class="today-earn-row">
-        <span class="today-detail-text" id="homeDetailsText"></span>
-        <span class="today-earn" id="homeTodayEarn"></span>
-      </div>
+```
+<div class="home-hero">
+  <div class="home-date-row">
+    <div class="home-date-block">
+      <div class="home-greeting">Hoş geldin</div>
+      <div class="home-date" id="homeDateTxt">—</div>
+      <div class="home-day" id="homeDayTxt"></div>
     </div>
-
-    <div class="action-row" id="actionRow"></div>
-    <div class="section-label" id="monthSummaryLabel"></div>
-    <div class="summary-grid">
-      <div class="sum-card"><div class="sum-card-label">Toplam Mesai</div><div class="sum-card-val green" id="sumSaat">0s</div><div class="sum-card-sub" id="sumMesaiTL">—</div></div>
-      <div class="sum-card"><div class="sum-card-label">Yol + Yemek</div><div class="sum-card-val blue" id="sumEkstra">0₺</div><div class="sum-card-sub" id="sumEkstraSub">—</div></div>
-      <div class="sum-card" style="grid-column:span 2"><div class="sum-card-label">Bu Ay Toplam (Maaş dahil)</div><div class="sum-card-val accent" id="sumToplam">—</div><div class="sum-card-sub" id="sumToplamSub">—</div></div>
+    <div class="avatar-btn" onclick="goSettings()">
+      <div class="avatar-placeholder" id="avatarPlaceholder">
+        <svg viewBox="0 0 24 24" style="width:22px;height:22px;stroke:#4f8ef7;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </div>
+      <img id="userAvatarImg" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover">
     </div>
   </div>
-  <nav class="nav-bar">
-    <button class="nav-item active" onclick="goHome()"><i class="ti ti-home"></i><span>Ana Ekran</span></button>
-    <button class="nav-item" onclick="goCalendar()"><i class="ti ti-calendar"></i><span>Takvim</span></button>
-    <button class="nav-item" onclick="goSettings()"><i class="ti ti-settings"></i><span>Ayarlar</span></button>
+
+  <!-- sync status -->
+  <div id="syncStatus" style="font-size:12px;color:var(--text3);margin-bottom:4px;display:flex;align-items:center;gap:6px">
+    <span id="syncDot" style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block"></span>
+    <span id="syncTxt">Senkronize</span>
+  </div>
+</div>
+
+<!-- Today card -->
+<div class="today-card">
+  <div class="tc-header">
+    <span class="tc-badge">Bugünün Mesaisi</span>
+    <div class="tc-status"><div class="tc-dot" id="tcDot"></div><span class="tc-status-text" id="tcStatusTxt">Mesai girilmedi</span></div>
+  </div>
+  <div class="tc-times">
+    <div class="tc-time"><div class="tc-time-label">Giriş</div><div class="tc-time-val muted" id="tcGiris">—</div></div>
+    <div class="tc-time"><div class="tc-time-label">Çıkış</div><div class="tc-time-val muted" id="tcCikis">—</div></div>
+    <div class="tc-time"><div class="tc-time-label">Süre</div><div class="tc-time-val muted" id="tcSure">—</div></div>
+  </div>
+  <div class="tc-earn">
+    <span class="tc-earn-detail" id="tcDetail"></span>
+    <span class="tc-earn-total" id="tcTotal"></span>
+  </div>
+</div>
+
+<!-- Actions -->
+<div class="actions" id="actionArea"></div>
+
+<!-- Month summary -->
+<div class="section-head" id="monthHead"></div>
+<div class="stat-grid">
+  <div class="stat-card"><div class="stat-label">Mesai Saati</div><div class="stat-val blue" id="sumSaat">0s</div><div class="stat-sub" id="sumSaatSub">—</div></div>
+  <div class="stat-card"><div class="stat-label">Yol + Yemek</div><div class="stat-val yellow" id="sumEkstra">0₺</div><div class="stat-sub" id="sumEkstraSub">—</div></div>
+  <div class="stat-card wide"><div class="stat-label">Bu Ay Toplam (Maaş dahil)</div><div class="stat-val green" id="sumToplam">—</div><div class="stat-sub" id="sumToplamSub">—</div></div>
+</div>
+```
+
+  </div>
+
+  <nav class="nav">
+    <button class="nav-btn active" onclick="goHome()">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span>Ana Ekran</span>
+    </button>
+    <button class="nav-btn" onclick="goCalendar()">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span>Takvim</span>
+    </button>
+    <button class="nav-btn" onclick="goSettings()">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      <span>Ayarlar</span>
+    </button>
   </nav>
 </div>
 
 <!-- CALENDAR -->
+
 <div class="screen hidden" id="calScreen">
-  <div class="topbar" style="padding-bottom:8px">
+  <div class="topbar">
     <div class="topbar-title">Takvim</div>
-    <button class="topbar-action" id="calSyncBtn" onclick="syncNow()" title="Senkronize et"><i class="ti ti-refresh"></i></button>
+    <div class="icon-btn" onclick="syncNow()">
+      <svg viewBox="0 0 24 24"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+    </div>
   </div>
   <div class="month-nav">
-    <button class="month-nav-btn" onclick="changeMonth(-1)"><i class="ti ti-chevron-left"></i></button>
-    <span class="month-nav-label" id="calMonthLabel"></span>
-    <button class="month-nav-btn" onclick="changeMonth(1)"><i class="ti ti-chevron-right"></i></button>
+    <button class="month-btn" onclick="changeMonth(-1)"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <span class="month-lbl" id="calMonthLbl"></span>
+    <button class="month-btn" onclick="changeMonth(1)"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
   </div>
-  <div class="salary-row" onclick="openSalaryModal()">
-    <i class="ti ti-currency-lira"></i>
-    <div class="salary-info"><div class="salary-label">Bu Ay Maaş</div><div class="salary-val" id="calSalaryVal">—</div></div>
-    <span class="salary-edit"><i class="ti ti-edit"></i> Düzenle</span>
+  <div class="salary-pill" onclick="openSalarySheet()">
+    <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+    <div class="salary-pill-info">
+      <div class="salary-pill-label">Bu Ay Maaş</div>
+      <div class="salary-pill-val" id="calSalaryVal">—</div>
+    </div>
+    <div class="salary-pill-edit">
+      <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      Düzenle
+    </div>
   </div>
-  <div class="scroll-area" id="calDayList"></div>
-  <nav class="nav-bar">
-    <button class="nav-item" onclick="goHome()"><i class="ti ti-home"></i><span>Ana Ekran</span></button>
-    <button class="nav-item active"><i class="ti ti-calendar"></i><span>Takvim</span></button>
-    <button class="nav-item" onclick="goSettings()"><i class="ti ti-settings"></i><span>Ayarlar</span></button>
+  <div class="scroll" id="calList"></div>
+  <nav class="nav">
+    <button class="nav-btn" onclick="goHome()">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span>Ana Ekran</span>
+    </button>
+    <button class="nav-btn active">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span>Takvim</span>
+    </button>
+    <button class="nav-btn" onclick="goSettings()">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      <span>Ayarlar</span>
+    </button>
   </nav>
 </div>
 
 <!-- SETTINGS -->
+
 <div class="screen hidden" id="settingsScreen">
   <div class="topbar">
-    <button class="topbar-back" onclick="goHome()"><i class="ti ti-arrow-left"></i></button>
+    <button class="icon-btn" onclick="goHome()">
+      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
     <div class="topbar-title">Ayarlar</div>
+    <div style="width:38px"></div>
   </div>
-  <div class="scroll-area">
-    <div class="user-info-card">
-      <img id="settingsAvatar" src="" alt="">
-      <div><div class="user-info-name" id="settingsName">—</div><div class="user-info-email" id="settingsEmail">—</div></div>
-    </div>
-    <div class="settings-section">
-      <div class="settings-section-title">Varsayılan Değerler</div>
-      <div class="settings-card">
-        <div class="settings-row">
-          <div class="settings-row-icon accent"><i class="ti ti-clock"></i></div>
-          <div class="settings-row-text"><div class="settings-row-label">Çalışma Bitiş Saati</div><div class="settings-row-sub">Mesai bu saatten sonra sayılır</div></div>
-          <input class="settings-row-input" type="time" id="stNormalBitis" value="18:00" onchange="saveSettings()">
-        </div>
-        <div class="settings-row">
-          <div class="settings-row-icon green"><i class="ti ti-multiplier-2x"></i></div>
-          <div class="settings-row-text"><div class="settings-row-label">Varsayılan Mesai Çarpanı</div><div class="settings-row-sub">Günlük override edilebilir</div></div>
-          <input class="settings-row-input" type="number" id="stCarpan" value="1.5" step="0.25" onchange="saveSettings()">
-        </div>
-        <div class="settings-row">
-          <div class="settings-row-icon" style="background:#2a2a2a;color:#a0a0a0"><i class="ti ti-calendar-stats"></i></div>
-          <div class="settings-row-text"><div class="settings-row-label">Aylık Çalışma Saati</div><div class="settings-row-sub">Maaş ÷ bu sayı = saatlik ücret</div></div>
-          <input class="settings-row-input" type="number" id="stAylikSaat" value="225" onchange="saveSettings()">
-        </div>
-        <div class="settings-row">
-          <div class="settings-row-icon blue"><i class="ti ti-bus"></i></div>
-          <div class="settings-row-text"><div class="settings-row-label">Hafta Sonu Yol (₺/gün)</div></div>
-          <input class="settings-row-input" type="number" id="stYol" value="0" onchange="saveSettings()">
-        </div>
-        <div class="settings-row">
-          <div class="settings-row-icon" style="background:var(--orange-bg);color:var(--orange)"><i class="ti ti-soup"></i></div>
-          <div class="settings-row-text"><div class="settings-row-label">Varsayılan Yemek (₺/gün)</div><div class="settings-row-sub">Günlük override edilebilir</div></div>
-          <input class="settings-row-input" type="number" id="stYemek" value="0" onchange="saveSettings()">
-        </div>
+  <div class="scroll">
+    <div class="user-hero">
+      <img id="settingsAvatarImg" src="" alt="" style="display:none">
+      <div id="settingsAvatarPlaceholder" style="width:56px;height:56px;border-radius:50%;background:var(--blue-dim);display:flex;align-items:center;justify-content:center">
+        <svg style="width:26px;height:26px;stroke:var(--blue);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       </div>
+      <div><div class="user-hero-name" id="stName">—</div><div class="user-hero-email" id="stEmail">—</div></div>
     </div>
-    <div class="settings-section">
-      <div class="settings-section-title">Veri</div>
-      <button class="settings-btn accent-btn" onclick="syncNow()"><i class="ti ti-refresh"></i> Şimdi Senkronize Et</button>
-      <button class="settings-btn accent-btn" onclick="exportJSON()"><i class="ti ti-download"></i> JSON Yedek Al</button>
-      <button class="settings-btn red-btn" onclick="signOut()"><i class="ti ti-logout"></i> Çıkış Yap</button>
+
+```
+<div class="settings-group">
+  <div class="settings-group-label">Mesai Ayarları</div>
+  <div class="settings-list">
+    <div class="settings-item">
+      <div class="si-icon blue"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+      <div class="si-text"><div class="si-label">Çalışma Bitiş Saati</div><div class="si-sub">Mesai bu saatten sonra başlar</div></div>
+      <input class="si-input" type="time" id="stBitis" value="18:00" onchange="saveSettings()">
     </div>
+    <div class="settings-item">
+      <div class="si-icon green"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
+      <div class="si-text"><div class="si-label">Aylık Çalışma Saati</div><div class="si-sub">Saatlik ücret = Maaş ÷ bu sayı</div></div>
+      <input class="si-input" type="number" id="stAylikSaat" value="225" min="1" onchange="saveSettings()">
+    </div>
+    <div class="settings-item">
+      <div class="si-icon yellow"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+      <div class="si-text"><div class="si-label">Varsayılan Mesai Çarpanı</div><div class="si-sub">Günlük override edilebilir</div></div>
+      <input class="si-input" type="number" id="stCarpan" value="1.5" step="0.25" min="1" onchange="saveSettings()">
+    </div>
+  </div>
+</div>
+
+<div class="settings-group">
+  <div class="settings-group-label">Veri</div>
+  <button class="settings-action blue" onclick="syncNow()">
+    <svg viewBox="0 0 24 24"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+    Şimdi Senkronize Et
+  </button>
+  <button class="settings-action" onclick="exportJSON()" style="color:var(--text)">
+    <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    JSON Yedek Al
+  </button>
+  <button class="settings-action red" onclick="signOut()">
+    <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    Çıkış Yap
+  </button>
+</div>
+
+<div style="text-align:center;padding:8px 0 24px;font-size:12px;color:var(--text3)">Mesai Takip <span id="vBadge2"></span></div>
+```
+
   </div>
 </div>
 
 <!-- MODALS -->
-<div class="sheet-overlay" id="girisSheet" onclick="sheetOut(event,'girisSheet')">
+
+<div class="overlay" id="girisOverlay" onclick="overlayClick(event,'girisOverlay')">
   <div class="sheet">
-    <div class="sheet-handle"></div>
-    <div class="sheet-title" id="girisSheetTitle">Mesai Başlangıcı</div>
-    <div class="sheet-sub" id="girisSheetSub">Mesaiye başlama saatini gir</div>
-    <input type="time" id="girisInput">
-    <div class="sheet-btns">
-      <button class="sheet-btn-skip" onclick="closeSheet('girisSheet')">Vazgeç</button>
-      <button class="sheet-btn-confirm" onclick="confirmGiris()">Onayla →</button>
+    <div class="sheet-drag"></div>
+    <div class="sheet-head"><h3 id="girisTitle">Mesai Başlangıcı</h3><p id="girisSub"></p></div>
+    <div class="sheet-body">
+      <div class="sheet-inp-label">Başlama saati</div>
+      <input type="time" class="sheet-time" id="girisInp">
+      <div class="sheet-btns">
+        <button class="sh-cancel" onclick="closeOverlay('girisOverlay')">Vazgeç</button>
+        <button class="sh-confirm" onclick="confirmGiris()">Onayla →</button>
+      </div>
     </div>
   </div>
 </div>
 
-<div class="sheet-overlay" id="cikisSheet" onclick="sheetOut(event,'cikisSheet')">
+<div class="overlay" id="cikisOverlay" onclick="overlayClick(event,'cikisOverlay')">
   <div class="sheet">
-    <div class="sheet-handle"></div>
-    <div class="sheet-title">Mesai Bitişi</div>
-    <div class="sheet-sub" id="cikisSheetSub"></div>
-    <input type="time" id="cikisInput">
-    <div class="sheet-btns">
-      <button class="sheet-btn-skip" onclick="closeSheet('cikisSheet');renderAll()">Sonra girerim</button>
-      <button class="sheet-btn-confirm" onclick="confirmCikis()">Kaydet ✓</button>
+    <div class="sheet-drag"></div>
+    <div class="sheet-head"><h3>Mesai Bitişi</h3><p id="cikisSub"></p></div>
+    <div class="sheet-body">
+      <div class="sheet-inp-label">Bitiş saati</div>
+      <input type="time" class="sheet-time" id="cikisInp">
+      <div class="sheet-btns">
+        <button class="sh-cancel" onclick="closeOverlay('cikisOverlay');renderAll()">Sonra girerim</button>
+        <button class="sh-confirm" onclick="confirmCikis()">Kaydet ✓</button>
+      </div>
     </div>
   </div>
 </div>
 
-<div class="sheet-overlay" id="salarySheet" onclick="sheetOut(event,'salarySheet')">
+<div class="overlay" id="salaryOverlay" onclick="overlayClick(event,'salaryOverlay')">
   <div class="sheet">
-    <div class="sheet-handle"></div>
-    <div class="sheet-title">Maaş Ayarı</div>
-    <div class="sheet-sub" id="salarySheetSub"></div>
-    <div class="sheet-note" id="salaryNote"></div>
-    <div class="sheet-inp-label">Bu ay net maaş (₺)</div>
-    <input class="sheet-input-big" type="number" id="salaryInput">
-    <div class="sheet-btns">
-      <button class="sheet-btn-skip" onclick="closeSheet('salarySheet')">Vazgeç</button>
-      <button class="sheet-btn-confirm" onclick="confirmSalary()">Kaydet ✓</button>
+    <div class="sheet-drag"></div>
+    <div class="sheet-head"><h3>Maaş Ayarı</h3><p id="salarySub"></p></div>
+    <div class="sheet-body">
+      <div class="sheet-note" id="salaryNote"></div>
+      <div class="sheet-inp-label">Net maaş (₺)</div>
+      <input type="number" class="sheet-num" id="salaryInp">
+      <div class="sheet-btns">
+        <button class="sh-cancel" onclick="closeOverlay('salaryOverlay')">Vazgeç</button>
+        <button class="sh-confirm" onclick="confirmSalary()">Kaydet ✓</button>
+      </div>
     </div>
   </div>
 </div>
@@ -410,730 +540,589 @@ body{display:flex;flex-direction:column;width:100%;position:relative}
 <div class="toast" id="toast"></div>
 
 <script>
-// ═══════════════ CONFIG ═══════════════
-const VERSION = 'v1.3';
+// ═══════════ CONFIG ═══════════
+const VERSION = 'v2.0';
 const CLIENT_ID = '390842439862-ks2rqj0cgh4t0aefea31cei42rea2usg.apps.googleusercontent.com';
 const SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
-const SHEET_TITLE = 'Mesai Takip';
+const SHEET_NAME = 'Mesai Takip';
 
-// ═══════════════ STATE ═══════════════
+// ═══════════ CONSTANTS ═══════════
 const MONTHS = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
-const DAYS_FULL = ['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
-const DAYS_SHORT = ['Paz','Pzt','Sal','Çar','Per','Cum','Cmt'];
+const DAYS = ['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
+const DAYS_S = ['Paz','Pzt','Sal','Çar','Per','Cum','Cmt'];
 const today = new Date();
-const todayKey = fmtKey(today.getFullYear(), today.getMonth(), today.getDate());
+const todayKey = dk(today.getFullYear(), today.getMonth(), today.getDate());
 
+// ═══════════ STATE ═══════════
 let curY = today.getFullYear(), curM = today.getMonth();
-let openDays = {}, modalKey = null, saveTimer = null;
-let spreadsheetId = null, accessToken = null, userInfo = null;
-let isSyncing = false, pendingSync = false;
+let openDays = {}, modalKey = null, syncTimer = null, isSyncing = false;
+let accessToken = null, userInfo = null, spreadsheetId = null;
+let cfg = { bitis:'18:00', carpan:1.5, aylikSaat:225 };
+let salaries = {}, dayData = {};
 
-let cfg = { normalBitis:'18:00', carpan:1.5, yol:0, yemek:0, aylikSaat:225 };
-let salaries = {};
-let dayData = {};
-
-// ═══════════════ HELPERS ═══════════════
-function fmtKey(y,m,d){ return `${y}-${m}-${d}`; }
-function monthKey(y,m){ return `${y}-${m}`; }
-function getDays(y,m){ return new Date(y,m+1,0).getDate(); }
-function parseTime(s){ if(!s)return null; const[h,mi]=s.split(':').map(Number); return h*60+mi; }
-function fmtMin(m){ const h=Math.floor(m/60),mn=m%60; return h>0&&mn>0?`${h}s ${mn}dk`:h>0?`${h}s`:`${mn}dk`; }
-function fmtMoney(n){ return Math.round(n).toLocaleString('tr-TR')+'₺'; }
-function fmtHrs(m){ return Math.round(m/60*100)/100; }
+// ═══════════ HELPERS ═══════════
+function dk(y,m,d){ return `${y}-${m}-${d}`; }
+function mk(y,m){ return `${y}-${m}`; }
+function daysIn(y,m){ return new Date(y,m+1,0).getDate(); }
+function pt(s){ if(!s) return null; const[h,i]=s.split(':').map(Number); return h*60+i; }
+function fmtDur(m){ const h=Math.floor(m/60),mn=m%60; return h&&mn?`${h}s ${mn}dk`:h?`${h}s`:`${mn}dk`; }
+function fmtTL(n){ return Math.round(n).toLocaleString('tr-TR')+'₺'; }
 
 function getSalary(y,m){
-  const mk=monthKey(y,m);
-  if(salaries[mk]!=null) return salaries[mk];
-  for(let i=1;i<=24;i++){
-    let pm=m-i,py=y;
-    if(pm<0){pm+=12;py--;}
-    if(salaries[monthKey(py,pm)]!=null) return salaries[monthKey(py,pm)];
-  }
+  const k=mk(y,m); if(salaries[k]!=null) return salaries[k];
+  for(let i=1;i<=24;i++){let pm=m-i,py=y;if(pm<0){pm+=12;py--;}if(salaries[mk(py,pm)]!=null)return salaries[mk(py,pm)];}
   return 30000;
 }
 
 function getDay(key){ return dayData[key]||{}; }
 
-function getMolaMin(r,g,c){
-  let total=0;
-  if(r.molalar&&r.molalar.length){
-    for(const mo of r.molalar){
-      const mb=parseTime(mo.bas),me=parseTime(mo.bit);
-      if(mb!=null&&me!=null&&me>mb){
-        const s=Math.max(mb,g),e=Math.min(me,c);
-        if(e>s) total+=e-s;
-      }
-    }
-  }
-  if(r.molaMin) total+=parseInt(r.molaMin)||0;
-  return total;
-}
-
 function calcDay(key){
-  const info=getKeyInfo(key), r=getDay(key);
-  const maas=getSalary(info.y,info.m);
+  const [ys,ms,ds]=key.split('-').map(Number);
+  const dt=new Date(ys,ms,ds), dow=dt.getDay(), isWE=dow===0||dow===6;
+  const r=getDay(key), maas=getSalary(ys,ms);
   const saatlik=maas/(cfg.aylikSaat||225);
   const carpan=r.carpanOverride!=null?r.carpanOverride:cfg.carpan;
-  const normalBitis=parseTime(cfg.normalBitis)||18*60;
+  const bitis=pt(cfg.bitis)||18*60;
   let netMin=0;
   if(r.giris&&r.cikis){
-    const g=parseTime(r.giris),c=parseTime(r.cikis);
+    const g=pt(r.giris),c=pt(r.cikis);
     if(c>g){
-      let raw=info.isWeekend?(c-g):Math.max(0,c-Math.max(g,normalBitis));
-      netMin=Math.max(0,raw-getMolaMin(r,g,c));
+      let raw=isWE?(c-g):Math.max(0,c-Math.max(g,bitis));
+      // subtract mola
+      let molaMin=0;
+      if(r.molalar) for(const mo of r.molalar){const mb=pt(mo.bas),me=pt(mo.bit);if(mb!=null&&me!=null&&me>mb){const s=Math.max(mb,g),e=Math.min(me,c);if(e>s)molaMin+=e-s;}}
+      if(r.molaMin) molaMin+=parseInt(r.molaMin)||0;
+      netMin=Math.max(0,raw-molaMin);
     }
   }
-  const mesaiSaat=fmtHrs(netMin);
-  const tutar=netMin>0?Math.round(saatlik*carpan*mesaiSaat):0;
-  let yol=0;
-  // yol is always a manual per-day amount (r.yolTutar), no auto default
-  if(r.yolTutar) yol=parseFloat(r.yolTutar)||0;
-  const yemek=r.yemekTutar?parseFloat(r.yemekTutar)||0:0;
-  return{netMin,mesaiSaat,tutar,yol,yemek};
+  const tutarMesai=netMin>0?Math.round(saatlik*carpan*(netMin/60)):0;
+  const yol=parseFloat(r.yolTutar)||0;
+  const yemek=parseFloat(r.yemekTutar)||0;
+  return{netMin,tutarMesai,yol,yemek,toplam:tutarMesai+yol+yemek};
 }
 
 function calcMonth(y,m){
-  const days=getDays(y,m);
-  let totMin=0,totTutar=0,totYol=0,totYemek=0;
-  for(let d=1;d<=days;d++){
-    const c=calcDay(fmtKey(y,m,d));
-    totMin+=c.netMin;totTutar+=c.tutar;totYol+=c.yol;totYemek+=c.yemek;
-  }
-  return{totMin,totTutar,totYol,totYemek};
+  const days=daysIn(y,m);
+  let totMin=0,totMesai=0,totYol=0,totYemek=0;
+  for(let d=1;d<=days;d++){const c=calcDay(dk(y,m,d));totMin+=c.netMin;totMesai+=c.tutarMesai;totYol+=c.yol;totYemek+=c.yemek;}
+  return{totMin,totMesai,totYol,totYemek};
 }
 
-function getKeyInfo(key){
-  const[y,m,d]=key.split('-').map(Number);
-  const dt=new Date(y,m,d);
-  return{y,m,d,dt,dow:dt.getDay(),isWeekend:dt.getDay()===0||dt.getDay()===6};
-}
-
-// ═══════════════ LOCAL CACHE ═══════════════
+// ═══════════ LOCAL STORAGE ═══════════
 function saveLocal(){
-  try{
-    localStorage.setItem('mesaiApp_v3',JSON.stringify({cfg,salaries,dayData,spreadsheetId,savedAt:new Date().toISOString()}));
-  }catch(e){}
+  try{ localStorage.setItem('mt_v4', JSON.stringify({cfg,salaries,dayData,spreadsheetId,ts:Date.now()})); }catch(e){}
 }
-
 function loadLocal(){
   try{
-    const raw=localStorage.getItem('mesaiApp_v3');
-    if(raw){
-      const d=JSON.parse(raw);
-      cfg=Object.assign(cfg,d.cfg||{});
-      salaries=d.salaries||{};
-      dayData=d.dayData||{};
-      spreadsheetId=d.spreadsheetId||null;
-    }
+    const r=localStorage.getItem('mt_v4');
+    if(r){const d=JSON.parse(r);cfg=Object.assign(cfg,d.cfg||{});salaries=d.salaries||{};dayData=d.dayData||{};spreadsheetId=d.spreadsheetId||null;}
   }catch(e){}
 }
 
-// ═══════════════ GOOGLE AUTH ═══════════════
+// ═══════════ GOOGLE AUTH ═══════════
 let tokenClient;
-
-function initGoogleAuth(){
-  tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: CLIENT_ID,
-    scope: SCOPES,
-    callback: async(resp) => {
-      if(resp.error){ showToast('Giriş hatası: '+resp.error); showScreen('loginScreen'); return; }
-      accessToken = resp.access_token;
-      await fetchUserInfo();
-      await initSpreadsheet();
-      await pullFromSheets();
-      showMainApp();
+function initAuth(){
+  tokenClient=google.accounts.oauth2.initTokenClient({
+    client_id:CLIENT_ID, scope:SCOPES,
+    callback:async(resp)=>{
+      if(resp.error){toast('Giriş hatası: '+resp.error);showScreen('loginScreen');return;}
+      accessToken=resp.access_token;
+      await getUser(); await initSheet(); await pullSheet();
+      showApp();
     }
   });
 }
-
-function signIn(){
-  if(!tokenClient){ showToast('Google API yükleniyor, bekle...'); return; }
-  tokenClient.requestAccessToken({prompt:'consent'});
-}
-
+function signIn(){if(!tokenClient){toast('Yükleniyor...');return;} tokenClient.requestAccessToken({prompt:'consent'});}
 function signOut(){
-  if(accessToken) google.accounts.oauth2.revoke(accessToken);
-  accessToken=null; userInfo=null; spreadsheetId=null;
-  localStorage.removeItem('mesaiApp_v3');
-  showScreen('loginScreen');
+  if(accessToken)google.accounts.oauth2.revoke(accessToken);
+  accessToken=null;userInfo=null;spreadsheetId=null;
+  localStorage.removeItem('mt_v4');showScreen('loginScreen');
 }
-
-async function fetchUserInfo(){
-  const r=await fetch('https://www.googleapis.com/oauth2/v2/userinfo',{
-    headers:{Authorization:'Bearer '+accessToken}
-  });
-  userInfo=await r.json();
-  updateUserUI();
+async function getUser(){
+  const r=await fetch('https://www.googleapis.com/oauth2/v2/userinfo',{headers:{Authorization:'Bearer '+accessToken}});
+  userInfo=await r.json(); updateUserUI();
 }
-
 function updateUserUI(){
-  if(!userInfo) return;
-  const av=document.getElementById('userAvatar');
-  av.src=userInfo.picture||'';
-  av.style.display='block';
-  document.getElementById('settingsAvatar').src=userInfo.picture||'';
-  document.getElementById('settingsName').textContent=userInfo.name||'';
-  document.getElementById('settingsEmail').textContent=userInfo.email||'';
+  if(!userInfo)return;
+  ['userAvatarImg','settingsAvatarImg'].forEach(id=>{const el=document.getElementById(id);if(el&&userInfo.picture){el.src=userInfo.picture;el.style.display='block';}});
+  document.getElementById('avatarPlaceholder').style.display='none';
+  document.getElementById('settingsAvatarPlaceholder').style.display='none';
+  document.getElementById('stName').textContent=userInfo.name||'';
+  document.getElementById('stEmail').textContent=userInfo.email||'';
 }
 
-// ═══════════════ SHEETS API ═══════════════
-async function sheetsReq(method, path, body){
-  const url='https://sheets.googleapis.com/v4/spreadsheets'+path;
-  const opts={method,headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'}};
-  if(body) opts.body=JSON.stringify(body);
-  const r=await fetch(url,opts);
-  if(!r.ok){
-    const err=await r.text();
-    throw new Error('Sheets API: '+r.status+' '+err);
-  }
+// ═══════════ SHEETS API ═══════════
+async function api(method,path,body){
+  const r=await fetch('https://sheets.googleapis.com/v4/spreadsheets'+path,{
+    method, headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},
+    body:body?JSON.stringify(body):undefined
+  });
+  if(!r.ok) throw new Error(await r.text());
   return r.status===204?null:r.json();
 }
-
-async function driveReq(method, path, body){
-  const url='https://www.googleapis.com/drive/v3'+path;
-  const opts={method,headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'}};
-  if(body) opts.body=JSON.stringify(body);
-  const r=await fetch(url,opts);
-  if(!r.ok) throw new Error('Drive API: '+r.status);
-  return r.json();
+async function driveSearch(){
+  const r=await fetch(`https://www.googleapis.com/drive/v3/files?q=name='${SHEET_NAME}'+and+mimeType='application/vnd.google-apps.spreadsheet'+and+trashed=false&fields=files(id)`,
+    {headers:{Authorization:'Bearer '+accessToken}});
+  return (await r.json()).files||[];
 }
 
-async function initSpreadsheet(){
-  // Search for existing sheet
-  if(spreadsheetId){
-    try{
-      await sheetsReq('GET','/'+spreadsheetId+'?fields=spreadsheetId');
-      return; // exists
-    }catch(e){ spreadsheetId=null; }
-  }
-  // Search Drive
-  const res=await driveReq('GET',`/files?q=name='${SHEET_TITLE}'+and+mimeType='application/vnd.google-apps.spreadsheet'+and+trashed=false&fields=files(id,name)`);
-  if(res.files&&res.files.length>0){
-    spreadsheetId=res.files[0].id;
-  } else {
-    // Create new
-    const created=await sheetsReq('POST','',{
-      properties:{title:SHEET_TITLE},
+async function initSheet(){
+  if(spreadsheetId){try{await api('GET','/'+spreadsheetId+'?fields=spreadsheetId');return;}catch(e){spreadsheetId=null;}}
+  const found=await driveSearch();
+  if(found.length){spreadsheetId=found[0].id;}
+  else{
+    const s=await api('POST','',{
+      properties:{title:SHEET_NAME},
       sheets:[
-        {properties:{title:'Veriler',sheetId:0}},
-        {properties:{title:'Ayarlar',sheetId:1}},
-        {properties:{title:'Maaslar',sheetId:2}}
+        {properties:{title:'Mesai Verileri',sheetId:0}},
+        {properties:{title:'Maaşlar',sheetId:1}},
+        {properties:{title:'Ayarlar',sheetId:2}}
       ]
     });
-    spreadsheetId=created.spreadsheetId;
-    // Write headers
-    await sheetsReq('PUT',`/${spreadsheetId}/values/Veriler!A1:K1?valueInputOption=RAW`,{
-      values:[['key','giris','cikis','molalar','molaMin','carpanOverride','yol','yemekOn','tatil','aciklama','updatedAt']]
+    spreadsheetId=s.spreadsheetId;
+    // Headers - human readable like original table
+    await api('PUT',`/${spreadsheetId}/values/'Mesai Verileri'!A1:M1?valueInputOption=RAW`,{
+      values:[['Tarih','Gün','Giriş Saati','Çıkış Saati','Toplam Mesai (saat)','Mesai Çarpanı','Mola Süresi (dk)','Yol (₺)','Yemek (₺)','Mesai Ücreti (₺)','Toplam (₺)','Not','key']]
     });
-    await sheetsReq('PUT',`/${spreadsheetId}/values/Ayarlar!A1:B1?valueInputOption=RAW`,{
-      values:[['key','value']]
-    });
-    await sheetsReq('PUT',`/${spreadsheetId}/values/Maaslar!A1:B1?valueInputOption=RAW`,{
-      values:[['monthKey','maas']]
-    });
+    await api('PUT',`/${spreadsheetId}/values/'Maaşlar'!A1:B1?valueInputOption=RAW`,{values:[['Ay (YYYY-M)','Net Maaş (₺)']]});
+    await api('PUT',`/${spreadsheetId}/values/'Ayarlar'!A1:B1?valueInputOption=RAW`,{values:[['Ayar','Değer']]});
   }
   saveLocal();
 }
 
-async function pushToSheets(){
+async function pushSheet(){
   if(!spreadsheetId||!accessToken) return;
-  if(isSyncing){ pendingSync=true; return; }
-  isSyncing=true;
-  setSyncStatus('syncing','Kaydediliyor…');
+  if(isSyncing){return;}
+  isSyncing=true; setSyncUI('syncing','Kaydediliyor…');
   try{
-    // Push dayData
-    const rows=[['key','giris','cikis','molalar','molaMin','carpanOverride','yol','yemekOn','tatil','aciklama','updatedAt']];
-    for(const[k,v] of Object.entries(dayData)){
-      rows.push([k,v.giris||'',v.cikis||'',JSON.stringify(v.molalar||[]),v.molaMin||'',
-        v.carpanOverride!=null?v.carpanOverride:'',v.yolTutar||'',
-        v.yemekTutar||'',v.tatil?'1':'',v.aciklama||'',new Date().toISOString()]);
-    }
-    await sheetsReq('PUT',`/${spreadsheetId}/values/Veriler!A1:K${rows.length}?valueInputOption=RAW`,{values:rows});
+    // Build readable data rows
+    const header=[['Tarih','Gün','Giriş Saati','Çıkış Saati','Toplam Mesai (saat)','Mesai Çarpanı','Mola Süresi (dk)','Yol (₺)','Yemek (₺)','Mesai Ücreti (₺)','Toplam (₺)','Not','key']];
+    const rows=Object.entries(dayData).map(([k,v])=>{
+      const [ys,ms,ds]=k.split('-').map(Number);
+      const dt=new Date(ys,ms,ds);
+      const c=calcDay(k);
+      const carpan=v.carpanOverride!=null?v.carpanOverride:cfg.carpan;
+      const molaDk=(()=>{let m=parseInt(v.molaMin)||0;if(v.molalar)for(const mo of v.molalar){const mb=pt(mo.bas),me=pt(mo.bit);if(mb!=null&&me!=null&&me>mb)m+=me-mb;}return m;})();
+      return [
+        `${ds}.${ms+1}.${ys}`, DAYS[dt.getDay()],
+        v.giris||'', v.cikis||'',
+        c.netMin>0?Math.round(c.netMin/60*100)/100:'',
+        carpan, molaDk||'',
+        v.yolTutar||'', v.yemekTutar||'',
+        c.tutarMesai||'', c.toplam||'',
+        v.aciklama||'', k
+      ];
+    }).sort((a,b)=>a[12]<b[12]?-1:1);
 
-    // Push settings
-    const sRows=[['key','value'],['normalBitis',cfg.normalBitis],['carpan',cfg.carpan],['yol',cfg.yol],['yemek',cfg.yemek],['aylikSaat',cfg.aylikSaat||225]];
-    await sheetsReq('PUT',`/${spreadsheetId}/values/Ayarlar!A1:B${sRows.length}?valueInputOption=RAW`,{values:sRows});
+    const allRows=[...header,...rows];
+    await api('PUT',`/${spreadsheetId}/values/'Mesai Verileri'!A1:M${allRows.length}?valueInputOption=RAW`,{values:allRows});
 
-    // Push salaries
-    const mRows=[['monthKey','maas'],...Object.entries(salaries).map(([k,v])=>[k,v])];
-    await sheetsReq('PUT',`/${spreadsheetId}/values/Maaslar!A1:B${mRows.length}?valueInputOption=RAW`,{values:mRows});
+    // Salaries
+    const salRows=[['Ay (YYYY-M)','Net Maaş (₺)'],...Object.entries(salaries).sort().map(([k,v])=>[k,v])];
+    await api('PUT',`/${spreadsheetId}/values/'Maaşlar'!A1:B${salRows.length}?valueInputOption=RAW`,{values:salRows});
 
-    saveLocal();
-    setSyncStatus('ok','Kaydedildi ✓');
-  }catch(e){
-    setSyncStatus('error','Hata: '+e.message);
-    showToast('Sheets hatası: '+e.message);
-  }finally{
-    isSyncing=false;
-    if(pendingSync){ pendingSync=false; setTimeout(pushToSheets,500); }
-  }
+    // Settings
+    const cfgRows=[['Ayar','Değer'],['bitisSaati',cfg.bitis],['mesaiCarpani',cfg.carpan],['aylikCalisma',cfg.aylikSaat]];
+    await api('PUT',`/${spreadsheetId}/values/'Ayarlar'!A1:B${cfgRows.length}?valueInputOption=RAW`,{values:cfgRows});
+
+    saveLocal(); setSyncUI('ok','Kaydedildi ✓');
+  }catch(e){setSyncUI('err','Hata'); toast('Sheets hatası: '+e.message);}
+  finally{isSyncing=false;}
 }
 
-async function pullFromSheets(){
+async function pullSheet(){
   if(!spreadsheetId||!accessToken) return;
-  setSyncStatus('syncing','Çekiliyor…');
+  setSyncUI('syncing','Çekiliyor…');
   try{
-    const ranges=['Veriler','Ayarlar','Maaslar'];
-    const res=await sheetsReq('GET',`/${spreadsheetId}/values:batchGet?ranges=${ranges.join('&ranges=')}`);
-    const [vSheet,aSheet,mSheet]=res.valueRanges||[];
+    const res=await api('GET',`/${spreadsheetId}/values:batchGet?ranges='Mesai Verileri'!A2:M&ranges='Maaşlar'!A2:B&ranges='Ayarlar'!A2:B`);
+    const [vSheet,mSheet,aSheet]=res.valueRanges||[];
 
-    // Parse dayData
-    const vRows=(vSheet.values||[]).slice(1);
-    const newDayData={};
-    for(const row of vRows){
-      const[k,giris,cikis,molalar,molaMin,carpanOverride,yolTutar,yemekTutar,tatil,aciklama]=row;
-      if(!k) continue;
-      newDayData[k]={
-        giris:giris||'',cikis:cikis||'',
-        molalar:molalar?JSON.parse(molalar):[],
-        molaMin:molaMin||'',
-        carpanOverride:carpanOverride!==''&&carpanOverride!=null?parseFloat(carpanOverride):null,
-        yolTutar:yolTutar||'',yemekTutar:yemekTutar||'',
-        tatil:tatil==='1',aciklama:aciklama||''
-      };
+    // Parse day data from readable table
+    const newDay={};
+    for(const row of (vSheet.values||[])){
+      const [tarih,gun,giris,cikis,mesaiSaat,carpan,molaDk,yol,yemek,mesaiUcret,toplam,not,key]=row;
+      if(!key) continue;
+      newDay[key]={giris:giris||'',cikis:cikis||'',
+        carpanOverride:carpan!==''&&carpan!=null?parseFloat(carpan):null,
+        molaMin:molaDk||'', molalar:[],
+        yolTutar:yol||'', yemekTutar:yemek||'',
+        aciklama:not||'', tatil:false};
     }
-    dayData=newDayData;
+    dayData=newDay;
 
-    // Parse settings
-    const aRows=(aSheet.values||[]).slice(1);
-    for(const[k,v] of aRows){
-      if(k==='normalBitis') cfg.normalBitis=v;
-      else if(k==='carpan') cfg.carpan=parseFloat(v)||1.5;
-      else if(k==='yol') cfg.yol=parseFloat(v)||0;
-      else if(k==='yemek') cfg.yemek=parseFloat(v)||0;
-      else if(k==='aylikSaat') cfg.aylikSaat=parseFloat(v)||225;
-    }
-
-    // Parse salaries
-    const mRows=(mSheet.values||[]).slice(1);
+    // Salaries
     salaries={};
-    for(const[k,v] of mRows){ if(k) salaries[k]=parseFloat(v)||0; }
+    for(const[k,v] of (mSheet.values||[])) if(k) salaries[k]=parseFloat(v)||0;
 
-    saveLocal();
-    applySettings();
-    setSyncStatus('ok','Senkronize ✓');
-  }catch(e){
-    setSyncStatus('error','Hata');
-    showToast('Çekme hatası: '+e.message);
-  }
+    // Settings
+    for(const[k,v] of (aSheet.values||[])){
+      if(k==='bitisSaati') cfg.bitis=v;
+      else if(k==='mesaiCarpani') cfg.carpan=parseFloat(v)||1.5;
+      else if(k==='aylikCalisma') cfg.aylikSaat=parseFloat(v)||225;
+    }
+    saveLocal(); applySettings(); setSyncUI('ok','Senkronize ✓');
+  }catch(e){setSyncUI('err','Hata'); toast('Çekme hatası: '+e.message);}
 }
 
-async function syncNow(){
-  await pullFromSheets();
-  renderAll();
+async function syncNow(){ await pullSheet(); renderAll(); }
+
+function setSyncUI(state,txt){
+  const dot=document.getElementById('syncDot'), t=document.getElementById('syncTxt');
+  if(!dot) return;
+  dot.style.background=state==='ok'?'var(--green)':state==='syncing'?'var(--yellow)':'var(--red)';
+  if(t) t.textContent=txt;
 }
 
-function setSyncStatus(state,text){
-  const ind=document.getElementById('syncIndicator');
-  const dot=ind.querySelector('.sync-dot');
-  const txt=document.getElementById('syncText');
-  ind.className='sync-indicator'+(state==='syncing'?' syncing':state==='error'?' error':'');
-  txt.textContent=text;
-}
+function debouncePush(){clearTimeout(syncTimer);syncTimer=setTimeout(pushSheet,2500);}
 
-// ═══════════════ DATA MUTATIONS ═══════════════
-function setDayField(key,field,val){
+// ═══════════ DATA MUTATIONS ═══════════
+function setField(key,field,val){
   if(!dayData[key]) dayData[key]={};
   dayData[key][field]=val;
-  saveLocal();
-  debounceSync();
-  refreshDayCard(key);
+  saveLocal(); debouncePush(); refreshCard(key);
 }
-
-function setDayOverride(key,field,val){
+function toggleExtra(key,field){
   if(!dayData[key]) dayData[key]={};
-  dayData[key][field]=val;
-  saveLocal(); debounceSync(); refreshDayCard(key);
+  dayData[key][field]=!dayData[key][field];
+  saveLocal(); debouncePush(); refreshCard(key);
 }
-
-function toggleDayExtra(key,field,isWeekend){
-  if(!dayData[key]) dayData[key]={};
-  const r=dayData[key];
-  if(field==='yol'){
-    if(isWeekend) r.yol=r.yol===false?true:false;
-    else r.yol=r.yol===true?false:true;
-  } else if(field==='yemek'){ r.yemekOn=!r.yemekOn; }
-  else if(field==='tatil'){ r.tatil=!r.tatil; }
-  saveLocal(); debounceSync(); refreshDayCard(key);
-}
-
 function addMola(key){
   if(!dayData[key]) dayData[key]={};
   if(!dayData[key].molalar) dayData[key].molalar=[];
   dayData[key].molalar.push({bas:'',bit:''});
-  saveLocal(); debounceSync();
-  const c=document.getElementById('mola-list-'+key);
-  if(c) c.innerHTML=buildMolaHtml(key,dayData[key]);
+  saveLocal(); debouncePush();
+  const el=document.getElementById('mlist-'+key);
+  if(el) el.innerHTML=buildMolaHTML(key,dayData[key]);
 }
-
 function removeMola(key,idx){
   if(!dayData[key]||!dayData[key].molalar) return;
   dayData[key].molalar.splice(idx,1);
-  saveLocal(); debounceSync();
-  const c=document.getElementById('mola-list-'+key);
-  if(c) c.innerHTML=buildMolaHtml(key,dayData[key]);
-  refreshDayCard(key);
+  saveLocal(); debouncePush();
+  const el=document.getElementById('mlist-'+key);
+  if(el) el.innerHTML=buildMolaHTML(key,dayData[key]);
+  refreshCard(key);
 }
-
 function updateMola(key,idx,field,val){
   if(!dayData[key]||!dayData[key].molalar) return;
   dayData[key].molalar[idx][field]=val;
-  saveLocal(); debounceSync(); refreshDayCard(key);
+  saveLocal(); debouncePush(); refreshCard(key);
 }
 
-let syncTimer=null;
-function debounceSync(){ clearTimeout(syncTimer); syncTimer=setTimeout(pushToSheets,2000); }
-
-// ═══════════════ SETTINGS ═══════════════
+// ═══════════ SETTINGS ═══════════
 function applySettings(){
-  document.getElementById('stNormalBitis').value=cfg.normalBitis||'18:00';
+  document.getElementById('stBitis').value=cfg.bitis||'18:00';
   document.getElementById('stCarpan').value=cfg.carpan||1.5;
-  document.getElementById('stYol').value=cfg.yol!=null?cfg.yol:100;
-  document.getElementById('stYemek').value=cfg.yemek||0;
   document.getElementById('stAylikSaat').value=cfg.aylikSaat||225;
 }
-
 function saveSettings(){
-  cfg.normalBitis=document.getElementById('stNormalBitis').value||'18:00';
+  cfg.bitis=document.getElementById('stBitis').value||'18:00';
   cfg.carpan=parseFloat(document.getElementById('stCarpan').value)||1.5;
-  cfg.yol=parseFloat(document.getElementById('stYol').value)||0;
-  cfg.yemek=parseFloat(document.getElementById('stYemek').value)||0;
   cfg.aylikSaat=parseFloat(document.getElementById('stAylikSaat').value)||225;
-  saveLocal(); debounceSync();
-  showToast('Ayarlar kaydedildi ✓');
-  renderAll();
+  saveLocal(); debouncePush(); renderAll(); toast('Ayarlar kaydedildi ✓');
 }
 
-// ═══════════════ NAVIGATION ═══════════════
-let currentScreen='loading';
+// ═══════════ NAVIGATION ═══════════
+let curScreen='';
 function showScreen(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
   document.getElementById(id).classList.remove('hidden');
-  currentScreen=id;
+  curScreen=id;
 }
+function showApp(){applySettings();updateUserUI();showScreen('homeScreen');renderHome();}
+function goHome(){showScreen('homeScreen');renderHome();}
+function goCalendar(){showScreen('calScreen');curY=today.getFullYear();curM=today.getMonth();renderCal();}
+function goSettings(){showScreen('settingsScreen');}
+function renderAll(){if(curScreen==='homeScreen')renderHome();else if(curScreen==='calScreen')renderCal();}
 
-function showMainApp(){
-  applySettings();
-  showScreen('homeScreen');
-  renderHome();
-}
-
-function goHome(){ showScreen('homeScreen'); setNavActive(0); renderHome(); }
-
-function goCalendar(){
-  showScreen('calScreen'); setNavActive(1);
-  curY=today.getFullYear(); curM=today.getMonth();
-  renderCalendar();
-}
-
-function goSettings(){ showScreen('settingsScreen'); setNavActive(2); }
-
-function setNavActive(idx){
-  document.querySelectorAll('.nav-item').forEach((n,i)=>n.classList.toggle('active',i===idx));
-}
-
-function renderAll(){
-  if(currentScreen==='homeScreen') renderHome();
-  else if(currentScreen==='calScreen') renderCalendar();
-}
-
-// ═══════════════ HOME RENDER ═══════════════
+// ═══════════ HOME ═══════════
 function renderHome(){
-  document.getElementById('homeDateText').innerHTML=
-    `${today.getDate()} <span>${MONTHS[today.getMonth()]}</span> ${today.getFullYear()}`;
-  document.getElementById('homeDayName').textContent=DAYS_FULL[today.getDay()];
+  document.getElementById('homeDateTxt').innerHTML=`${today.getDate()} <em>${MONTHS[today.getMonth()]}</em> ${today.getFullYear()}`;
+  document.getElementById('homeDayTxt').textContent=DAYS[today.getDay()];
 
   const r=getDay(todayKey), c=calcDay(todayKey);
-  const dot=document.getElementById('statusDot');
-  if(r.giris&&r.cikis){dot.className='status-dot done';document.getElementById('statusText').textContent='Tamamlandı';}
-  else if(r.giris){dot.className='status-dot active';document.getElementById('statusText').textContent='Devam ediyor…';}
-  else{dot.className='status-dot';document.getElementById('statusText').textContent='Mesai girilmedi';}
+  const dot=document.getElementById('tcDot'), stxt=document.getElementById('tcStatusTxt');
+  if(r.giris&&r.cikis){dot.className='tc-dot done';stxt.textContent='Tamamlandı';}
+  else if(r.giris){dot.className='tc-dot live';stxt.textContent='Devam ediyor…';}
+  else{dot.className='tc-dot';stxt.textContent='Mesai girilmedi';}
 
-  document.getElementById('homeGirisVal').innerHTML=r.giris?r.giris:'<span class="empty">—</span>';
-  document.getElementById('homeCikisVal').innerHTML=r.cikis?r.cikis:'<span class="empty">—</span>';
-  document.getElementById('homeSureVal').innerHTML=c.netMin>0?fmtMin(c.netMin):'<span class="empty">—</span>';
-
+  const setTC=(id,val)=>{const el=document.getElementById(id);el.textContent=val||'—';el.className='tc-time-val'+(val?'':' muted');};
+  setTC('tcGiris',r.giris); setTC('tcCikis',r.cikis);
+  setTC('tcSure',c.netMin>0?fmtDur(c.netMin):'');
   const parts=[];
-  if(c.yol>0) parts.push('Yol: '+fmtMoney(c.yol));
-  if(c.yemek>0) parts.push('Yemek: '+fmtMoney(c.yemek));
-  document.getElementById('homeDetailsText').textContent=parts.join(' · ');
-  document.getElementById('homeTodayEarn').textContent=(c.tutar+c.yol+c.yemek)>0?fmtMoney(c.tutar+c.yol+c.yemek):'';
+  if(c.yol>0) parts.push('Yol '+fmtTL(c.yol));
+  if(c.yemek>0) parts.push('Yemek '+fmtTL(c.yemek));
+  document.getElementById('tcDetail').textContent=parts.join(' · ');
+  document.getElementById('tcTotal').textContent=c.toplam>0?fmtTL(c.toplam):'';
 
   // Actions
-  const ar=document.getElementById('actionRow'); ar.innerHTML='';
+  const area=document.getElementById('actionArea'); area.innerHTML='';
   if(!r.giris){
-    ar.innerHTML=`<button class="action-btn primary" onclick="openGirisSheet()" style="grid-column:span 2">
-      <i class="ti ti-player-play" style="font-size:24px"></i><span style="font-size:15px;font-weight:600">Mesaiye Başla</span><small style="font-size:12px;opacity:0.65">Giriş saatini kaydet</small></button>`;
+    area.innerHTML=`<button class="btn-main start" onclick="openGirisSheet()">
+      <div class="btn-main-icon"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+      <div class="btn-main-text"><strong>Mesaiye Başla</strong><small>Giriş saatini kaydet</small></div>
+      <svg class="btn-main-arrow" style="width:20px;height:20px;stroke:#fff;stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+    <div class="btn-row">
+      <button class="btn-sec" onclick="goCalendar()">
+        <div class="btn-sec-icon cal"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+        <strong>Takvim</strong><small>Geçmiş günler</small>
+      </button>
+      <button class="btn-sec" onclick="syncNow()">
+        <div class="btn-sec-icon sync"><svg viewBox="0 0 24 24"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg></div>
+        <strong>Senkronize</strong><small>Verileri güncelle</small>
+      </button>
+    </div>`;
   } else if(!r.cikis){
-    ar.innerHTML=`<button class="action-btn primary" onclick="openCikisSheet('${todayKey}')">
-      <i class="ti ti-player-stop" style="font-size:24px"></i><span style="font-size:15px;font-weight:600">Mesaiden Çık</span><small style="font-size:12px;opacity:0.65">Çıkış saatini kaydet</small></button>
-      <button class="action-btn secondary" onclick="goCalendar()">
-      <i class="ti ti-calendar" style="font-size:24px"></i><span style="font-size:15px;font-weight:600">Takvim</span><small style="font-size:12px;opacity:0.65">Geçmiş günler</small></button>`;
+    area.innerHTML=`<button class="btn-main stop" onclick="openCikisSheet('${todayKey}')">
+      <div class="btn-main-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div>
+      <div class="btn-main-text"><strong>Mesaiden Çık</strong><small>Çıkış saatini kaydet</small></div>
+      <svg class="btn-main-arrow" style="width:20px;height:20px;stroke:#fff;stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+    <div class="btn-row">
+      <button class="btn-sec" onclick="goCalendar()">
+        <div class="btn-sec-icon cal"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+        <strong>Takvim</strong><small>Geçmiş günler</small>
+      </button>
+      <button class="btn-sec" onclick="openEditToday()">
+        <div class="btn-sec-icon" style="background:var(--yellow-dim);color:var(--yellow)"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+        <strong>Düzenle</strong><small>Bugünü düzenle</small>
+      </button>
+    </div>`;
   } else {
-    ar.innerHTML=`<button class="action-btn secondary" onclick="goCalendar()">
-      <i class="ti ti-calendar" style="font-size:24px"></i><span style="font-size:15px;font-weight:600">Takvim</span><small style="font-size:12px;opacity:0.65">Geçmiş günler</small></button>
-      <button class="action-btn secondary" onclick="openDayFromHome()">
-      <i class="ti ti-edit" style="font-size:24px"></i><span style="font-size:15px;font-weight:600">Düzenle</span><small style="font-size:12px;opacity:0.65">Bugünü düzenle</small></button>`;
+    area.innerHTML=`<div class="btn-row">
+      <button class="btn-sec" onclick="goCalendar()">
+        <div class="btn-sec-icon cal"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+        <strong>Takvim</strong><small>Geçmiş günler</small>
+      </button>
+      <button class="btn-sec" onclick="openEditToday()">
+        <div class="btn-sec-icon" style="background:var(--yellow-dim);color:var(--yellow)"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+        <strong>Bugünü Düzenle</strong><small>Detay ve düzenleme</small>
+      </button>
+    </div>`;
   }
 
-  document.getElementById('monthSummaryLabel').textContent=MONTHS[today.getMonth()]+' Özeti';
+  document.getElementById('monthHead').textContent=MONTHS[today.getMonth()]+' Özeti';
   const mc=calcMonth(today.getFullYear(),today.getMonth());
   const maas=getSalary(today.getFullYear(),today.getMonth());
-  document.getElementById('sumSaat').textContent=fmtMin(mc.totMin);
-  document.getElementById('sumMesaiTL').textContent=fmtMoney(mc.totTutar)+' mesai';
-  document.getElementById('sumEkstra').textContent=fmtMoney(mc.totYol+mc.totYemek);
-  document.getElementById('sumToplamSub').textContent=fmtMoney(maas)+' maaş + '+fmtMoney(mc.totTutar+mc.totYol+mc.totYemek)+' ek';
-  document.getElementById('sumToplam').textContent=fmtMoney(maas+mc.totTutar+mc.totYol+mc.totYemek);
+  document.getElementById('sumSaat').textContent=fmtDur(mc.totMin);
+  document.getElementById('sumSaatSub').textContent=fmtTL(mc.totMesai)+' mesai ücreti';
+  document.getElementById('sumEkstra').textContent=fmtTL(mc.totYol+mc.totYemek);
+  document.getElementById('sumEkstraSub').textContent='Yol + yemek toplamı';
+  document.getElementById('sumToplam').textContent=fmtTL(maas+mc.totMesai+mc.totYol+mc.totYemek);
+  document.getElementById('sumToplamSub').textContent=fmtTL(maas)+' maaş + '+fmtTL(mc.totMesai+mc.totYol+mc.totYemek)+' ek';
 }
 
-function openDayFromHome(){
-  goCalendar();
-  setTimeout(()=>{
-    openDayCard(todayKey);
-    document.getElementById('dc-'+todayKey)?.scrollIntoView({behavior:'smooth',block:'center'});
-  },250);
-}
+function openEditToday(){goCalendar();setTimeout(()=>{openCard(todayKey);document.getElementById('dc-'+todayKey)?.scrollIntoView({behavior:'smooth',block:'center'});},250);}
 
-// ═══════════════ CALENDAR RENDER ═══════════════
-function changeMonth(d){ curM+=d; if(curM>11){curM=0;curY++;} if(curM<0){curM=11;curY--;} openDays={}; renderCalendar(); }
+// ═══════════ CALENDAR ═══════════
+function changeMonth(d){curM+=d;if(curM>11){curM=0;curY++;}if(curM<0){curM=11;curY--;}openDays={};renderCal();}
 
-function renderCalendar(){
-  document.getElementById('calMonthLabel').textContent=MONTHS[curM]+' '+curY;
-  document.getElementById('calSalaryVal').textContent=fmtMoney(getSalary(curY,curM));
-  const days=getDays(curY,curM), list=document.getElementById('calDayList');
-  list.innerHTML='';
+function renderCal(){
+  document.getElementById('calMonthLbl').textContent=MONTHS[curM]+' '+curY;
+  document.getElementById('calSalaryVal').textContent=fmtTL(getSalary(curY,curM));
+  const list=document.getElementById('calList'); list.innerHTML='';
+  const days=daysIn(curY,curM);
   for(let d=1;d<=days;d++){
-    const key=fmtKey(curY,curM,d), dt=new Date(curY,curM,d), dow=dt.getDay();
-    const isWeekend=dow===0||dow===6, isToday=key===todayKey;
+    const key=dk(curY,curM,d), dt=new Date(curY,curM,d), dow=dt.getDay();
+    const isWE=dow===0||dow===6, isToday=key===todayKey;
     const r=getDay(key), c=calcDay(key), isOpen=!!openDays[key];
-    let sub=r.giris&&r.cikis?r.giris+' – '+r.cikis+(c.netMin>0?' · '+fmtMin(c.netMin)+' mesai':''):
-      r.giris?'Giriş: '+r.giris+' (çıkış girilmedi)':isToday?'Dokunarak mesai gir':isWeekend?'Hafta sonu':'Mesai girilmedi';
-    const molaHtml=buildMolaHtml(key,r);
+    let sub=r.giris&&r.cikis?r.giris+' – '+r.cikis+(c.netMin>0?' · '+fmtDur(c.netMin)+' mesai':''):
+      r.giris?'Giriş: '+r.giris+' — çıkış girilmedi':isToday?'Dokunarak mesai gir':isWE?'Hafta sonu':'—';
     const carpanVal=r.carpanOverride!=null?r.carpanOverride:cfg.carpan;
     const div=document.createElement('div');
-    div.className='day-item'+(isToday?' today-item':isWeekend?' weekend-item':'');
+    div.className='day-card'+(isToday?' is-today':isWE?' is-weekend':'');
     div.id='dc-'+key;
     div.innerHTML=`
-      <div class="day-row" onclick="toggleDayCard('${key}')">
-        <div class="day-num-box"><span class="dn">${d}</span><span class="dd">${DAYS_SHORT[dow]}</span></div>
-        <div class="day-main">
-          <div class="day-name-text">${DAYS_FULL[dow]}</div>
-          <div class="day-sub-text">${sub}</div>
+      <div class="day-row" onclick="toggleCard('${key}')">
+        <div class="day-num"><span class="dn">${d}</span><span class="dd">${DAYS_S[dow]}</span></div>
+        <div class="day-info">
+          <div class="day-name">${DAYS[dow]}</div>
+          <div class="day-sub">${sub}</div>
         </div>
-        <div class="day-right-info">
-          ${c.netMin>0?`<span class="day-earn-badge">${fmtMoney(c.tutar+c.yol+c.yemek)}</span><span class="day-hrs-badge">${fmtMin(c.netMin)}</span>`:''}
+        <div class="day-meta">
+          ${c.netMin>0?`<span class="earn-pill">${fmtTL(c.toplam)}</span><span class="hrs-lbl">${fmtDur(c.netMin)}</span>`:''}
         </div>
-        <i class="ti ti-chevron-down day-chevron ${isOpen?'open':''}" id="chev-${key}"></i>
+        <div class="chevron ${isOpen?'open':''}" id="chev-${key}"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
       </div>
       <div class="day-detail ${isOpen?'open':''}" id="dd-${key}">
-        <div class="det-sec">
-          <div class="det-sec-label">Mesai Saatleri</div>
-          <div class="inp-row">
-            <div class="inp-group"><label>Giriş</label><input type="time" value="${r.giris||''}" onchange="setDayField('${key}','giris',this.value)"></div>
-            <div class="inp-group"><label>Çıkış</label><input type="time" value="${r.cikis||''}" onchange="setDayField('${key}','cikis',this.value)"></div>
+        <div class="det-section">
+          <div class="det-label">Mesai Saatleri</div>
+          <div class="field-row">
+            <div class="field"><label>Giriş</label><input type="time" value="${r.giris||''}" onchange="setField('${key}','giris',this.value)"></div>
+            <div class="field"><label>Çıkış</label><input type="time" value="${r.cikis||''}" onchange="setField('${key}','cikis',this.value)"></div>
           </div>
         </div>
-        <div class="det-sec">
-          <div class="det-sec-label">Mola / Eksik Süre</div>
-          <div class="mola-list" id="mola-list-${key}">${molaHtml}</div>
-          <div class="inp-row" style="margin-bottom:8px">
-            <button class="add-mola-btn" onclick="addMola('${key}')"><i class="ti ti-plus"></i> Saat aralığı ekle</button>
-            <div class="inp-group"><label>Sabit dk (ör. 30)</label><input type="number" min="0" placeholder="0" value="${r.molaMin||''}" onchange="setDayField('${key}','molaMin',this.value)"></div>
+        <div class="det-section">
+          <div class="det-label">Mola / Eksik Süre</div>
+          <div class="mola-list" id="mlist-${key}">${buildMolaHTML(key,r)}</div>
+          <div class="field-row">
+            <button class="add-mola" onclick="addMola('${key}')"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Saat aralığı ekle</button>
+            <div class="field"><label>Sabit dk</label><input type="number" min="0" placeholder="0" value="${r.molaMin||''}" onchange="setField('${key}','molaMin',this.value)"></div>
           </div>
         </div>
-        <div class="det-sec">
-          <div class="det-sec-label">Ekstralar</div>
-          <div class="inp-row" style="margin-bottom:8px">
-            <div class="inp-group"><label><i class="ti ti-bus" style="vertical-align:-2px"></i> Yol (₺)</label>
-              <input type="number" min="0" placeholder="0" value="${r.yolTutar||''}" onchange="setDayField('${key}','yolTutar',this.value)">
+        <div class="det-section">
+          <div class="det-label">Yol & Yemek</div>
+          <div class="field-row">
+            <div class="field"><label>Yol (₺)</label><input type="number" min="0" placeholder="0" value="${r.yolTutar||''}" onchange="setField('${key}','yolTutar',this.value)"></div>
+            <div class="field"><label>Yemek (₺)</label><input type="number" min="0" placeholder="0" value="${r.yemekTutar||''}" onchange="setField('${key}','yemekTutar',this.value)"></div>
+          </div>
+        </div>
+        <div class="det-section">
+          <div class="det-label">Bu Güne Özel</div>
+          <div class="field-row">
+            <div class="field"><label>Mesai Çarpanı</label><input type="number" step="0.25" min="1" value="${carpanVal}" onchange="setField('${key}','carpanOverride',parseFloat(this.value))"></div>
+            <div class="field"><label>Not</label><input type="text" value="${r.aciklama||''}" placeholder="not..." onchange="setField('${key}','aciklama',this.value)"></div>
+          </div>
+          <div class="extras-row" style="margin-top:10px">
+            <div class="extra-chip ${r.tatil?'on-blue':''}" onclick="toggleExtra('${key}','tatil')" id="xtatil-${key}">
+              <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+              <span>Tatil</span>
             </div>
-            <div class="inp-group"><label><i class="ti ti-soup" style="vertical-align:-2px"></i> Yemek (₺)</label>
-              <input type="number" min="0" placeholder="0" value="${r.yemekTutar||''}" onchange="setDayField('${key}','yemekTutar',this.value)">
-            </div>
-          </div>
-          <div class="toggle-row" style="grid-template-columns:1fr 1fr">
-            <div class="toggle-pill ${r.tatil?'on-blue':''}" onclick="toggleDayExtra('${key}','tatil',false)" id="tatilpill-${key}"><i class="ti ti-beach"></i>${r.tatil?'Tatil ✓':'Tatil'}</div>
-            <div class="toggle-pill" style="opacity:0;pointer-events:none"></div>
-          </div>
-        </div>
-        <div class="det-sec">
-          <div class="det-sec-label">Bu Güne Özel</div>
-          <div class="override-row">
-            <div class="inp-group"><label>Mesai Çarpanı</label><input type="number" step="0.25" min="1" value="${carpanVal}" onchange="setDayOverride('${key}','carpanOverride',parseFloat(this.value))"></div>
-            <div class="inp-group"><label>Not</label><input type="text" value="${r.aciklama||''}" placeholder="not..." onchange="setDayField('${key}','aciklama',this.value)"></div>
+            <div style="opacity:0"></div><div style="opacity:0"></div>
           </div>
         </div>
         ${c.netMin>0||c.yol>0||c.yemek>0?`
-        <div class="det-total">
-          <div><div class="det-total-label">Gün Toplamı</div>
-          <div style="font-size:11px;color:var(--accent);opacity:.5;margin-top:2px">${c.netMin>0?fmtMin(c.netMin)+' mesai':''}${c.yol>0?' · '+fmtMoney(c.yol)+' yol':''}${c.yemek>0?' · '+fmtMoney(c.yemek)+' yemek':''}</div></div>
-          <div class="det-total-val">${fmtMoney(c.tutar+c.yol+c.yemek)}</div>
+        <div class="day-total-bar">
+          <div class="day-total-left">
+            <div class="dtl-label">Gün Toplamı</div>
+            <div class="dtl-detail">${[c.netMin>0?fmtDur(c.netMin)+' mesai':'',c.yol>0?fmtTL(c.yol)+' yol':'',c.yemek>0?fmtTL(c.yemek)+' yemek':''].filter(Boolean).join(' · ')}</div>
+          </div>
+          <div class="day-total-right">${fmtTL(c.toplam)}</div>
         </div>`:''}
       </div>`;
     list.appendChild(div);
   }
-  setTimeout(()=>document.querySelector('.today-item')?.scrollIntoView({behavior:'smooth',block:'center'}),100);
+  setTimeout(()=>document.querySelector('.is-today')?.scrollIntoView({behavior:'smooth',block:'center'}),100);
 }
 
-function buildMolaHtml(key,r){
+function buildMolaHTML(key,r){
   if(!r.molalar||!r.molalar.length) return '';
-  return r.molalar.map((mo,idx)=>`
-    <div class="mola-item">
-      <input type="time" value="${mo.bas||''}" placeholder="başlangıç" onchange="updateMola('${key}',${idx},'bas',this.value)">
-      <input type="time" value="${mo.bit||''}" placeholder="bitiş" onchange="updateMola('${key}',${idx},'bit',this.value)">
-      <button class="mola-del" onclick="removeMola('${key}',${idx})"><i class="ti ti-x"></i></button>
+  return r.molalar.map((mo,i)=>`
+    <div class="mola-row">
+      <input type="time" value="${mo.bas||''}" placeholder="başlangıç" onchange="updateMola('${key}',${i},'bas',this.value)">
+      <input type="time" value="${mo.bit||''}" placeholder="bitiş" onchange="updateMola('${key}',${i},'bit',this.value)">
+      <button class="mola-del" onclick="removeMola('${key}',${i})"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>`).join('');
 }
 
-function toggleDayCard(key){
+function toggleCard(key){
   openDays[key]=!openDays[key];
   document.getElementById('dd-'+key)?.classList.toggle('open',!!openDays[key]);
   document.getElementById('chev-'+key)?.classList.toggle('open',!!openDays[key]);
 }
-
-function openDayCard(key){
+function openCard(key){
   openDays[key]=true;
   document.getElementById('dd-'+key)?.classList.add('open');
   document.getElementById('chev-'+key)?.classList.add('open');
 }
 
-function refreshDayCard(key){
-  const c=calcDay(key), r=getDay(key), info=getKeyInfo(key);
+function refreshCard(key){
+  const c=calcDay(key),r=getDay(key);
   const dc=document.getElementById('dc-'+key); if(!dc) return;
-  const sub=dc.querySelector('.day-sub-text'), ri=dc.querySelector('.day-right-info');
+  const [ys,ms,ds]=key.split('-').map(Number),dt=new Date(ys,ms,ds),isWE=dt.getDay()===0||dt.getDay()===6;
+  const sub=dc.querySelector('.day-sub');
   if(sub){
-    if(r.giris&&r.cikis) sub.textContent=r.giris+' – '+r.cikis+(c.netMin>0?' · '+fmtMin(c.netMin)+' mesai':'');
-    else if(r.giris) sub.textContent='Giriş: '+r.giris+' (çıkış girilmedi)';
-    else sub.textContent=info.isWeekend?'Hafta sonu':'Mesai girilmedi';
+    if(r.giris&&r.cikis) sub.textContent=r.giris+' – '+r.cikis+(c.netMin>0?' · '+fmtDur(c.netMin)+' mesai':'');
+    else if(r.giris) sub.textContent='Giriş: '+r.giris+' — çıkış girilmedi';
+    else sub.textContent=isWE?'Hafta sonu':'—';
   }
-  if(ri) ri.innerHTML=c.netMin>0?`<span class="day-earn-badge">${fmtMoney(c.tutar+c.yol+c.yemek)}</span><span class="day-hrs-badge">${fmtMin(c.netMin)}</span>`:'';
-  const det=document.getElementById('dd-'+key);
-  if(det){
-    let tot=det.querySelector('.det-total');
-    const totHtml=c.netMin>0||c.yol>0||c.yemek>0?`<div class="det-total">
-      <div><div class="det-total-label">Gün Toplamı</div>
-      <div style="font-size:11px;color:var(--accent);opacity:.5;margin-top:2px">${c.netMin>0?fmtMin(c.netMin)+' mesai':''}${c.yol>0?' · '+fmtMoney(c.yol)+' yol':''}${c.yemek>0?' · '+fmtMoney(c.yemek)+' yemek':''}</div></div>
-      <div class="det-total-val">${fmtMoney(c.tutar+c.yol+c.yemek)}</div></div>`:'';
-    if(tot) tot.outerHTML=totHtml||''; else if(totHtml) det.insertAdjacentHTML('beforeend',totHtml);
+  const meta=dc.querySelector('.day-meta');
+  if(meta) meta.innerHTML=c.netMin>0?`<span class="earn-pill">${fmtTL(c.toplam)}</span><span class="hrs-lbl">${fmtDur(c.netMin)}</span>`:'';
+  const dd=document.getElementById('dd-'+key);
+  if(dd){
+    let tot=dd.querySelector('.day-total-bar');
+    const html=c.netMin>0||c.yol>0||c.yemek>0?`<div class="day-total-bar"><div class="day-total-left"><div class="dtl-label">Gün Toplamı</div><div class="dtl-detail">${[c.netMin>0?fmtDur(c.netMin)+' mesai':'',c.yol>0?fmtTL(c.yol)+' yol':'',c.yemek>0?fmtTL(c.yemek)+' yemek':''].filter(Boolean).join(' · ')}</div></div><div class="day-total-right">${fmtTL(c.toplam)}</div></div>`:'';
+    if(tot) tot.outerHTML=html||''; else if(html) dd.insertAdjacentHTML('beforeend',html);
   }
-
-  const tp=document.getElementById('tatilpill-'+key);
-  if(tp){tp.className='toggle-pill'+(r.tatil?' on-blue':'');tp.innerHTML=`<i class="ti ti-beach"></i>${r.tatil?'Tatil ✓':'Tatil'}`;}
+  const tp=document.getElementById('xtatil-'+key);
+  if(tp){tp.className='extra-chip'+(r.tatil?' on-blue':'');}
 }
 
-// ═══════════════ MODALS ═══════════════
-function openSheet(id){document.getElementById(id).classList.add('show');}
-function closeSheet(id){document.getElementById(id).classList.remove('show');}
-function sheetOut(e,id){if(e.target===document.getElementById(id))closeSheet(id);}
+// ═══════════ OVERLAYS ═══════════
+function openOverlay(id){document.getElementById(id).classList.add('show');}
+function closeOverlay(id){document.getElementById(id).classList.remove('show');}
+function overlayClick(e,id){if(e.target===document.getElementById(id))closeOverlay(id);}
 
 function openGirisSheet(key){
   modalKey=key||todayKey;
-  const info=getKeyInfo(modalKey);
-  document.getElementById('girisSheetTitle').textContent=DAYS_FULL[info.dow]+', '+info.d+' '+MONTHS[info.m];
-  document.getElementById('girisInput').value=cfg.normalBitis||'18:00';
-  openSheet('girisSheet');
+  const [ys,ms,ds]=modalKey.split('-').map(Number),dt=new Date(ys,ms,ds);
+  document.getElementById('girisTitle').textContent=DAYS[dt.getDay()]+', '+ds+' '+MONTHS[ms];
+  document.getElementById('girisSub').textContent='Mesaiye başlama saatini gir';
+  document.getElementById('girisInp').value=cfg.bitis||'18:00';
+  openOverlay('girisOverlay');
 }
-
 function confirmGiris(){
-  const val=document.getElementById('girisInput').value;
-  if(!val){closeSheet('girisSheet');return;}
+  const val=document.getElementById('girisInp').value;
+  if(!val){closeOverlay('girisOverlay');return;}
   if(!dayData[modalKey]) dayData[modalKey]={};
   dayData[modalKey].giris=val;
-  saveLocal(); debounceSync();
-  const key=modalKey;
-  closeSheet('girisSheet');
+  saveLocal(); debouncePush();
+  const key=modalKey; closeOverlay('girisOverlay');
   setTimeout(()=>openCikisSheet(key),350);
   renderAll();
 }
-
 function openCikisSheet(key){
   modalKey=key;
-  const r=getDay(key), g=parseTime(r.giris), def=g?g+120:20*60;
-  const dh=Math.floor(def/60)%24,dm=def%60;
-  document.getElementById('cikisInput').value=String(dh).padStart(2,'0')+':'+String(dm).padStart(2,'0');
-  document.getElementById('cikisSheetSub').textContent=r.giris?'Giriş: '+r.giris:'';
-  openSheet('cikisSheet');
+  const r=getDay(key),g=pt(r.giris),def=g?g+120:20*60;
+  document.getElementById('cikisInp').value=String(Math.floor(def/60)%24).padStart(2,'0')+':'+String(def%60).padStart(2,'0');
+  document.getElementById('cikisSub').textContent=r.giris?'Giriş: '+r.giris:'';
+  openOverlay('cikisOverlay');
 }
-
 function confirmCikis(){
-  const val=document.getElementById('cikisInput').value;
-  if(val&&modalKey){
-    if(!dayData[modalKey]) dayData[modalKey]={};
-    dayData[modalKey].cikis=val;
-    saveLocal(); debounceSync();
-  }
-  closeSheet('cikisSheet');
-  renderAll();
+  const val=document.getElementById('cikisInp').value;
+  if(val&&modalKey){if(!dayData[modalKey])dayData[modalKey]={};dayData[modalKey].cikis=val;saveLocal();debouncePush();}
+  closeOverlay('cikisOverlay'); renderAll();
 }
-
-function openSalaryModal(){
-  const mk=monthKey(curY,curM), existing=salaries[mk], inherited=getSalary(curY,curM);
-  document.getElementById('salarySheetSub').textContent=MONTHS[curM]+' '+curY+' maaşı';
-  document.getElementById('salaryNote').textContent=existing==null?
-    'Kayıtlı maaş yok. Önceki aydan alınan: '+fmtMoney(inherited):
-    'Kayıtlı maaş var. Değiştirmek için yeni değer gir.';
-  document.getElementById('salaryInput').value=existing!=null?existing:inherited;
-  openSheet('salarySheet');
+function openSalarySheet(){
+  const k=mk(curY,curM),ex=salaries[k],inh=getSalary(curY,curM);
+  document.getElementById('salarySub').textContent=MONTHS[curM]+' '+curY;
+  document.getElementById('salaryNote').textContent=ex==null?'Kayıtlı maaş yok. Önceki aydan alınan: '+fmtTL(inh):'Kayıtlı maaş mevcut. Güncellemek için yeni değer gir.';
+  document.getElementById('salaryInp').value=ex!=null?ex:inh;
+  openOverlay('salaryOverlay');
 }
-
 function confirmSalary(){
-  const val=parseFloat(document.getElementById('salaryInput').value);
+  const val=parseFloat(document.getElementById('salaryInp').value);
   if(!isNaN(val)&&val>0){
-    salaries[monthKey(curY,curM)]=val;
-    saveLocal(); debounceSync();
-    document.getElementById('calSalaryVal').textContent=fmtMoney(val);
-    showToast(MONTHS[curM]+' maaşı güncellendi ✓');
+    salaries[mk(curY,curM)]=val;
+    saveLocal(); debouncePush();
+    document.getElementById('calSalaryVal').textContent=fmtTL(val);
+    toast(MONTHS[curM]+' maaşı güncellendi ✓');
     renderAll();
   }
-  closeSheet('salarySheet');
+  closeOverlay('salaryOverlay');
 }
 
-// ═══════════════ EXPORT ═══════════════
+// ═══════════ EXPORT ═══════════
 function exportJSON(){
-  const payload=JSON.stringify({cfg,salaries,dayData,exportedAt:new Date().toISOString()},null,2);
-  const blob=new Blob([payload],{type:'application/json'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url; a.download='mesai-yedek-'+new Date().toISOString().slice(0,10)+'.json'; a.click();
-  setTimeout(()=>URL.revokeObjectURL(url),2000);
-  showToast('Yedek indirildi');
+  const b=new Blob([JSON.stringify({cfg,salaries,dayData,ts:new Date().toISOString()},null,2)],{type:'application/json'});
+  const u=URL.createObjectURL(b),a=document.createElement('a');
+  a.href=u;a.download='mesai-yedek-'+new Date().toISOString().slice(0,10)+'.json';a.click();
+  setTimeout(()=>URL.revokeObjectURL(u),2000); toast('Yedek indirildi');
 }
 
-// ═══════════════ TOAST ═══════════════
-function showToast(msg){
+// ═══════════ TOAST ═══════════
+function toast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2500);
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2500);
 }
 
-// ═══════════════ INIT ═══════════════
+// ═══════════ INIT ═══════════
+['vBadge1','vBadge2'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=VERSION;});
 loadLocal();
-document.querySelectorAll('#versionBadge').forEach(el => el.textContent = VERSION);
 
-// Wait for Google API
 window.addEventListener('load',()=>{
-  let attempts=0;
-  const waitForGoogle=setInterval(()=>{
-    attempts++;
+  let n=0;
+  const wait=setInterval(()=>{
+    n++;
     if(typeof google!=='undefined'&&google.accounts){
-      clearInterval(waitForGoogle);
-      initGoogleAuth();
-      // If token in localStorage, try silent signin
-      const cached=localStorage.getItem('mesaiApp_v3');
-      if(cached&&spreadsheetId){
-        // Show app with cached data, then try to refresh token silently
-        showMainApp();
-        tokenClient.requestAccessToken({prompt:''});
-      } else {
-        showScreen('loginScreen');
-      }
-    } else if(attempts>50){
-      clearInterval(waitForGoogle);
-      showScreen('loginScreen');
-      showToast('Google API yüklenemedi. İnternet bağlantını kontrol et.');
-    }
+      clearInterval(wait); initAuth();
+      if(spreadsheetId){showApp();tokenClient.requestAccessToken({prompt:''});}
+      else showScreen('loginScreen');
+    } else if(n>60){clearInterval(wait);showScreen('loginScreen');toast('Google API yüklenemedi');}
   },100);
 });
 </script>
+
 </body>
 </html>
