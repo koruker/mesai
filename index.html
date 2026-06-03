@@ -407,8 +407,13 @@ body{display:flex;flex-direction:column;position:relative}
       <div class="slist">
         <div class="si">
           <div class="si-ic blue"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
-          <div class="si-t"><div class="n">Çalışma Bitiş Saati</div><div class="s">Mesai bu saatten sonra başlar</div></div>
-          <input class="si-inp" type="time" id="stBitis" value="18:00" onchange="saveSettings()">
+          <div class="si-t"><div class="n">Varsayılan Vardiya Başlangıcı</div><div class="s">Hiç vardiya girilmemişse kullanılır</div></div>
+          <input class="si-inp" type="time" id="stVardiyaS" value="15:00" onchange="saveSettings()">
+        </div>
+        <div class="si">
+          <div class="si-ic blue"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 8 14"/></svg></div>
+          <div class="si-t"><div class="n">Varsayılan Vardiya Bitişi</div><div class="s">Hiç vardiya girilmemişse kullanılır</div></div>
+          <input class="si-inp" type="time" id="stVardiyaB" value="23:00" onchange="saveSettings()">
         </div>
         <div class="si">
           <div class="si-ic green"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
@@ -498,7 +503,7 @@ body{display:flex;flex-direction:column;position:relative}
 <div class="toast" id="toast"></div>
 
 <script>
-const VERSION='v2.1';
+const VERSION='v2.2';
 const CLIENT_ID='390842439862-ks2rqj0cgh4t0aefea31cei42rea2usg.apps.googleusercontent.com';
 const SCOPES='https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
 const SHEET_NAME='Mesai Takip';
@@ -510,7 +515,7 @@ const todayKey=dk(today.getFullYear(),today.getMonth(),today.getDate());
 let curY=today.getFullYear(),curM=today.getMonth();
 let openDays={},modalKey=null,syncTimer=null,isSyncing=false;
 let accessToken=null,userInfo=null,spreadsheetId=null;
-let cfg={bitis:'18:00',carpan:1.5,aylikSaat:225,devamPrimi:0,performansPrimi:0};
+let cfg={vardiyaS:'15:00',vardiyaB:'23:00',carpan:1.5,aylikSaat:225,devamPrimi:0,performansPrimi:0};
 let salaries={},dayData={};
 
 function dk(y,m,d){return `${y}-${m}-${d}`;}
@@ -519,6 +524,7 @@ function daysIn(y,m){return new Date(y,m+1,0).getDate();}
 function pt(s){if(!s)return null;const[h,i]=s.split(':').map(Number);return h*60+i;}
 function fmtD(m){const h=Math.floor(m/60),mn=m%60;return h&&mn?`${h}s ${mn}dk`:h?`${h}s`:`${mn}dk`;}
 function fmtTL(n){return Math.round(n).toLocaleString('tr-TR')+'₺';}
+function fmtT(mins){const h=Math.floor(mins/60)%24,m=mins%60;return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');}
 function $(id){return document.getElementById(id);}
 
 function getSalary(y,m){
@@ -527,12 +533,34 @@ function getSalary(y,m){
   return 30000;
 }
 function getDay(key){return dayData[key]||{};}
+
+// Returns {s, b} vardiya start/end in minutes for a given day key.
+// Searches backwards from that day for a day with explicit vardiya set.
+// Falls back to cfg defaults.
+function getVardiya(key){
+  // Check the day itself first
+  const r=getDay(key);
+  if(r.vardiyaS!=null&&r.vardiyaB!=null) return{s:pt(r.vardiyaS),b:pt(r.vardiyaB)};
+  // Search backwards up to 60 days
+  const[ys,ms,ds]=key.split('-').map(Number);
+  let dt=new Date(ys,ms,ds);
+  for(let i=1;i<=60;i++){
+    dt=new Date(dt.getTime()-86400000);
+    const k=dk(dt.getFullYear(),dt.getMonth(),dt.getDate());
+    const pr=getDay(k);
+    if(pr.vardiyaS!=null&&pr.vardiyaB!=null) return{s:pt(pr.vardiyaS),b:pt(pr.vardiyaB)};
+  }
+  // Fall back to cfg
+  return{s:pt(cfg.vardiyaS)||15*60,b:pt(cfg.vardiyaB)||23*60};
+}
+
 function calcDay(key){
   const[ys,ms,ds]=key.split('-').map(Number),dt=new Date(ys,ms,ds),dow=dt.getDay(),isWE=dow===0||dow===6;
   const r=getDay(key),maas=getSalary(ys,ms),saatlik=maas/(cfg.aylikSaat||225);
-  const carpan=r.carpanOverride!=null?r.carpanOverride:cfg.carpan,bitis=pt(cfg.bitis)||18*60;
+  const carpan=r.carpanOverride!=null?r.carpanOverride:cfg.carpan;
+  const vrd=getVardiya(key); // {s: vardiyaStart mins, b: vardiyaBitis mins}
   let netMin=0;
-  // Support multiple mesai blocks (r.mesailer) + legacy single giris/cikis
+  // Collect mesai blocks
   const blocks=[];
   if(r.mesailer&&r.mesailer.length){
     for(const b of r.mesailer) if(b.giris&&b.cikis) blocks.push(b);
@@ -542,9 +570,18 @@ function calcDay(key){
   for(const blk of blocks){
     const g=pt(blk.giris);
     let c2=pt(blk.cikis);
+    if(c2===null||g===null) continue;
     if(c2<=g) c2+=24*60; // overnight
-    const raw=isWE?(c2-g):Math.max(0,c2-Math.max(g,bitis));
-    netMin+=Math.max(0,raw);
+    if(isWE){
+      // Weekend: entire duration is overtime
+      netMin+=Math.max(0,c2-g);
+    } else {
+      // Erken geliş: vardiyaS'dan önce geldiyse, o fark mesai
+      const erken=Math.max(0,vrd.s-g);
+      // Geç çıkış: vardiyaB'den sonra çıktıysa, o fark mesai
+      const gec=Math.max(0,c2-vrd.b);
+      netMin+=erken+gec;
+    }
   }
   // Subtract shared mola
   let mol=0;
@@ -584,7 +621,10 @@ function calcMonth(y,m){
 }
 
 function saveLocal(){try{localStorage.setItem('mt_v4',JSON.stringify({cfg,salaries,dayData,spreadsheetId,ts:Date.now()}));}catch(e){}}
-function loadLocal(){try{const r=localStorage.getItem('mt_v4');if(r){const d=JSON.parse(r);cfg=Object.assign(cfg,d.cfg||{});salaries=d.salaries||{};dayData=d.dayData||{};spreadsheetId=d.spreadsheetId||null;}}catch(e){}}
+function loadLocal(){try{const r=localStorage.getItem('mt_v4');if(r){const d=JSON.parse(r);cfg=Object.assign(cfg,d.cfg||{});
+  // migrate old bitis -> vardiyaB
+  if(cfg.bitis&&!cfg.vardiyaB){cfg.vardiyaB=cfg.bitis;}
+  salaries=d.salaries||{};dayData=d.dayData||{};spreadsheetId=d.spreadsheetId||null;}}catch(e){}}
 
 // AUTH
 let tokenClient;
@@ -733,7 +773,7 @@ async function pushSheet(){
     }
 
     // Update Ayarlar sheet
-    const cfgR=[['Ayar','Değer'],['bitisSaati',cfg.bitis],['mesaiCarpani',cfg.carpan],['aylikCalisma',cfg.aylikSaat],['devamPrimi',cfg.devamPrimi||0],['performansPrimi',cfg.performansPrimi||0]];
+    const cfgR=[['Ayar','Değer'],['vardiyaS',cfg.vardiyaS],['vardiyaB',cfg.vardiyaB],['mesaiCarpani',cfg.carpan],['aylikCalisma',cfg.aylikSaat],['devamPrimi',cfg.devamPrimi||0],['performansPrimi',cfg.performansPrimi||0]];
     await api('PUT',`/${spreadsheetId}/values/Ayarlar!A1:B${cfgR.length}?valueInputOption=RAW`,{values:cfgR});
 
     // Update Maaslar sheet
@@ -805,7 +845,9 @@ async function pullSheet(){
 
     // Parse settings
     for(const[k,v]of(aS?.values||[])){
-      if(k==='bitisSaati')cfg.bitis=v;
+      if(k==='vardiyaS')cfg.vardiyaS=v;
+      else if(k==='vardiyaB')cfg.vardiyaB=v;
+      else if(k==='bitisSaati'){cfg.vardiyaB=v;} // legacy migration
       else if(k==='mesaiCarpani')cfg.carpan=parseFloat(v)||1.5;
       else if(k==='aylikCalisma')cfg.aylikSaat=parseFloat(v)||225;
       else if(k==='devamPrimi')cfg.devamPrimi=parseFloat(v)||0;
@@ -823,18 +865,32 @@ function setSyncUI(state,txt){
 function debouncePush(){clearTimeout(syncTimer);syncTimer=setTimeout(pushSheet,2500);}
 
 function setField(key,field,val){if(!dayData[key])dayData[key]={};dayData[key][field]=val;saveLocal();debouncePush();refreshCard(key);}
+function setVardiya(key,field,val){
+  if(!dayData[key])dayData[key]={};
+  dayData[key][field]=val;
+  // Make sure both are set together — if only one is set, grab the other from inheritance
+  const r=dayData[key];
+  if(!r.vardiyaS||!r.vardiyaB){
+    const inh=getVardiya(key);
+    if(!r.vardiyaS)r.vardiyaS=fmtT(inh.s);
+    if(!r.vardiyaB)r.vardiyaB=fmtT(inh.b);
+  }
+  saveLocal();debouncePush();refreshCard(key);
+  // Update inheritance label
+  const lbl=$('vrd-inh-'+key);if(lbl)lbl.textContent='Bu güne özel';
+}
 function toggleExtra(key,field){if(!dayData[key])dayData[key]={};dayData[key][field]=!dayData[key][field];saveLocal();debouncePush();refreshCard(key);}
 function addMola(key){if(!dayData[key])dayData[key]={};if(!dayData[key].molalar)dayData[key].molalar=[];dayData[key].molalar.push({bas:'',bit:''});saveLocal();debouncePush();const el=$('ml-'+key);if(el)el.innerHTML=buildMolaHTML(key,dayData[key]);}
 function removeMola(key,idx){if(!dayData[key]||!dayData[key].molalar)return;dayData[key].molalar.splice(idx,1);saveLocal();debouncePush();const el=$('ml-'+key);if(el)el.innerHTML=buildMolaHTML(key,dayData[key]);refreshCard(key);}
 function updateMola(key,idx,f,val){if(!dayData[key]||!dayData[key].molalar)return;dayData[key].molalar[idx][f]=val;saveLocal();debouncePush();refreshCard(key);}
 
 function applySettings(){
-  const b=$('stBitis'),cp=$('stCarpan'),as=$('stAylikSaat');
-  if(b)b.value=cfg.bitis||'18:00';if(cp)cp.value=cfg.carpan||1.5;if(as)as.value=cfg.aylikSaat||225;
+  const vs=$('stVardiyaS'),vb=$('stVardiyaB'),cp=$('stCarpan'),as=$('stAylikSaat');
+  if(vs)vs.value=cfg.vardiyaS||'15:00';if(vb)vb.value=cfg.vardiyaB||'23:00';if(cp)cp.value=cfg.carpan||1.5;if(as)as.value=cfg.aylikSaat||225;
   const dev=$('stDevam'),prf=$('stPerf');if(dev)dev.value=cfg.devamPrimi||0;if(prf)prf.value=cfg.performansPrimi||0;
 }
 function saveSettings(){
-  cfg.bitis=$('stBitis').value||'18:00';cfg.carpan=parseFloat($('stCarpan').value)||1.5;cfg.aylikSaat=parseFloat($('stAylikSaat').value)||225;
+  cfg.vardiyaS=$('stVardiyaS').value||'15:00';cfg.vardiyaB=$('stVardiyaB').value||'23:00';cfg.carpan=parseFloat($('stCarpan').value)||1.5;cfg.aylikSaat=parseFloat($('stAylikSaat').value)||225;
   cfg.devamPrimi=parseFloat($('stDevam')?.value)||0;cfg.performansPrimi=parseFloat($('stPerf')?.value)||0;
   saveLocal();debouncePush();renderAll();toast('Ayarlar kaydedildi ✓');
 }
@@ -927,6 +983,17 @@ function renderCal(){
       <div class="dchev ${isOpen?'open':''}" id="ch-${key}"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
     </div>
     <div class="ddet ${isOpen?'open':''}" id="dd-${key}">
+      <div class="det-s">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div class="det-lbl" style="margin-bottom:0">Vardiya</div>
+          <span style="font-size:11px;color:var(--t3)" id="vrd-inh-${key}">${r.vardiyaS!=null?'Bu güne özel':'Öncekinden miras'}</span>
+        </div>
+        <div class="frow">
+          <div class="fi"><label>Vardiya Başlangıç</label><input type="time" value="${r.vardiyaS!=null?r.vardiyaS:fmtT(getVardiya(key).s)}" onchange="setVardiya('${key}','vardiyaS',this.value)"></div>
+          <div class="fi"><label>Vardiya Bitiş</label><input type="time" value="${r.vardiyaB!=null?r.vardiyaB:fmtT(getVardiya(key).b)}" onchange="setVardiya('${key}','vardiyaB',this.value)"></div>
+        </div>
+        <div style="margin-top:6px;font-size:11px;color:var(--t3)">Sonraki günler bu vardiyayı otomatik alır. Öncekiler değişmez.</div>
+      </div>
       <div class="det-s">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
           <div class="det-lbl" style="margin-bottom:0">Mesai Blokları</div>
@@ -1043,7 +1110,7 @@ function openGirisSheet(key){
   const[ys,ms,ds]=modalKey.split('-').map(Number),dt=new Date(ys,ms,ds);
   if($('gTitle'))$('gTitle').textContent=DAYS[dt.getDay()]+', '+ds+' '+MONTHS[ms];
   if($('gSub'))$('gSub').textContent='Mesaiye başlama saatini gir';
-  if($('gInp'))$('gInp').value=cfg.bitis||'18:00';
+  if($('gInp'))$('gInp').value=fmtT(getVardiya(modalKey).s);
   openOv('girisOv');
 }
 function confirmGiris(){
