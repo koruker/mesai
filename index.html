@@ -550,7 +550,7 @@ function getSalary(y,m){
 }
 function getDay(key){return dayData[key]||{};}
 function getMonthData(y,m){return monthData[mk(y,m)]||{devamPrimi:0,performansPrimi:0};}
-function setMonthData(y,m,field,val){const k=mk(y,m);if(!monthData[k])monthData[k]={devamPrimi:0,performansPrimi:0};monthData[k][field]=val;saveLocal();debouncePush();}}
+function setMonthData(y,m,field,val){const k=mk(y,m);if(!monthData[k])monthData[k]={devamPrimi:0,performansPrimi:0};monthData[k][field]=val;saveLocal();debouncePush();}
 
 // Returns {s, b} vardiya start/end in minutes for a given day key.
 // Searches backwards from that day for a day with explicit vardiya set.
@@ -572,11 +572,17 @@ function getVardiya(key){
   return{s:pt(cfg.vardiyaS)||15*60,b:pt(cfg.vardiyaB)||23*60};
 }
 
+function anyVardiyaSet(){
+  // Returns true if any day in dayData has explicit vardiya
+  return Object.values(dayData).some(r=>r.vardiyaS!=null&&r.vardiyaB!=null);
+}
+
 function calcDay(key){
-  const[ys,ms,ds]=key.split('-').map(Number),dt=new Date(ys,ms,ds),dow=dt.getDay(),isWE=dow===0||dow===6;
+  const[ys,ms,ds]=key.split('-').map(Number),dt=new Date(ys,ms,ds),dow=dt.getDay();
   const r=getDay(key),maas=getSalary(ys,ms),saatlik=maas/(cfg.aylikSaat||225);
   const carpan=r.carpanOverride!=null?r.carpanOverride:cfg.carpan;
-  const vrd=getVardiya(key); // {s: vardiyaStart mins, b: vardiyaBitis mins}
+  const vrd=getVardiya(key);
+  const hasVardiya=anyVardiyaSet();
   let netMin=0;
   // Collect mesai blocks
   const blocks=[];
@@ -590,25 +596,10 @@ function calcDay(key){
     let c2=pt(blk.cikis);
     if(c2===null||g===null) continue;
     if(c2<=g) c2+=24*60; // overnight
-    // Vardiya tanımlı mı? (cfg default değil, gerçekten bir güne atanmış mı?)
-    // getVardiya her zaman bir değer döner ama dayData'da hiç vardiyaS/B yoksa "gerçek vardiya yok"
-    const hasVardiya=(()=>{
-      // Herhangi bir günde vardiyaS/B tanımlı mı diye bak (getVardiya'nın bulduğu şey cfg mi?)
-      const[ys2,ms2,ds2]=key.split('-').map(Number);
-      let dt2=new Date(ys2,ms2,ds2);
-      for(let i=0;i<=60;i++){
-        const k2=dk(dt2.getFullYear(),dt2.getMonth(),dt2.getDate());
-        const pr=getDay(k2);
-        if(pr.vardiyaS!=null&&pr.vardiyaB!=null) return true;
-        if(i===0){dt2=new Date(dt2.getTime()-86400000);continue;}
-        dt2=new Date(dt2.getTime()-86400000);
-      }
-      return false;
-    })();
     if(!hasVardiya){
-      netMin+=c2-g; // tüm süre mesai
+      netMin+=c2-g;
     } else {
-      netMin+=(vrd.s-g)+(c2-vrd.b); // net, negatif kalabilir
+      netMin+=(vrd.s-g)+(c2-vrd.b);
     }
   }
   // Subtract shared mola
@@ -1336,19 +1327,18 @@ function exportJSON(){
 }
 function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2500);}
 
+window.onerror=function(msg,src,line){showScreen('loginScreen');toast('Hata: '+msg+' ('+line+')');return false;};
 ['vb1','vb2'].forEach(id=>{const el=$(id);if(el)el.textContent=VERSION;});
 loadLocal();
 window.addEventListener('load',()=>{
   let n=0;const w=setInterval(()=>{n++;
     if(typeof google!=='undefined'&&google.accounts){
-      clearInterval(w);initAuth();
+      clearInterval(w);
+      try{initAuth();}catch(e){showScreen('loginScreen');toast('initAuth hatası: '+e.message);return;}
       if(loadToken()){
-        // Valid cached token — go straight to app, refresh token silently in background
-        updateUser();
-        showApp();
+        try{updateUser();showApp();}catch(e){showScreen('loginScreen');toast('showApp hatası: '+e.message);return;}
         tokenClient.requestAccessToken({prompt:''});
       } else if(spreadsheetId){
-        // Have sheet ID but no token — try silent sign-in (no prompt)
         tokenClient.requestAccessToken({prompt:''});
       } else {
         showScreen('loginScreen');
