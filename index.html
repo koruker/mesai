@@ -572,22 +572,32 @@ function calcDay(key){
     let c2=pt(blk.cikis);
     if(c2===null||g===null) continue;
     if(c2<=g) c2+=24*60; // overnight
-    if(isWE){
-      // Weekend: entire duration is overtime
-      netMin+=Math.max(0,c2-g);
+    // Vardiya tanımlı mı? (cfg default değil, gerçekten bir güne atanmış mı?)
+    // getVardiya her zaman bir değer döner ama dayData'da hiç vardiyaS/B yoksa "gerçek vardiya yok"
+    const hasVardiya=(()=>{
+      // Herhangi bir günde vardiyaS/B tanımlı mı diye bak (getVardiya'nın bulduğu şey cfg mi?)
+      const[ys2,ms2,ds2]=key.split('-').map(Number);
+      let dt2=new Date(ys2,ms2,ds2);
+      for(let i=0;i<=60;i++){
+        const k2=dk(dt2.getFullYear(),dt2.getMonth(),dt2.getDate());
+        const pr=getDay(k2);
+        if(pr.vardiyaS!=null&&pr.vardiyaB!=null) return true;
+        if(i===0){dt2=new Date(dt2.getTime()-86400000);continue;}
+        dt2=new Date(dt2.getTime()-86400000);
+      }
+      return false;
+    })();
+    if(!hasVardiya){
+      netMin+=c2-g; // tüm süre mesai
     } else {
-      // Erken geliş: vardiyaS'dan önce geldiyse, o fark mesai
-      const erken=Math.max(0,vrd.s-g);
-      // Geç çıkış: vardiyaB'den sonra çıktıysa, o fark mesai
-      const gec=Math.max(0,c2-vrd.b);
-      netMin+=erken+gec;
+      netMin+=(vrd.s-g)+(c2-vrd.b); // net, negatif kalabilir
     }
   }
   // Subtract shared mola
   let mol=0;
   if(r.molalar)for(const mo of r.molalar){const mb=pt(mo.bas),me=pt(mo.bit);if(mb!=null&&me!=null){let dur=me-mb;if(dur<0)dur+=24*60;if(dur>0)mol+=dur;}}
   if(r.molaMin)mol+=parseInt(r.molaMin)||0;
-  netMin=Math.max(0,netMin-mol);
+  netMin=netMin-mol;
   const tm=netMin>0?Math.round(saatlik*carpan*(netMin/60)):0;
   const yol=parseFloat(r.yolTutar)||0,yemek=parseFloat(r.yemekTutar)||0;
   return{netMin,tm,yol,yemek,top:tm+yol+yemek};
@@ -626,20 +636,37 @@ function loadLocal(){try{const r=localStorage.getItem('mt_v4');if(r){const d=JSO
   if(cfg.bitis&&!cfg.vardiyaB){cfg.vardiyaB=cfg.bitis;}
   salaries=d.salaries||{};dayData=d.dayData||{};spreadsheetId=d.spreadsheetId||null;}}catch(e){}}
 
+function saveToken(){try{localStorage.setItem('mt_tok',JSON.stringify({t:accessToken,e:tokenExpiry,u:userInfo}));}catch(e){}}
+function loadToken(){try{const r=localStorage.getItem('mt_tok');if(r){const d=JSON.parse(r);if(d.t&&d.e&&Date.now()<d.e-60000){accessToken=d.t;tokenExpiry=d.e;userInfo=d.u||null;return true;}}return false;}catch(e){return false;}}
+
 // AUTH
-let tokenClient;
+let tokenClient,tokenExpiry=0;
 function initAuth(){
   tokenClient=google.accounts.oauth2.initTokenClient({
     client_id:CLIENT_ID,scope:SCOPES,
     callback:async(resp)=>{
-      if(resp.error){toast('Giriş hatası: '+resp.error);showScreen('loginScreen');return;}
+      if(resp.error){
+        // Silent refresh failed — show login
+        if(resp.error==='interaction_required'||resp.error==='login_required'){showScreen('loginScreen');}
+        else{toast('Giriş hatası: '+resp.error);showScreen('loginScreen');}
+        return;
+      }
       accessToken=resp.access_token;
-      await getUser();await initSheet();await pullSheet();showApp();
+      tokenExpiry=Date.now()+(resp.expires_in||3600)*1000;
+      if(!userInfo)await getUser();
+      saveToken();
+      if(!spreadsheetId){await initSheet();await pullSheet();}
+      showApp();
     }
   });
 }
 function signIn(){if(!tokenClient){toast('Yükleniyor...');return;}tokenClient.requestAccessToken({prompt:'select_account'});}
-function signOut(){if(accessToken)google.accounts.oauth2.revoke(accessToken);accessToken=null;userInfo=null;spreadsheetId=null;localStorage.removeItem('mt_v4');showScreen('loginScreen');}
+function signOut(){
+  if(accessToken)google.accounts.oauth2.revoke(accessToken);
+  accessToken=null;userInfo=null;spreadsheetId=null;tokenExpiry=0;
+  localStorage.removeItem('mt_v4');localStorage.removeItem('mt_tok');
+  showScreen('loginScreen');
+}
 async function getUser(){const r=await fetch('https://www.googleapis.com/oauth2/v2/userinfo',{headers:{Authorization:'Bearer '+accessToken}});userInfo=await r.json();updateUser();}
 function updateUser(){
   if(!userInfo)return;
@@ -1166,8 +1193,17 @@ window.addEventListener('load',()=>{
   let n=0;const w=setInterval(()=>{n++;
     if(typeof google!=='undefined'&&google.accounts){
       clearInterval(w);initAuth();
-      if(spreadsheetId){showApp();tokenClient.requestAccessToken({prompt:''});}
-      else showScreen('loginScreen');
+      if(loadToken()){
+        // Valid cached token — go straight to app, refresh token silently in background
+        updateUser();
+        showApp();
+        tokenClient.requestAccessToken({prompt:''});
+      } else if(spreadsheetId){
+        // Have sheet ID but no token — try silent sign-in (no prompt)
+        tokenClient.requestAccessToken({prompt:''});
+      } else {
+        showScreen('loginScreen');
+      }
     }else if(n>60){clearInterval(w);showScreen('loginScreen');toast('Google API yüklenemedi');}
   },100);
 });
