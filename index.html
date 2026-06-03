@@ -144,17 +144,44 @@ body{display:flex;flex-direction:column;position:relative}
 .nbtn svg{width:22px;height:22px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
 .nbtn span{font-size:10px;font-weight:600;letter-spacing:.03em}
 
-/* CALENDAR */
-.mbar{display:flex;align-items:center;padding:10px 18px 8px;gap:10px;position:relative;z-index:1}
-.mbtn{width:36px;height:36px;border-radius:50%;background:var(--g1);backdrop-filter:blur(12px);border:1px solid var(--gb);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t2)}
-.mbtn svg{width:16px;height:16px;stroke:currentColor;stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
-.mlbl{flex:1;text-align:center;font-size:17px;font-weight:800;letter-spacing:-.3px}
-.spill{margin:0 14px 10px;padding:12px 16px;background:var(--bd);backdrop-filter:blur(16px);border:1px solid var(--bb);border-radius:var(--r);display:flex;align-items:center;gap:12px;cursor:pointer;position:relative;z-index:1}
-.spill svg{width:18px;height:18px;stroke:var(--blue);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
-.spill-info{flex:1}
-.spill-lbl{font-size:10px;font-weight:700;color:var(--blue);opacity:.7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px}
-.spill-val{font-size:16px;font-weight:800;color:var(--blue);letter-spacing:-.3px}
-.spill-edit{font-size:12px;color:var(--blue);opacity:.5}
+/* MONTH CARDS */
+.mcard{margin:0 14px 12px;background:var(--g1);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--gb);border-radius:var(--r2);overflow:hidden;position:relative;z-index:1}
+.mcard-hdr{padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px}
+.mcard-hdr:active{background:var(--g2)}
+.mcard-title{font-size:17px;font-weight:800;letter-spacing:-.3px;flex:1}
+.mcard-sum{font-size:13px;font-weight:700;color:var(--green)}
+.mcard-chev{color:var(--t3);transition:transform .2s;flex-shrink:0}
+.mcard-chev svg{width:16px;height:16px;stroke:currentColor;stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.mcard-chev.open{transform:rotate(180deg)}
+.mcard-body{display:none;border-top:1px solid var(--gb)}
+.mcard-body.open{display:block}
+.mcard-params{padding:12px 14px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;border-bottom:1px solid var(--gb)}
+.mparam{background:rgba(255,255,255,.04);border:1px solid var(--gb);border-radius:12px;padding:10px 12px;cursor:pointer}
+.mparam-lbl{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.mparam-val{font-size:15px;font-weight:800;letter-spacing:-.3px;color:var(--t1)}
+.mparam input{width:100%;background:transparent;border:none;color:var(--t1);font-size:15px;font-weight:800;font-family:'Inter',sans-serif;outline:none;padding:0;letter-spacing:-.3px}
+.mparam input::-webkit-inner-spin-button{display:none}
+.mcard-dowrow{display:grid;grid-template-columns:repeat(7,1fr);padding:8px 10px 4px;gap:3px}
+.dow-lbl{text-align:center;font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;padding:4px 0}
+.mcard-grid{display:grid;grid-template-columns:repeat(7,1fr);padding:0 10px 12px;gap:4px}
+.dgrid-empty{aspect-ratio:1}
+.dgrid-day{aspect-ratio:1;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;padding:3px;transition:background .15s;position:relative;overflow:hidden}
+.dgrid-day:active{background:rgba(255,255,255,.12)}
+.dgrid-day.today{border-color:var(--bb);background:var(--bd)}
+.dgrid-day.wknd{background:var(--rdd);border-color:rgba(255,107,128,.2)}
+.dgrid-day.has-data{border-color:var(--grb);background:rgba(61,232,160,.08)}
+.dgrid-day.neg-data{border-color:rgba(255,107,128,.3);background:rgba(255,107,128,.06)}
+.dgrid-dn{font-size:13px;font-weight:800;line-height:1;color:var(--t1)}
+.dgrid-day.today .dgrid-dn{color:var(--blue)}
+.dgrid-day.wknd .dgrid-dn{color:var(--red)}
+.dgrid-day.has-data .dgrid-dn{color:var(--green)}
+.dgrid-day.neg-data .dgrid-dn{color:var(--red)}
+.dgrid-min{font-size:9px;font-weight:700;color:var(--t3);line-height:1.1;margin-top:2px;text-align:center}
+.dgrid-day.has-data .dgrid-min{color:var(--green);opacity:.8}
+.dgrid-day.neg-data .dgrid-min{color:var(--red);opacity:.8}
+.mcard-total{padding:10px 14px 12px;border-top:1px solid var(--gb);display:flex;align-items:center;justify-content:space-between}
+.mcard-total-lbl{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em}
+.mcard-total-val{font-size:16px;font-weight:800;color:var(--green)}
 
 /* DAY CARDS */
 .dc{margin:0 14px 6px;background:var(--g1);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--gb);border-radius:var(--r2);overflow:hidden;position:relative;z-index:1}
@@ -360,17 +387,7 @@ body{display:flex;flex-direction:column;position:relative}
       <svg viewBox="0 0 24 24"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
     </button>
   </div>
-  <div class="mbar">
-    <button class="mbtn" onclick="changeMonth(-1)"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
-    <span class="mlbl" id="cml"></span>
-    <button class="mbtn" onclick="changeMonth(1)"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
-  </div>
-  <div class="spill" onclick="openSalarySheet()">
-    <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-    <div class="spill-info"><div class="spill-lbl">Bu Ay Maaş</div><div class="spill-val" id="csv">—</div></div>
-    <div class="spill-edit">Düzenle</div>
-  </div>
-  <div class="scroll" id="clist"></div>
+  <div class="scroll" id="calScroll"></div>
   <nav class="nav">
     <button class="nbtn" onclick="goHome()">
       <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -385,6 +402,15 @@ body{display:flex;flex-direction:column;position:relative}
       <span>Ayarlar</span>
     </button>
   </nav>
+</div>
+
+<!-- DAY DETAIL OVERLAY -->
+<div class="ov" id="dayOv" onclick="ovClick(event,'dayOv')">
+  <div class="sh" id="dayOvSh">
+    <div class="sh-drag"></div>
+    <div class="sh-head" id="dayOvHead"></div>
+    <div class="sh-body" id="dayOvBody" style="max-height:60vh;overflow-y:auto;padding-bottom:32px"></div>
+  </div>
 </div>
 
 <!-- SETTINGS -->
@@ -423,17 +449,7 @@ body{display:flex;flex-direction:column;position:relative}
         <div class="si">
           <div class="si-ic gold"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
           <div class="si-t"><div class="n">Varsayılan Mesai Çarpanı</div><div class="s">Günlük override edilebilir</div></div>
-          <input class="si-inp" type="number" id="stCarpan" value="1.5" step="0.25" min="1.5" onchange="saveSettings()">
-        </div>
-        <div class="si">
-          <div class="si-ic" style="background:rgba(167,139,250,.15);color:#a78bfa"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></div>
-          <div class="si-t"><div class="n">Devam Primi (₺)</div><div class="s">Aylık devam primi</div></div>
-          <input class="si-inp" type="number" id="stDevam" value="0" min="0" onchange="saveSettings()">
-        </div>
-        <div class="si">
-          <div class="si-ic" style="background:rgba(251,146,60,.15);color:#fb923c"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg></div>
-          <div class="si-t"><div class="n">Performans Primi (₺)</div><div class="s">Aylık performans primi</div></div>
-          <input class="si-inp" type="number" id="stPerf" value="0" min="0" onchange="saveSettings()">
+          <input class="si-inp" type="number" id="stCarpan" value="1.5" step="0.25" min="1" onchange="saveSettings()">
         </div>
       </div>
     </div>
@@ -503,7 +519,7 @@ body{display:flex;flex-direction:column;position:relative}
 <div class="toast" id="toast"></div>
 
 <script>
-const VERSION='v2.2';
+const VERSION='v2.3';
 const CLIENT_ID='390842439862-ks2rqj0cgh4t0aefea31cei42rea2usg.apps.googleusercontent.com';
 const SCOPES='https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
 const SHEET_NAME='Mesai Takip';
@@ -515,8 +531,8 @@ const todayKey=dk(today.getFullYear(),today.getMonth(),today.getDate());
 let curY=today.getFullYear(),curM=today.getMonth();
 let openDays={},modalKey=null,syncTimer=null,isSyncing=false;
 let accessToken=null,userInfo=null,spreadsheetId=null;
-let cfg={vardiyaS:'15:00',vardiyaB:'23:00',carpan:1.5,aylikSaat:225,devamPrimi:0,performansPrimi:0};
-let salaries={},dayData={};
+let cfg={vardiyaS:'15:00',vardiyaB:'23:00',carpan:1.5,aylikSaat:225};
+let salaries={},dayData={},monthData={};
 
 function dk(y,m,d){return `${y}-${m}-${d}`;}
 function mk(y,m){return `${y}-${m}`;}
@@ -533,6 +549,8 @@ function getSalary(y,m){
   return 30000;
 }
 function getDay(key){return dayData[key]||{};}
+function getMonthData(y,m){return monthData[mk(y,m)]||{devamPrimi:0,performansPrimi:0};}
+function setMonthData(y,m,field,val){const k=mk(y,m);if(!monthData[k])monthData[k]={devamPrimi:0,performansPrimi:0};monthData[k][field]=val;saveLocal();debouncePush();}}
 
 // Returns {s, b} vardiya start/end in minutes for a given day key.
 // Searches backwards from that day for a day with explicit vardiya set.
@@ -630,11 +648,18 @@ function calcMonth(y,m){
   return{mn,tm,yl,yk};
 }
 
-function saveLocal(){try{localStorage.setItem('mt_v4',JSON.stringify({cfg,salaries,dayData,spreadsheetId,ts:Date.now()}));}catch(e){}}
+function saveLocal(){try{localStorage.setItem('mt_v4',JSON.stringify({cfg,salaries,dayData,monthData,spreadsheetId,ts:Date.now()}));}catch(e){}}
 function loadLocal(){try{const r=localStorage.getItem('mt_v4');if(r){const d=JSON.parse(r);cfg=Object.assign(cfg,d.cfg||{});
-  // migrate old bitis -> vardiyaB
   if(cfg.bitis&&!cfg.vardiyaB){cfg.vardiyaB=cfg.bitis;}
-  salaries=d.salaries||{};dayData=d.dayData||{};spreadsheetId=d.spreadsheetId||null;}}catch(e){}}
+  salaries=d.salaries||{};dayData=d.dayData||{};monthData=d.monthData||{};spreadsheetId=d.spreadsheetId||null;
+  // migrate old devamPrimi/performansPrimi from cfg into monthData for current month
+  if(d.cfg&&(d.cfg.devamPrimi||d.cfg.performansPrimi)){
+    const k=mk(today.getFullYear(),today.getMonth());
+    if(!monthData[k])monthData[k]={devamPrimi:0,performansPrimi:0};
+    if(!monthData[k].devamPrimi)monthData[k].devamPrimi=d.cfg.devamPrimi||0;
+    if(!monthData[k].performansPrimi)monthData[k].performansPrimi=d.cfg.performansPrimi||0;
+  }
+}}catch(e){}}
 
 function saveToken(){try{localStorage.setItem('mt_tok',JSON.stringify({t:accessToken,e:tokenExpiry,u:userInfo}));}catch(e){}}
 function loadToken(){try{const r=localStorage.getItem('mt_tok');if(r){const d=JSON.parse(r);if(d.t&&d.e&&Date.now()<d.e-60000){accessToken=d.t;tokenExpiry=d.e;userInfo=d.u||null;return true;}}return false;}catch(e){return false;}}
@@ -733,7 +758,8 @@ async function pushSheet(){
       const[ys,ms]=monthKey.split('-').map(Number);
       const sheetTitle=`${MONTHS[ms]} ${ys}`;
       const maas=getSalary(ys,ms);
-      const devam=parseFloat(cfg.devamPrimi)||0, perf=parseFloat(cfg.performansPrimi)||0;
+      const md=getMonthData(ys,ms);
+      const devam=md.devamPrimi||0, perf=md.performansPrimi||0;
 
       // Create sheet if not exists
       if(existingSheets[sheetTitle]==null){
@@ -800,12 +826,12 @@ async function pushSheet(){
     }
 
     // Update Ayarlar sheet
-    const cfgR=[['Ayar','Değer'],['vardiyaS',cfg.vardiyaS],['vardiyaB',cfg.vardiyaB],['mesaiCarpani',cfg.carpan],['aylikCalisma',cfg.aylikSaat],['devamPrimi',cfg.devamPrimi||0],['performansPrimi',cfg.performansPrimi||0]];
+    const cfgR=[['Ayar','Değer'],['vardiyaS',cfg.vardiyaS],['vardiyaB',cfg.vardiyaB],['mesaiCarpani',cfg.carpan],['aylikCalisma',cfg.aylikSaat]];
     await api('PUT',`/${spreadsheetId}/values/Ayarlar!A1:B${cfgR.length}?valueInputOption=RAW`,{values:cfgR});
 
-    // Update Maaslar sheet
-    const salR=[['Ay','Maaş (₺)'],...Object.entries(salaries).sort().map(([k,v])=>[k,v])];
-    await api('PUT',`/${spreadsheetId}/values/Maaslar!A1:B${salR.length}?valueInputOption=RAW`,{values:salR});
+    // Update Maaslar sheet - include devam/perf per month
+    const salR=[['Ay','Maaş (₺)','Devam Primi','Performans Primi'],...Object.entries(salaries).sort().map(([k,v])=>{const[sy,sm]=k.split('-').map(Number);const md=getMonthData(sy,sm);return[k,v,md.devamPrimi||0,md.performansPrimi||0];})];
+    await api('PUT',`/${spreadsheetId}/values/Maaslar!A1:D${salR.length}?valueInputOption=RAW`,{values:salR});
 
     saveLocal();setSyncUI('ok','Kaydedildi ✓');
   }catch(e){setSyncUI('err','Hata ✗');toast('Hata: '+e.message.slice(0,80));console.error(e);}
@@ -866,19 +892,23 @@ async function pullSheet(){
     });
     dayData=nd;
 
-    // Parse salaries
-    salaries={};
-    for(const[k,v]of(mS?.values||[]))if(k)salaries[k]=parseFloat(v)||0;
+    // Parse salaries + month prims
+    salaries={};monthData={};
+    for(const row of(mS?.values||[])){
+      const[k,v,dp,pp]=row;
+      if(k){
+        salaries[k]=parseFloat(v)||0;
+        if(dp||pp){if(!monthData[k])monthData[k]={devamPrimi:0,performansPrimi:0};monthData[k].devamPrimi=parseFloat(dp)||0;monthData[k].performansPrimi=parseFloat(pp)||0;}
+      }
+    }
 
     // Parse settings
     for(const[k,v]of(aS?.values||[])){
       if(k==='vardiyaS')cfg.vardiyaS=v;
       else if(k==='vardiyaB')cfg.vardiyaB=v;
-      else if(k==='bitisSaati'){cfg.vardiyaB=v;} // legacy migration
+      else if(k==='bitisSaati'){cfg.vardiyaB=v;}
       else if(k==='mesaiCarpani')cfg.carpan=parseFloat(v)||1.5;
       else if(k==='aylikCalisma')cfg.aylikSaat=parseFloat(v)||225;
-      else if(k==='devamPrimi')cfg.devamPrimi=parseFloat(v)||0;
-      else if(k==='performansPrimi')cfg.performansPrimi=parseFloat(v)||0;
     }
     saveLocal();applySettings();setSyncUI('ok','Senkronize ✓');
   }catch(e){setSyncUI('err','Hata ✗');toast('Çekme hatası: '+e.message.slice(0,80));console.error(e);}
@@ -907,18 +937,16 @@ function setVardiya(key,field,val){
   const lbl=$('vrd-inh-'+key);if(lbl)lbl.textContent='Bu güne özel';
 }
 function toggleExtra(key,field){if(!dayData[key])dayData[key]={};dayData[key][field]=!dayData[key][field];saveLocal();debouncePush();refreshCard(key);}
-function addMola(key){if(!dayData[key])dayData[key]={};if(!dayData[key].molalar)dayData[key].molalar=[];dayData[key].molalar.push({bas:'',bit:''});saveLocal();debouncePush();const el=$('ml-'+key);if(el)el.innerHTML=buildMolaHTML(key,dayData[key]);}
-function removeMola(key,idx){if(!dayData[key]||!dayData[key].molalar)return;dayData[key].molalar.splice(idx,1);saveLocal();debouncePush();const el=$('ml-'+key);if(el)el.innerHTML=buildMolaHTML(key,dayData[key]);refreshCard(key);}
-function updateMola(key,idx,f,val){if(!dayData[key]||!dayData[key].molalar)return;dayData[key].molalar[idx][f]=val;saveLocal();debouncePush();refreshCard(key);}
+function addMola(key){if(!dayData[key])dayData[key]={};if(!dayData[key].molalar)dayData[key].molalar=[];dayData[key].molalar.push({bas:'',bit:''});saveLocal();debouncePush();const el=$('ml-'+key)||$('ml-ov-'+key);if(el)el.innerHTML=buildMolaHTML(key,dayData[key]);}
+function removeMola(key,idx){if(!dayData[key]||!dayData[key].molalar)return;dayData[key].molalar.splice(idx,1);saveLocal();debouncePush();const el=$('ml-'+key)||$('ml-ov-'+key);if(el)el.innerHTML=buildMolaHTML(key,dayData[key]);refreshDayOv(key);}
+function updateMola(key,idx,f,val){if(!dayData[key]||!dayData[key].molalar)return;dayData[key].molalar[idx][f]=val;saveLocal();debouncePush();refreshDayOv(key);}
 
 function applySettings(){
   const vs=$('stVardiyaS'),vb=$('stVardiyaB'),cp=$('stCarpan'),as=$('stAylikSaat');
   if(vs)vs.value=cfg.vardiyaS||'15:00';if(vb)vb.value=cfg.vardiyaB||'23:00';if(cp)cp.value=cfg.carpan||1.5;if(as)as.value=cfg.aylikSaat||225;
-  const dev=$('stDevam'),prf=$('stPerf');if(dev)dev.value=cfg.devamPrimi||0;if(prf)prf.value=cfg.performansPrimi||0;
 }
 function saveSettings(){
   cfg.vardiyaS=$('stVardiyaS').value||'15:00';cfg.vardiyaB=$('stVardiyaB').value||'23:00';cfg.carpan=parseFloat($('stCarpan').value)||1.5;cfg.aylikSaat=parseFloat($('stAylikSaat').value)||225;
-  cfg.devamPrimi=parseFloat($('stDevam')?.value)||0;cfg.performansPrimi=parseFloat($('stPerf')?.value)||0;
   saveLocal();debouncePush();renderAll();toast('Ayarlar kaydedildi ✓');
 }
 
@@ -979,89 +1007,205 @@ function renderHome(){
   }
   if($('mhead'))$('mhead').textContent=MONTHS[today.getMonth()]+' Özeti';
   const mc=calcMonth(today.getFullYear(),today.getMonth()),maas=getSalary(today.getFullYear(),today.getMonth());
+  const md=getMonthData(today.getFullYear(),today.getMonth());
+  const primTop=(md.devamPrimi||0)+(md.performansPrimi||0);
   if($('ss1'))$('ss1').textContent=fmtD(mc.mn);if($('ss1s'))$('ss1s').textContent=fmtTL(mc.tm)+' mesai ücreti';
-  if($('ss2'))$('ss2').textContent=fmtTL(mc.yl+mc.yk);
-  if($('ss3'))$('ss3').textContent=fmtTL(maas+mc.tm+mc.yl+mc.yk);
-  if($('ss3s'))$('ss3s').textContent=fmtTL(maas)+' maaş + '+fmtTL(mc.tm+mc.yl+mc.yk)+' ek';
+  if($('ss2'))$('ss2').textContent=fmtTL(mc.yl+mc.yk+(md.devamPrimi||0)+(md.performansPrimi||0));
+  if($('ss3'))$('ss3').textContent=fmtTL(maas+mc.tm+mc.yl+mc.yk+primTop);
+  const subParts=[fmtTL(maas)+' maaş'];if(mc.tm>0)subParts.push(fmtTL(mc.tm)+' mesai');if(primTop>0)subParts.push(fmtTL(primTop)+' prim');
+  if($('ss3s'))$('ss3s').textContent=subParts.join(' + ');
 }
-function openEditToday(){goCalendar();setTimeout(()=>{openCard(todayKey);$('dc-'+todayKey)?.scrollIntoView({behavior:'smooth',block:'center'});},250);}
+function openEditToday(){goCalendar();setTimeout(()=>openDayDetail(todayKey),300);}
 
 function changeMonth(d){curM+=d;if(curM>11){curM=0;curY++;}if(curM<0){curM=11;curY--;}openDays={};renderCal();}
+
+let openMonths={};
 function renderCal(){
-  if($('cml'))$('cml').textContent=MONTHS[curM]+' '+curY;
-  if($('csv'))$('csv').textContent=fmtTL(getSalary(curY,curM));
-  const list=$('clist');if(!list)return;list.innerHTML='';
-  for(let d=1;d<=daysIn(curY,curM);d++){
-    const key=dk(curY,curM,d),dt=new Date(curY,curM,d),dow=dt.getDay();
-    const isWE=dow===0||dow===6,isToday=key===todayKey;
-    const r=getDay(key),c=calcDay(key),isOpen=!!openDays[key];
-    const cp=r.carpanOverride!=null?r.carpanOverride:cfg.carpan;
-    const blks=getMesailer(r);
-    let sub;
-    if(blks.length===0){sub=isToday?'Dokunarak mesai gir':isWE?'Hafta sonu':'—';}
-    else if(blks.length===1){const b=blks[0];sub=b.giris&&b.cikis?b.giris+' – '+b.cikis+(c.netMin>0?' · '+fmtD(c.netMin)+' mesai':''):b.giris?'Giriş: '+b.giris+' — çıkış girilmedi':'—';}
-    else{sub=blks.length+' mesai bloğu'+(c.netMin>0?' · '+fmtD(c.netMin)+' toplam mesai':'');}
-    const div=document.createElement('div');
-    div.className='dc'+(isToday?' today':isWE?' wknd':'');div.id='dc-'+key;
-    div.innerHTML=`<div class="drow" onclick="toggleCard('${key}')">
-      <div class="dnum"><span class="dn">${d}</span><span class="ds">${DAYS_S[dow]}</span></div>
-      <div class="dinf"><div class="dname">${DAYS[dow]}</div><div class="dsub">${sub}</div></div>
-      <div class="dmeta">${c.netMin>0?`<span class="dpill">${fmtTL(c.top)}</span><span class="dhrs">${fmtD(c.netMin)}</span>`:''}</div>
-      <div class="dchev ${isOpen?'open':''}" id="ch-${key}"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
-    </div>
-    <div class="ddet ${isOpen?'open':''}" id="dd-${key}">
-      <div class="det-s">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-          <div class="det-lbl" style="margin-bottom:0">Vardiya</div>
-          <span style="font-size:11px;color:var(--t3)" id="vrd-inh-${key}">${r.vardiyaS!=null?'Bu güne özel':'Öncekinden miras'}</span>
-        </div>
-        <div class="frow">
-          <div class="fi"><label>Vardiya Başlangıç</label><input type="time" value="${r.vardiyaS!=null?r.vardiyaS:fmtT(getVardiya(key).s)}" onchange="setVardiya('${key}','vardiyaS',this.value)"></div>
-          <div class="fi"><label>Vardiya Bitiş</label><input type="time" value="${r.vardiyaB!=null?r.vardiyaB:fmtT(getVardiya(key).b)}" onchange="setVardiya('${key}','vardiyaB',this.value)"></div>
-        </div>
-        <div style="margin-top:6px;font-size:11px;color:var(--t3)">Sonraki günler bu vardiyayı otomatik alır. Öncekiler değişmez.</div>
-      </div>
-      <div class="det-s">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-          <div class="det-lbl" style="margin-bottom:0">Mesai Blokları</div>
-          <button onclick="addMesaiBlok('${key}')" style="display:flex;align-items:center;gap:5px;padding:6px 12px;background:var(--bd);border:1px solid var(--bb);border-radius:8px;color:var(--blue);font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif">
-            <svg style="width:14px;height:14px;stroke:currentColor;stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Mesai Ekle
-          </button>
-        </div>
-        <div id="mbloks-${key}">${buildMesaiBloksHTML(key,r)}</div>
-      </div>
-      <div class="det-s"><div class="det-lbl">Mola / Eksik Süre</div>
-        <div class="mlist" id="ml-${key}">${buildMolaHTML(key,r)}</div>
-        <div class="frow">
-          <button class="addm" onclick="addMola('${key}')"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Saat aralığı ekle</button>
-          <div class="fi"><label>Sabit dk</label><input type="number" min="0" placeholder="0" value="${r.molaMin||''}" onchange="setField('${key}','molaMin',this.value)"></div>
-        </div>
-      </div>
-      <div class="det-s"><div class="det-lbl">Yol & Yemek</div>
-        <div class="frow">
-          <div class="fi"><label>Yol (₺)</label><input type="number" min="0" placeholder="0" value="${r.yolTutar||''}" onchange="setField('${key}','yolTutar',this.value)"></div>
-          <div class="fi"><label>Yemek (₺)</label><input type="number" min="0" placeholder="0" value="${r.yemekTutar||''}" onchange="setField('${key}','yemekTutar',this.value)"></div>
-        </div>
-      </div>
-      <div class="det-s"><div class="det-lbl">Bu Güne Özel</div>
-        <div class="frow">
-          <div class="fi"><label>Mesai Çarpanı</label><input type="number" step="0.25" min="1" value="${cp}" onchange="setField('${key}','carpanOverride',parseFloat(this.value))"></div>
-          <div class="fi"><label>Not</label><input type="text" value="${r.aciklama||''}" placeholder="not..." onchange="setField('${key}','aciklama',this.value)"></div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px">
-          <div class="xchip ${r.tatil?'on':''}" onclick="toggleExtra('${key}','tatil')" id="xt-${key}">
-            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-            <span>Tatil</span>
-          </div>
-          <div></div><div></div>
-        </div>
-      </div>
-      ${c.netMin>0||c.yol>0||c.yemek>0?`<div class="dtbar"><div class="dtbar-l"><div class="dtl">Gün Toplamı</div><div class="dtd">${[c.netMin>0?fmtD(c.netMin)+' mesai':'',c.yol>0?fmtTL(c.yol)+' yol':'',c.yemek>0?fmtTL(c.yemek)+' yemek':''].filter(Boolean).join(' · ')}</div></div><div class="dtbar-r">${fmtTL(c.top)}</div></div>`:''}
-    </div>`;
-    list.appendChild(div);
+  const scroll=$('calScroll');if(!scroll)return;
+  scroll.innerHTML='';
+  scroll.style.paddingTop='10px';
+  // Show last 12 months + current
+  const months=[];
+  for(let i=11;i>=0;i--){
+    let y=today.getFullYear(),m=today.getMonth()-i;
+    while(m<0){m+=12;y--;}
+    months.push({y,m});
   }
-  setTimeout(()=>document.querySelector('.dc.today')?.scrollIntoView({behavior:'smooth',block:'center'}),100);
+  for(const{y,m} of months){
+    const mk2=mk(y,m),mc=calcMonth(y,m),maas=getSalary(y,m);
+    const md=getMonthData(y,m);
+    const isCurrentMonth=y===today.getFullYear()&&m===today.getMonth();
+    const isOpen=openMonths[mk2]!==undefined?openMonths[mk2]:isCurrentMonth;
+    const primTop=(md.devamPrimi||0)+(md.performansPrimi||0);
+    const grandTotal=maas+mc.tm+mc.yl+mc.yk+primTop;
+    const card=document.createElement('div');
+    card.className='mcard';card.id='mc-'+mk2;
+    // Header
+    const hdrHTML=`<div class="mcard-hdr" onclick="toggleMonthCard('${mk2}')">
+      <div class="mcard-title">${MONTHS[m]} ${y}</div>
+      <div class="mcard-sum">${grandTotal>0?fmtTL(grandTotal):''}</div>
+      <div class="mcard-chev ${isOpen?'open':''}" id="mchev-${mk2}"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+    </div>`;
+    // Params row
+    const paramsHTML=`<div class="mcard-params">
+      <div class="mparam" onclick="openSalaryForMonth(${y},${m})">
+        <div class="mparam-lbl">Maaş</div>
+        <div class="mparam-val">${fmtTL(maas)}</div>
+      </div>
+      <div class="mparam">
+        <div class="mparam-lbl">Devam Primi</div>
+        <input type="number" min="0" value="${md.devamPrimi||0}" onchange="setMonthData(${y},${m},'devamPrimi',parseFloat(this.value)||0);refreshMonthCard('${mk2}')">
+      </div>
+      <div class="mparam">
+        <div class="mparam-lbl">Perf. Primi</div>
+        <input type="number" min="0" value="${md.performansPrimi||0}" onchange="setMonthData(${y},${m},'performansPrimi',parseFloat(this.value)||0);refreshMonthCard('${mk2}')">
+      </div>
+    </div>`;
+    // Day of week headers (Mon–Sun order)
+    const dowLabels=['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'];
+    const dowRowHTML='<div class="mcard-dowrow">'+dowLabels.map(l=>`<div class="dow-lbl">${l}</div>`).join('')+'</div>';
+    // Day grid — week starts Monday
+    const firstDow=new Date(y,m,1).getDay(); // 0=Sun
+    const offset=(firstDow+6)%7; // Mon=0
+    const daysCount=daysIn(y,m);
+    let gridHTML='<div class="mcard-grid">';
+    for(let i=0;i<offset;i++) gridHTML+='<div class="dgrid-empty"></div>';
+    for(let d=1;d<=daysCount;d++){
+      const key=dk(y,m,d),dt=new Date(y,m,d),dow=dt.getDay();
+      const isWE=dow===0||dow===6,isToday=key===todayKey;
+      const c=calcDay(key),r=getDay(key);
+      const hasEntry=getMesailer(r).some(b=>b.giris);
+      let cls='dgrid-day';
+      if(isToday)cls+=' today';
+      else if(isWE)cls+=' wknd';
+      if(hasEntry&&c.netMin>0)cls+=' has-data';
+      else if(hasEntry&&c.netMin<0)cls+=' neg-data';
+      const minTxt=hasEntry?(c.netMin!==0?fmtD(Math.abs(c.netMin))+(c.netMin<0?' eksik':''):''):'';
+      gridHTML+=`<div class="${cls}" id="dgd-${key}" onclick="openDayDetail('${key}')">
+        <div class="dgrid-dn">${d}</div>
+        ${minTxt?`<div class="dgrid-min">${minTxt}</div>`:''}
+      </div>`;
+    }
+    gridHTML+='</div>';
+    // Total bar
+    const parts=[];if(mc.mn!==0)parts.push(fmtD(Math.abs(mc.mn))+(mc.mn<0?' eksik mesai':' mesai'));if(primTop>0)parts.push(fmtTL(primTop)+' prim');
+    const totalHTML=`<div class="mcard-total"><div><div class="mcard-total-lbl">Aylık Toplam</div><div style="font-size:11px;color:var(--t3);margin-top:2px">${parts.join(' · ')||'Mesai yok'}</div></div><div class="mcard-total-val">${fmtTL(grandTotal)}</div></div>`;
+    card.innerHTML=hdrHTML+`<div class="mcard-body ${isOpen?'open':''}" id="mb-${mk2}">`+paramsHTML+dowRowHTML+gridHTML+totalHTML+'</div>';
+    scroll.appendChild(card);
+  }
+  // Scroll to current month
+  setTimeout(()=>{const el=$('mc-'+mk(today.getFullYear(),today.getMonth()));el?.scrollIntoView({behavior:'smooth',block:'start'});},100);
+}
+
+function toggleMonthCard(mk2){
+  openMonths[mk2]=!($(`mb-${mk2}`)?.classList.contains('open'));
+  $(`mb-${mk2}`)?.classList.toggle('open');
+  $(`mchev-${mk2}`)?.classList.toggle('open');
+}
+
+function refreshMonthCard(mk2){
+  // Rebuild only the total and header sum
+  const[y,m]=mk2.split('-').map(Number);
+  const mc=calcMonth(y,m),maas=getSalary(y,m),md=getMonthData(y,m);
+  const primTop=(md.devamPrimi||0)+(md.performansPrimi||0);
+  const grandTotal=maas+mc.tm+mc.yl+mc.yk+primTop;
+  const sumEl=$('mc-'+mk2)?.querySelector('.mcard-sum');
+  if(sumEl)sumEl.textContent=grandTotal>0?fmtTL(grandTotal):'';
+  // Also refresh home if visible
+  if(curScreen==='homeScreen')renderHome();
+}
+
+function openSalaryForMonth(y,m){
+  curY=y;curM=m;openSalarySheet();
+}
+
+// Day detail overlay
+function openDayDetail(key){
+  modalKey=key;
+  const[ys,ms,ds]=key.split('-').map(Number),dt=new Date(ys,ms,ds),dow=dt.getDay();
+  const r=getDay(key),c=calcDay(key);
+  const head=$('dayOvHead'),body=$('dayOvBody');
+  if(!head||!body)return;
+  head.innerHTML=`<h3>${ds} ${MONTHS[ms]} ${ys} — ${DAYS[dow]}</h3><p>${c.netMin!==0?fmtD(Math.abs(c.netMin))+(c.netMin<0?' eksik':' mesai')+(c.tm?` · ${fmtTL(c.tm)}`:''):'Mesai girilmedi'}</p>`;
+  body.innerHTML=buildDayDetailHTML(key,r,c);
+  openOv('dayOv');
+}
+function buildDayDetailHTML(key,r,c){
+  const cp=r.carpanOverride!=null?r.carpanOverride:cfg.carpan;
+  return `
+  <div class="det-s">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div class="det-lbl" style="margin-bottom:0">Vardiya</div>
+      <span style="font-size:11px;color:var(--t3)">${r.vardiyaS!=null?'Bu güne özel':'Öncekinden miras'}</span>
+    </div>
+    <div class="frow">
+      <div class="fi"><label>Başlangıç</label><input type="time" value="${r.vardiyaS!=null?r.vardiyaS:fmtT(getVardiya(key).s)}" onchange="setVardiyaOv('${key}','vardiyaS',this.value)"></div>
+      <div class="fi"><label>Bitiş</label><input type="time" value="${r.vardiyaB!=null?r.vardiyaB:fmtT(getVardiya(key).b)}" onchange="setVardiyaOv('${key}','vardiyaB',this.value)"></div>
+    </div>
+    <div style="margin-top:6px;font-size:11px;color:var(--t3)">Sonraki günler bu vardiyayı otomatik alır.</div>
+  </div>
+  <div class="det-s">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div class="det-lbl" style="margin-bottom:0">Mesai Blokları</div>
+      <button onclick="addMesaiBlokOv('${key}')" style="display:flex;align-items:center;gap:5px;padding:6px 12px;background:var(--bd);border:1px solid var(--bb);border-radius:8px;color:var(--blue);font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif">
+        <svg style="width:14px;height:14px;stroke:currentColor;stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Ekle
+      </button>
+    </div>
+    <div id="mbloks-ov-${key}">${buildMesaiBloksHTML(key,r)}</div>
+  </div>
+  <div class="det-s"><div class="det-lbl">Mola / Eksik Süre</div>
+    <div class="mlist" id="ml-ov-${key}">${buildMolaHTML(key,r)}</div>
+    <div class="frow">
+      <button class="addm" onclick="addMolaOv('${key}')"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Saat aralığı ekle</button>
+      <div class="fi"><label>Sabit dk</label><input type="number" min="0" placeholder="0" value="${r.molaMin||''}" onchange="setField('${key}','molaMin',this.value);refreshDayOv('${key}')"></div>
+    </div>
+  </div>
+  <div class="det-s"><div class="det-lbl">Yol & Yemek</div>
+    <div class="frow">
+      <div class="fi"><label>Yol (₺)</label><input type="number" min="0" placeholder="0" value="${r.yolTutar||''}" onchange="setField('${key}','yolTutar',this.value);refreshDayOv('${key}')"></div>
+      <div class="fi"><label>Yemek (₺)</label><input type="number" min="0" placeholder="0" value="${r.yemekTutar||''}" onchange="setField('${key}','yemekTutar',this.value);refreshDayOv('${key}')"></div>
+    </div>
+  </div>
+  <div class="det-s"><div class="det-lbl">Bu Güne Özel</div>
+    <div class="frow">
+      <div class="fi"><label>Mesai Çarpanı</label><input type="number" step="0.25" min="1" value="${cp}" onchange="setField('${key}','carpanOverride',parseFloat(this.value));refreshDayOv('${key}')"></div>
+      <div class="fi"><label>Not</label><input type="text" value="${r.aciklama||''}" placeholder="not..." onchange="setField('${key}','aciklama',this.value)"></div>
+    </div>
+  </div>
+  ${c.netMin!==0||c.yol>0||c.yemek>0?`<div class="dtbar"><div class="dtbar-l"><div class="dtl">Gün Toplamı</div><div class="dtd">${[c.netMin!==0?fmtD(Math.abs(c.netMin))+(c.netMin<0?' eksik':''):'' ,c.yol>0?fmtTL(c.yol)+' yol':'',c.yemek>0?fmtTL(c.yemek)+' yemek':''].filter(Boolean).join(' · ')}</div></div><div class="dtbar-r" style="${c.netMin<0?'color:var(--red)':''}">${fmtTL(c.top)}</div></div>`:''}`;
+}
+
+function refreshDayOv(key){
+  const r=getDay(key),c=calcDay(key);
+  const head=$('dayOvHead');
+  if(head){const[ys,ms,ds]=key.split('-').map(Number),dt=new Date(ys,ms,ds),dow=dt.getDay();head.innerHTML=`<h3>${ds} ${MONTHS[ms]} ${ys} — ${DAYS[dow]}</h3><p>${c.netMin!==0?fmtD(Math.abs(c.netMin))+(c.netMin<0?' eksik':' mesai')+(c.tm?` · ${fmtTL(c.tm)}`:''):'Mesai girilmedi'}</p>`;}
+  // Refresh day tile in grid
+  const tile=$('dgd-'+key);
+  if(tile){
+    const[ys,ms,ds]=key.split('-').map(Number),dt=new Date(ys,ms,ds),dow=dt.getDay();
+    const isWE=dow===0||dow===6,isToday=key===todayKey,hasEntry=getMesailer(r).some(b=>b.giris);
+    let cls='dgrid-day';if(isToday)cls+=' today';else if(isWE)cls+=' wknd';
+    if(hasEntry&&c.netMin>0)cls+=' has-data';else if(hasEntry&&c.netMin<0)cls+=' neg-data';
+    const minTxt=hasEntry?(c.netMin!==0?fmtD(Math.abs(c.netMin))+(c.netMin<0?' eksik':''):''):'';
+    tile.className=cls;tile.innerHTML=`<div class="dgrid-dn">${ds}</div>${minTxt?`<div class="dgrid-min">${minTxt}</div>`:''}`;
+  }
+  // Refresh month totals
+  const[ys2,ms2]=key.split('-').map(Number);refreshMonthCard(mk(ys2,ms2));
+}
+
+function setVardiyaOv(key,field,val){
+  setVardiya(key,field,val);refreshDayOv(key);
+}
+function addMesaiBlokOv(key){
+  ensureMesailer(key);dayData[key].mesailer.push({giris:'',cikis:''});
+  saveLocal();debouncePush();
+  const el=$('mbloks-ov-'+key);if(el)el.innerHTML=buildMesaiBloksHTML(key,dayData[key]);
+}
+function addMolaOv(key){
+  if(!dayData[key])dayData[key]={};if(!dayData[key].molalar)dayData[key].molalar=[];
+  dayData[key].molalar.push({bas:'',bit:''});saveLocal();debouncePush();
+  const el=$('ml-ov-'+key);if(el)el.innerHTML=buildMolaHTML(key,dayData[key]);refreshDayOv(key);
 }
 function buildMesaiBloksHTML(key,r){
   const blocks=getMesailer(r);
@@ -1090,16 +1234,16 @@ function removeMesaiBlok(key,idx){
   const r=ensureMesailer(key);
   r.mesailer.splice(idx,1);
   saveLocal();debouncePush();
-  const el=$('mbloks-'+key);
+  const el=$('mbloks-'+key)||$('mbloks-ov-'+key);
   if(el)el.innerHTML=buildMesaiBloksHTML(key,dayData[key]);
-  refreshCard(key);
+  refreshDayOv(key);
 }
 
 function updateMesaiBlok(key,idx,field,val){
   const r=ensureMesailer(key);
   if(!r.mesailer[idx])return;
   r.mesailer[idx][field]=val;
-  saveLocal();debouncePush();refreshCard(key);
+  saveLocal();debouncePush();refreshDayOv(key);
 }
 
 function buildMolaHTML(key,r){
@@ -1178,7 +1322,12 @@ function openSalarySheet(){
 }
 function confirmSalary(){
   const val=parseFloat($('salInp').value);
-  if(!isNaN(val)&&val>0){salaries[mk(curY,curM)]=val;saveLocal();debouncePush();if($('csv'))$('csv').textContent=fmtTL(val);toast(MONTHS[curM]+' maaşı güncellendi ✓');renderAll();}
+  if(!isNaN(val)&&val>0){
+    salaries[mk(curY,curM)]=val;saveLocal();debouncePush();
+    toast(MONTHS[curM]+' maaşı güncellendi ✓');
+    refreshMonthCard(mk(curY,curM));
+    if(curScreen==='homeScreen')renderHome();
+  }
   closeOv('salaryOv');
 }
 function exportJSON(){
