@@ -167,17 +167,17 @@ body{display:flex;flex-direction:column;position:relative}
 .year-nav{display:flex;gap:8px}
 .ynbtn{width:32px;height:32px;border-radius:50%;background:var(--g1);border:1px solid var(--gb);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t2)}
 .ynbtn svg{width:16px;height:16px;stroke:currentColor;stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
-.month-grid-y{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.month-grid-y{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}
 
 /* MINI MONTH CARD */
-.mmc{background:var(--g1);border:1px solid var(--gb);border-radius:18px;padding:10px 8px 9px;cursor:pointer;transition:background .15s,border-color .15s}
+.mmc{background:var(--g1);border:1px solid var(--gb);border-radius:36px;padding:10px 8px 9px;cursor:pointer;transition:background .15s,border-color .15s}
 .mmc:active{background:var(--g2);border-color:rgba(255,255,255,.18)}
-.mmc-name{font-size:13px;font-weight:700;color:var(--t1);text-align:center;margin-bottom:6px;letter-spacing:.01em}
+.mmc-name{font-size:25px;font-weight:700;color:var(--t1);text-align:center;margin-bottom:6px;letter-spacing:.01em}
 .mmc-dowrow{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:3px}
 .mmc-dow{font-size:8px;font-weight:700;color:var(--t3);text-align:center;padding:1px 0}
-.mmc-daygrid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
-.mmc-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:5px;font-size:9px;font-weight:600;color:var(--t3);line-height:1;position:relative}
-.mmc-day.today{background:var(--bd);color:var(--blue);font-weight:800;border-radius:6px}
+.mmc-daygrid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.mmc-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:10px;font-size:18px;font-weight:600;color:var(--t3);line-height:1;position:relative}
+.mmc-day.today{background:var(--bd);color:var(--blue);font-weight:800;border-radius:10px}
 .mmc-day.wknd{opacity:.45}
 .mmc-day.has-pos{color:var(--green);font-weight:700}
 .mmc-day.has-neg{color:var(--red);font-weight:700}
@@ -198,21 +198,21 @@ body{display:flex;flex-direction:column;position:relative}
 .mdet-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .mdet-scroll::-webkit-scrollbar{display:none}
 .mdet-dowrow{display:grid;grid-template-columns:repeat(7,1fr);padding:8px 10px 3px;gap:3px}
-.det-dow{text-align:center;font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase}
-.mdet-daygrid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;padding:0 10px 16px}
+.det-dow{text-align:center;font-size:18px;font-weight:700;color:var(--t3);text-transform:uppercase}
+.mdet-daygrid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;padding:0 15px 26px}
 .dgrid-empty{aspect-ratio:1}
-.dgrid-day{aspect-ratio:1;border-radius:16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;padding:2px;transition:background .15s}
+.dgrid-day{aspect-ratio:1;border-radius:32px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;padding:2px;transition:background .15s}
 .dgrid-day:active{background:rgba(255,255,255,.14)}
 .dgrid-day.today{border-color:var(--bb);background:var(--bd)}
 .dgrid-day.wknd{background:var(--rdd);border-color:rgba(255,107,128,.15)}
 .dgrid-day.has-pos{border-color:var(--grb);background:rgba(61,232,160,.08)}
 .dgrid-day.has-neg{border-color:rgba(255,107,128,.28);background:rgba(255,107,128,.07)}
-.dgrid-dn{font-size:15px;font-weight:800;line-height:1;color:var(--t2)}
+.dgrid-dn{font-size:30px;font-weight:800;line-height:1;color:var(--t2)}
 .dgrid-day.today .dgrid-dn{color:var(--blue)}
 .dgrid-day.wknd .dgrid-dn{color:rgba(255,107,128,.45)}
 .dgrid-day.has-pos .dgrid-dn{color:var(--green)}
 .dgrid-day.has-neg .dgrid-dn{color:var(--red)}
-.dgrid-min{font-size:10px;font-weight:700;line-height:1.1;margin-top:3px;text-align:center;color:var(--t3)}
+.dgrid-min{font-size:20px;font-weight:700;line-height:1.1;margin-top:6px;text-align:center;color:var(--t3)}
 .dgrid-day.has-pos .dgrid-min{color:rgba(61,232,160,.75)}
 .dgrid-day.has-neg .dgrid-min{color:rgba(255,107,128,.75)}
 .mdet-footer{padding:10px 12px 14px;border-top:1px solid var(--gb);display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
@@ -646,7 +646,7 @@ body{display:flex;flex-direction:column;position:relative}
 </script>
 
 <script>
-const VERSION='v2.37';
+const VERSION='v2.38';
 const CLIENT_ID='390842439862-ks2rqj0cgh4t0aefea31cei42rea2usg.apps.googleusercontent.com';
 const SCOPES='https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
 const SHEET_NAME='Mesai Takip';
