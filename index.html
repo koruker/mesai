@@ -144,44 +144,72 @@ body{display:flex;flex-direction:column;position:relative}
 .nbtn svg{width:22px;height:22px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
 .nbtn span{font-size:10px;font-weight:600;letter-spacing:.03em}
 
-/* MONTH CARDS */
-.mcard{margin:0 14px 12px;background:var(--g1);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--gb);border-radius:var(--r2);overflow:hidden;position:relative;z-index:1}
-.mcard-hdr{padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px}
-.mcard-hdr:active{background:var(--g2)}
-.mcard-title{font-size:17px;font-weight:800;letter-spacing:-.3px;flex:1}
-.mcard-sum{font-size:13px;font-weight:700;color:var(--green)}
-.mcard-chev{color:var(--t3);transition:transform .2s;flex-shrink:0}
-.mcard-chev svg{width:16px;height:16px;stroke:currentColor;stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
-.mcard-chev.open{transform:rotate(180deg)}
-.mcard-body{display:none;border-top:1px solid var(--gb)}
-.mcard-body.open{display:block}
-.mcard-params{padding:12px 14px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;border-bottom:1px solid var(--gb)}
-.mparam{background:rgba(255,255,255,.04);border:1px solid var(--gb);border-radius:12px;padding:10px 12px;cursor:pointer}
-.mparam-lbl{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
-.mparam-val{font-size:15px;font-weight:800;letter-spacing:-.3px;color:var(--t1)}
-.mparam input{width:100%;background:transparent;border:none;color:var(--t1);font-size:15px;font-weight:800;font-family:'Inter',sans-serif;outline:none;padding:0;letter-spacing:-.3px}
+/* CAL SUB-SCREENS */
+.cal-inner{flex:1;overflow:hidden;position:relative}
+.cal-sub{position:absolute;inset:0;display:flex;flex-direction:column;transition:transform .32s cubic-bezier(.4,0,.2,1);overflow:hidden}
+.cal-sub.left{transform:translateX(-100%)}
+.cal-sub.right{transform:translateX(100%)}
+.cal-sub.active{transform:translateX(0)}
+
+/* YEAR VIEW */
+.year-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px}
+.year-scroll::-webkit-scrollbar{display:none}
+.year-hdr-row{display:flex;align-items:center;justify-content:space-between;padding:4px 4px 10px}
+.year-lbl{font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--t1)}
+.year-nav{display:flex;gap:8px}
+.ynbtn{width:32px;height:32px;border-radius:50%;background:var(--g1);border:1px solid var(--gb);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t2)}
+.ynbtn svg{width:16px;height:16px;stroke:currentColor;stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.month-grid-y{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+
+/* MINI MONTH CARD */
+.mmc{background:var(--g1);border:1px solid var(--gb);border-radius:14px;padding:8px 7px 7px;cursor:pointer;transition:background .15s,border-color .15s}
+.mmc:active{background:var(--g2);border-color:rgba(255,255,255,.18)}
+.mmc-name{font-size:10px;font-weight:700;color:var(--t2);text-align:center;margin-bottom:5px;letter-spacing:.02em}
+.mmc-dowrow{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:2px}
+.mmc-dow{font-size:6px;font-weight:700;color:var(--t3);text-align:center;padding:1px 0}
+.mmc-daygrid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px}
+.mmc-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:3px;font-size:7px;font-weight:500;color:var(--t3);line-height:1;position:relative}
+.mmc-day.today{background:var(--bd);color:var(--blue);font-weight:800}
+.mmc-day.wknd{color:var(--t3);opacity:.5}
+.mmc-day.has-pos{color:var(--green)}
+.mmc-day.has-neg{color:var(--red)}
+.mmc-dot{width:3px;height:3px;border-radius:50%;background:var(--green);margin-top:1px}
+.mmc-dot.neg{background:var(--red)}
+
+/* MONTH DETAIL VIEW */
+.mdet-hdr{display:flex;align-items:center;gap:10px;padding:12px 14px 10px;border-bottom:1px solid var(--gb);flex-shrink:0}
+.back-btn{width:34px;height:34px;border-radius:50%;background:var(--g1);border:1px solid var(--gb);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t2);flex-shrink:0}
+.back-btn svg{width:18px;height:18px;stroke:currentColor;stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.mdet-title{font-size:18px;font-weight:800;letter-spacing:-.4px;flex:1}
+.mdet-total{font-size:13px;font-weight:700;color:var(--green);flex-shrink:0}
+.mdet-params{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:10px 12px;border-bottom:1px solid var(--gb);flex-shrink:0}
+.mparam{background:rgba(255,255,255,.04);border:1px solid var(--gb);border-radius:11px;padding:8px 10px}
+.mparam-lbl{font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
+.mparam input{width:100%;background:transparent;border:none;color:var(--t1);font-size:14px;font-weight:800;font-family:'Inter',sans-serif;outline:none;padding:0;letter-spacing:-.3px}
 .mparam input::-webkit-inner-spin-button{display:none}
-.mcard-dowrow{display:grid;grid-template-columns:repeat(7,1fr);padding:8px 10px 4px;gap:3px}
-.dow-lbl{text-align:center;font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;padding:4px 0}
-.mcard-grid{display:grid;grid-template-columns:repeat(7,1fr);padding:0 10px 12px;gap:4px}
+.mdet-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.mdet-scroll::-webkit-scrollbar{display:none}
+.mdet-dowrow{display:grid;grid-template-columns:repeat(7,1fr);padding:8px 10px 3px;gap:3px}
+.det-dow{text-align:center;font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase}
+.mdet-daygrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;padding:0 10px 16px}
 .dgrid-empty{aspect-ratio:1}
-.dgrid-day{aspect-ratio:1;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;padding:3px;transition:background .15s;position:relative;overflow:hidden}
-.dgrid-day:active{background:rgba(255,255,255,.12)}
+.dgrid-day{aspect-ratio:1;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;padding:2px;transition:background .15s}
+.dgrid-day:active{background:rgba(255,255,255,.14)}
 .dgrid-day.today{border-color:var(--bb);background:var(--bd)}
-.dgrid-day.wknd{background:var(--rdd);border-color:rgba(255,107,128,.2)}
-.dgrid-day.has-data{border-color:var(--grb);background:rgba(61,232,160,.08)}
-.dgrid-day.neg-data{border-color:rgba(255,107,128,.3);background:rgba(255,107,128,.06)}
-.dgrid-dn{font-size:13px;font-weight:800;line-height:1;color:var(--t1)}
+.dgrid-day.wknd{background:var(--rdd);border-color:rgba(255,107,128,.15)}
+.dgrid-day.has-pos{border-color:var(--grb);background:rgba(61,232,160,.08)}
+.dgrid-day.has-neg{border-color:rgba(255,107,128,.28);background:rgba(255,107,128,.07)}
+.dgrid-dn{font-size:12px;font-weight:800;line-height:1;color:var(--t2)}
 .dgrid-day.today .dgrid-dn{color:var(--blue)}
-.dgrid-day.wknd .dgrid-dn{color:var(--red)}
-.dgrid-day.has-data .dgrid-dn{color:var(--green)}
-.dgrid-day.neg-data .dgrid-dn{color:var(--red)}
-.dgrid-min{font-size:9px;font-weight:700;color:var(--t3);line-height:1.1;margin-top:2px;text-align:center}
-.dgrid-day.has-data .dgrid-min{color:var(--green);opacity:.8}
-.dgrid-day.neg-data .dgrid-min{color:var(--red);opacity:.8}
-.mcard-total{padding:10px 14px 12px;border-top:1px solid var(--gb);display:flex;align-items:center;justify-content:space-between}
-.mcard-total-lbl{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em}
-.mcard-total-val{font-size:16px;font-weight:800;color:var(--green)}
+.dgrid-day.wknd .dgrid-dn{color:rgba(255,107,128,.45)}
+.dgrid-day.has-pos .dgrid-dn{color:var(--green)}
+.dgrid-day.has-neg .dgrid-dn{color:var(--red)}
+.dgrid-min{font-size:8px;font-weight:700;line-height:1.1;margin-top:2px;text-align:center;color:var(--t3)}
+.dgrid-day.has-pos .dgrid-min{color:rgba(61,232,160,.75)}
+.dgrid-day.has-neg .dgrid-min{color:rgba(255,107,128,.75)}
+.mdet-footer{padding:10px 12px 14px;border-top:1px solid var(--gb);display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+.mdet-fl{font-size:11px;color:var(--t3)}
+.mdet-fr{font-size:17px;font-weight:800;color:var(--green)}
 
 /* DAY CARDS */
 .dc{margin:0 14px 6px;background:var(--g1);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--gb);border-radius:var(--r2);overflow:hidden;position:relative;z-index:1}
@@ -382,12 +410,66 @@ body{display:flex;flex-direction:column;position:relative}
 <!-- CALENDAR -->
 <div class="screen hidden" id="calScreen">
   <div class="tbar" style="border-bottom:1px solid rgba(255,255,255,.08)">
-    <div class="tbar-title">Takvim</div>
+    <div class="tbar-title" id="calTitle">Takvim</div>
     <button class="ibtn" onclick="syncNow()">
       <svg viewBox="0 0 24 24"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
     </button>
   </div>
-  <div class="scroll" id="calScroll"></div>
+  <div class="cal-inner">
+
+    <!-- YEAR VIEW -->
+    <div class="cal-sub active" id="yearView">
+      <div class="year-scroll">
+        <div class="year-hdr-row">
+          <div class="year-lbl" id="yearLbl">2026</div>
+          <div class="year-nav">
+            <div class="ynbtn" onclick="changeYear(-1)"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></div>
+            <div class="ynbtn" onclick="changeYear(1)"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+          </div>
+        </div>
+        <div class="month-grid-y" id="yearGrid"></div>
+      </div>
+    </div>
+
+    <!-- MONTH DETAIL VIEW -->
+    <div class="cal-sub right" id="monthView">
+      <div class="mdet-hdr">
+        <div class="back-btn" onclick="calGoBack()">
+          <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        </div>
+        <div class="mdet-title" id="mdetTitle">—</div>
+        <div class="mdet-total" id="mdetTotal"></div>
+      </div>
+      <div class="mdet-params">
+        <div class="mparam">
+          <div class="mparam-lbl">Maaş</div>
+          <input type="number" id="mdetMaas" min="0" onchange="onMaasChange(this.value)">
+        </div>
+        <div class="mparam">
+          <div class="mparam-lbl">Devam Primi</div>
+          <input type="number" id="mdetDevam" min="0" onchange="onMdChange('devamPrimi',this.value)">
+        </div>
+        <div class="mparam">
+          <div class="mparam-lbl">Perf. Primi</div>
+          <input type="number" id="mdetPerf" min="0" onchange="onMdChange('performansPrimi',this.value)">
+        </div>
+      </div>
+      <div class="mdet-scroll">
+        <div class="mdet-dowrow">
+          <div class="det-dow">Pzt</div><div class="det-dow">Sal</div><div class="det-dow">Çar</div>
+          <div class="det-dow">Per</div><div class="det-dow">Cum</div>
+          <div class="det-dow" style="color:rgba(255,107,128,.5)">Cmt</div>
+          <div class="det-dow" style="color:rgba(255,107,128,.5)">Paz</div>
+        </div>
+        <div class="mdet-daygrid" id="mdetGrid"></div>
+      </div>
+      <div class="mdet-footer">
+        <div class="mdet-fl" id="mdetSub">—</div>
+        <div class="mdet-fr" id="mdetGrand">—</div>
+      </div>
+    </div>
+
+  </div>
   <nav class="nav">
     <button class="nbtn" onclick="goHome()">
       <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -1006,108 +1088,140 @@ function renderHome(){
   const subParts=[fmtTL(maas)+' maaş'];if(mc.tm>0)subParts.push(fmtTL(mc.tm)+' mesai');if(primTop>0)subParts.push(fmtTL(primTop)+' prim');
   if($('ss3s'))$('ss3s').textContent=subParts.join(' + ');
 }
-function openEditToday(){goCalendar();setTimeout(()=>openDayDetail(todayKey),300);}
+function openEditToday(){goCalendar();setTimeout(()=>openDayDetail(todayKey),350);}
 
-function changeMonth(d){curM+=d;if(curM>11){curM=0;curY++;}if(curM<0){curM=11;curY--;}openDays={};renderCal();}
+// ── CAL YEAR STATE ──────────────────────────────────────────
+let calYear=today.getFullYear();
+let detailY=null,detailM=null;
 
-let openMonths={};
+function changeYear(d){calYear+=d;if($('yearLbl'))$('yearLbl').textContent=calYear;renderYearGrid();}
+
 function renderCal(){
-  const scroll=$('calScroll');if(!scroll)return;
-  scroll.innerHTML='';
-  scroll.style.paddingTop='10px';
-  // Show last 12 months + current
-  const months=[];
-  for(let i=11;i>=0;i--){
-    let y=today.getFullYear(),m=today.getMonth()-i;
-    while(m<0){m+=12;y--;}
-    months.push({y,m});
-  }
-  for(const{y,m} of months){
-    const mk2=mk(y,m),mc=calcMonth(y,m),maas=getSalary(y,m);
-    const md=getMonthData(y,m);
-    const isCurrentMonth=y===today.getFullYear()&&m===today.getMonth();
-    const isOpen=openMonths[mk2]!==undefined?openMonths[mk2]:isCurrentMonth;
-    const primTop=(md.devamPrimi||0)+(md.performansPrimi||0);
-    const grandTotal=maas+mc.tm+mc.yl+mc.yk+primTop;
-    const card=document.createElement('div');
-    card.className='mcard';card.id='mc-'+mk2;
-    // Header
-    const hdrHTML=`<div class="mcard-hdr" onclick="toggleMonthCard('${mk2}')">
-      <div class="mcard-title">${MONTHS[m]} ${y}</div>
-      <div class="mcard-sum">${grandTotal>0?fmtTL(grandTotal):''}</div>
-      <div class="mcard-chev ${isOpen?'open':''}" id="mchev-${mk2}"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
-    </div>`;
-    // Params row
-    const paramsHTML=`<div class="mcard-params">
-      <div class="mparam" onclick="openSalaryForMonth(${y},${m})">
-        <div class="mparam-lbl">Maaş</div>
-        <div class="mparam-val">${fmtTL(maas)}</div>
-      </div>
-      <div class="mparam">
-        <div class="mparam-lbl">Devam Primi</div>
-        <input type="number" min="0" value="${md.devamPrimi||0}" onchange="setMonthData(${y},${m},'devamPrimi',parseFloat(this.value)||0);refreshMonthCard('${mk2}')">
-      </div>
-      <div class="mparam">
-        <div class="mparam-lbl">Perf. Primi</div>
-        <input type="number" min="0" value="${md.performansPrimi||0}" onchange="setMonthData(${y},${m},'performansPrimi',parseFloat(this.value)||0);refreshMonthCard('${mk2}')">
-      </div>
-    </div>`;
-    // Day of week headers (Mon–Sun order)
-    const dowLabels=['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'];
-    const dowRowHTML='<div class="mcard-dowrow">'+dowLabels.map(l=>`<div class="dow-lbl">${l}</div>`).join('')+'</div>';
-    // Day grid — week starts Monday
-    const firstDow=new Date(y,m,1).getDay(); // 0=Sun
-    const offset=(firstDow+6)%7; // Mon=0
-    const daysCount=daysIn(y,m);
-    let gridHTML='<div class="mcard-grid">';
-    for(let i=0;i<offset;i++) gridHTML+='<div class="dgrid-empty"></div>';
+  if($('yearLbl'))$('yearLbl').textContent=calYear;
+  // Reset to year view when opening
+  $('yearView').className='cal-sub active';
+  $('monthView').className='cal-sub right';
+  if($('calTitle'))$('calTitle').textContent='Takvim';
+  renderYearGrid();
+}
+
+function renderYearGrid(){
+  const grid=$('yearGrid');if(!grid)return;
+  const DOW_LABELS=['P','S','Ç','P','C','C','P'];
+  let html='';
+  for(let m=0;m<12;m++){
+    const firstDow=new Date(calYear,m,1).getDay();
+    const offset=(firstDow+6)%7;
+    const daysCount=daysIn(calYear,m);
+    const mc=calcMonth(calYear,m);
+    const hasAny=mc.mn!==0;
+    let dayHTML='';
+    for(let i=0;i<offset;i++) dayHTML+='<div class="mmc-day"></div>';
     for(let d=1;d<=daysCount;d++){
-      const key=dk(y,m,d),dt=new Date(y,m,d),dow=dt.getDay();
+      const key=dk(calYear,m,d),dt=new Date(calYear,m,d),dow=dt.getDay();
       const isWE=dow===0||dow===6,isToday=key===todayKey;
-      const c=calcDay(key),r=getDay(key);
+      const r=getDay(key),c=calcDay(key);
       const hasEntry=getMesailer(r).some(b=>b.giris);
-      let cls='dgrid-day';
+      let cls='mmc-day';
       if(isToday)cls+=' today';
       else if(isWE)cls+=' wknd';
-      if(hasEntry&&c.netMin>0)cls+=' has-data';
-      else if(hasEntry&&c.netMin<0)cls+=' neg-data';
-      const minTxt=hasEntry?(c.netMin!==0?fmtD(Math.abs(c.netMin))+(c.netMin<0?' eksik':''):''):'';
-      gridHTML+=`<div class="${cls}" id="dgd-${key}" onclick="openDayDetail('${key}')">
-        <div class="dgrid-dn">${d}</div>
-        ${minTxt?`<div class="dgrid-min">${minTxt}</div>`:''}
-      </div>`;
+      if(hasEntry&&c.netMin>0)cls+=' has-pos';
+      else if(hasEntry&&c.netMin<0)cls+=' has-neg';
+      const dot=hasEntry?`<div class="mmc-dot${c.netMin<0?' neg':''}"></div>`:'';
+      dayHTML+=`<div class="${cls}">${d}${dot}</div>`;
     }
-    gridHTML+='</div>';
-    // Total bar
-    const parts=[];if(mc.mn!==0)parts.push(fmtD(Math.abs(mc.mn))+(mc.mn<0?' eksik mesai':' mesai'));if(primTop>0)parts.push(fmtTL(primTop)+' prim');
-    const totalHTML=`<div class="mcard-total"><div><div class="mcard-total-lbl">Aylık Toplam</div><div style="font-size:11px;color:var(--t3);margin-top:2px">${parts.join(' · ')||'Mesai yok'}</div></div><div class="mcard-total-val">${fmtTL(grandTotal)}</div></div>`;
-    card.innerHTML=hdrHTML+`<div class="mcard-body ${isOpen?'open':''}" id="mb-${mk2}">`+paramsHTML+dowRowHTML+gridHTML+totalHTML+'</div>';
-    scroll.appendChild(card);
+    const dowRow=DOW_LABELS.map(l=>`<div class="mmc-dow">${l}</div>`).join('');
+    html+=`<div class="mmc" onclick="openMonthDetail(${calYear},${m})">
+      <div class="mmc-name">${MONTHS[m]}</div>
+      <div class="mmc-dowrow">${dowRow}</div>
+      <div class="mmc-daygrid">${dayHTML}</div>
+    </div>`;
   }
-  // Scroll to current month
-  setTimeout(()=>{const el=$('mc-'+mk(today.getFullYear(),today.getMonth()));el?.scrollIntoView({behavior:'smooth',block:'start'});},100);
+  grid.innerHTML=html;
 }
 
-function toggleMonthCard(mk2){
-  openMonths[mk2]=!($(`mb-${mk2}`)?.classList.contains('open'));
-  $(`mb-${mk2}`)?.classList.toggle('open');
-  $(`mchev-${mk2}`)?.classList.toggle('open');
+function openMonthDetail(y,m){
+  detailY=y;detailM=m;
+  // Populate header
+  if($('mdetTitle'))$('mdetTitle').textContent=MONTHS[m]+' '+y;
+  if($('calTitle'))$('calTitle').textContent=MONTHS[m]+' '+y;
+  // Populate params
+  const maas=getSalary(y,m),md=getMonthData(y,m);
+  if($('mdetMaas'))$('mdetMaas').value=maas||'';
+  if($('mdetDevam'))$('mdetDevam').value=md.devamPrimi||0;
+  if($('mdetPerf'))$('mdetPerf').value=md.performansPrimi||0;
+  // Build grid
+  renderMonthDetailGrid(y,m);
+  updateMonthDetailFooter(y,m);
+  // Slide in
+  $('yearView').className='cal-sub left';
+  $('monthView').className='cal-sub active';
 }
 
-function refreshMonthCard(mk2){
-  // Rebuild only the total and header sum
-  const[y,m]=mk2.split('-').map(Number);
+function calGoBack(){
+  if($('calTitle'))$('calTitle').textContent='Takvim';
+  $('yearView').className='cal-sub active';
+  $('monthView').className='cal-sub right';
+}
+
+function renderMonthDetailGrid(y,m){
+  const grid=$('mdetGrid');if(!grid)return;
+  const firstDow=new Date(y,m,1).getDay();
+  const offset=(firstDow+6)%7;
+  const daysCount=daysIn(y,m);
+  let html='';
+  for(let i=0;i<offset;i++) html+='<div class="dgrid-empty"></div>';
+  for(let d=1;d<=daysCount;d++){
+    const key=dk(y,m,d),dt=new Date(y,m,d),dow=dt.getDay();
+    const isWE=dow===0||dow===6,isToday=key===todayKey;
+    const r=getDay(key),c=calcDay(key);
+    const hasEntry=getMesailer(r).some(b=>b.giris);
+    let cls='dgrid-day';
+    if(isToday)cls+=' today';
+    else if(isWE)cls+=' wknd';
+    if(hasEntry&&c.netMin>0)cls+=' has-pos';
+    else if(hasEntry&&c.netMin<0)cls+=' has-neg';
+    const minTxt=hasEntry&&c.netMin!==0?fmtD(Math.abs(c.netMin))+(c.netMin<0?'-':''):'';
+    html+=`<div class="${cls}" id="dgd-${key}" onclick="openDayDetail('${key}')">
+      <div class="dgrid-dn">${d}</div>
+      ${minTxt?`<div class="dgrid-min">${minTxt}</div>`:''}
+    </div>`;
+  }
+  grid.innerHTML=html;
+}
+
+function updateMonthDetailFooter(y,m){
   const mc=calcMonth(y,m),maas=getSalary(y,m),md=getMonthData(y,m);
   const primTop=(md.devamPrimi||0)+(md.performansPrimi||0);
-  const grandTotal=maas+mc.tm+mc.yl+mc.yk+primTop;
-  const sumEl=$('mc-'+mk2)?.querySelector('.mcard-sum');
-  if(sumEl)sumEl.textContent=grandTotal>0?fmtTL(grandTotal):'';
-  // Also refresh home if visible
+  const grand=maas+mc.tm+mc.yl+mc.yk+primTop;
+  if($('mdetTotal'))$('mdetTotal').textContent=grand>0?fmtTL(grand):'';
+  if($('mdetGrand'))$('mdetGrand').textContent=fmtTL(grand);
+  const parts=[];
+  if(mc.mn!==0)parts.push(fmtD(Math.abs(mc.mn))+(mc.mn<0?' eksik':' mesai'));
+  if(primTop>0)parts.push(fmtTL(primTop)+' prim');
+  if($('mdetSub'))$('mdetSub').textContent=parts.join(' · ')||'Mesai yok';
+}
+
+function onMaasChange(val){
+  if(detailY===null)return;
+  salaries[mk(detailY,detailM)]=parseFloat(val)||0;
+  saveLocal();debouncePush();updateMonthDetailFooter(detailY,detailM);
+  if(curScreen==='homeScreen')renderHome();
+}
+function onMdChange(field,val){
+  if(detailY===null)return;
+  setMonthData(detailY,detailM,field,parseFloat(val)||0);
+  updateMonthDetailFooter(detailY,detailM);
   if(curScreen==='homeScreen')renderHome();
 }
 
-function openSalaryForMonth(y,m){
-  curY=y;curM=m;openSalarySheet();
+function openSalaryForMonth(y,m){curY=y;curM=m;openSalarySheet();}
+function refreshMonthCard(){
+  if(detailY===null)return;
+  renderMonthDetailGrid(detailY,detailM);
+  updateMonthDetailFooter(detailY,detailM);
+  renderYearGrid();
+  if(curScreen==='homeScreen')renderHome();
 }
 
 // Day detail overlay
@@ -1182,7 +1296,7 @@ function refreshDayOv(key){
     tile.className=cls;tile.innerHTML=`<div class="dgrid-dn">${ds}</div>${minTxt?`<div class="dgrid-min">${minTxt}</div>`:''}`;
   }
   // Refresh month totals
-  const[ys2,ms2]=key.split('-').map(Number);refreshMonthCard(mk(ys2,ms2));
+  const[ys2,ms2]=key.split('-').map(Number);refreshMonthCard();
 }
 
 function setVardiyaOv(key,field,val){
