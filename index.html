@@ -646,7 +646,7 @@ body{display:flex;flex-direction:column;position:relative}
 </script>
 
 <script>
-const VERSION='v2.393';
+const VERSION='v2.4';
 const CLIENT_ID='390842439862-ks2rqj0cgh4t0aefea31cei42rea2usg.apps.googleusercontent.com';
 const SCOPES='https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
 const SHEET_NAME='Mesai Takip';
@@ -953,7 +953,7 @@ async function pullSheet(){
     const fixedSheets=['Maaslar','Ayarlar'];
     const allRanges=[
       ...monthSheets.map(t=>encodeURIComponent(t+'!A1:N60')),
-      'Maaslar!A2:B',
+      'Maaslar!A2:D',
       'Ayarlar!A2:B'
     ];
 
