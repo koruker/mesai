@@ -646,7 +646,7 @@ body{display:flex;flex-direction:column;position:relative}
 </script>
 
 <script>
-const VERSION='v2.391';
+const VERSION='v2.392';
 const CLIENT_ID='390842439862-ks2rqj0cgh4t0aefea31cei42rea2usg.apps.googleusercontent.com';
 const SCOPES='https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
 const SHEET_NAME='Mesai Takip';
@@ -996,7 +996,22 @@ async function pullSheet(){
         const yol=row[7]&&row[7]!=='₺0,00'?String(row[7]).replace(/[₺,]/g,''):''  ;
         const yemek=row[8]&&row[8]!=='₺0,00'?String(row[8]).replace(/[₺,]/g,''):'';
         if(giris||cikis){
-          nd[key]={giris:giris||'',cikis:cikis||'',carpanOverride:cp!=null&&!isNaN(cp)?cp:null,molaMin:'',molalar:[],yolTutar:yol,yemekTutar:yemek,aciklama:aciklama||'',tatil:false};
+          const existing=dayData[key]||{};
+          nd[key]={
+            giris:giris||'',cikis:cikis||'',
+            carpanOverride:cp!=null&&!isNaN(cp)?cp:null,
+            molaMin:'',molalar:[],
+            yolTutar:yol,yemekTutar:yemek,
+            aciklama:aciklama||'',tatil:false,
+            // Vardiya bilgisini koru — Sheets'te saklanmıyor
+            vardiyaS:existing.vardiyaS??null,
+            vardiyaB:existing.vardiyaB??null,
+            mesailer:existing.mesailer||null
+          };
+          // mesailer varsa giris/cikis legacy alanını temizle
+          if(nd[key].mesailer&&nd[key].mesailer.length){
+            delete nd[key].giris;delete nd[key].cikis;
+          }
         }
       }
     });
