@@ -646,7 +646,7 @@ body{display:flex;flex-direction:column;position:relative}
 </script>
 
 <script>
-const VERSION='v2.38';
+const VERSION='v2.39';
 const CLIENT_ID='390842439862-ks2rqj0cgh4t0aefea31cei42rea2usg.apps.googleusercontent.com';
 const SCOPES='https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
 const SHEET_NAME='Mesai Takip';
@@ -683,25 +683,18 @@ function setMonthData(y,m,field,val){const k=mk(y,m);if(!monthData[k])monthData[
 // Searches backwards from that day for a day with explicit vardiya set.
 // Falls back to cfg defaults.
 function getVardiya(key){
-  // Check the day itself first
   const r=getDay(key);
-  if(r.vardiyaS!=null&&r.vardiyaB!=null) return{s:pt(r.vardiyaS),b:pt(r.vardiyaB)};
-  // Search backwards up to 60 days
+  if(r.vardiyaS!=null&&r.vardiyaB!=null) return{s:pt(r.vardiyaS),b:pt(r.vardiyaB),isDefault:false};
   const[ys,ms,ds]=key.split('-').map(Number);
   let dt=new Date(ys,ms,ds);
   for(let i=1;i<=60;i++){
     dt=new Date(dt.getTime()-86400000);
     const k=dk(dt.getFullYear(),dt.getMonth(),dt.getDate());
     const pr=getDay(k);
-    if(pr.vardiyaS!=null&&pr.vardiyaB!=null) return{s:pt(pr.vardiyaS),b:pt(pr.vardiyaB)};
+    if(pr.vardiyaS!=null&&pr.vardiyaB!=null) return{s:pt(pr.vardiyaS),b:pt(pr.vardiyaB),isDefault:false};
   }
-  // Fall back to cfg
-  return{s:pt(cfg.vardiyaS)||15*60,b:pt(cfg.vardiyaB)||23*60};
-}
-
-function anyVardiyaSet(){
-  // Returns true if any day in dayData has explicit vardiya
-  return Object.values(dayData).some(r=>r.vardiyaS!=null&&r.vardiyaB!=null);
+  // cfg default — no real vardiya set anywhere
+  return{s:pt(cfg.vardiyaS)||15*60,b:pt(cfg.vardiyaB)||23*60,isDefault:true};
 }
 
 function calcDay(key){
@@ -709,9 +702,9 @@ function calcDay(key){
   const r=getDay(key),maas=getSalary(ys,ms),saatlik=maas/(cfg.aylikSaat||225);
   const carpan=r.carpanOverride!=null?r.carpanOverride:cfg.carpan;
   const vrd=getVardiya(key);
-  const hasVardiya=anyVardiyaSet();
+  // Vardiya gerçekten tanımlıysa net hesap, değilse tüm süre mesai
+  const hasVardiya=!vrd.isDefault;
   let netMin=0;
-  // Collect mesai blocks
   const blocks=[];
   if(r.mesailer&&r.mesailer.length){
     for(const b of r.mesailer) if(b.giris&&b.cikis) blocks.push(b);
@@ -722,14 +715,13 @@ function calcDay(key){
     const g=pt(blk.giris);
     let c2=pt(blk.cikis);
     if(c2===null||g===null) continue;
-    if(c2<=g) c2+=24*60; // overnight
+    if(c2<=g) c2+=24*60;
     if(!hasVardiya){
       netMin+=c2-g;
     } else {
       netMin+=(vrd.s-g)+(c2-vrd.b);
     }
   }
-  // Subtract shared mola
   let mol=0;
   if(r.molalar)for(const mo of r.molalar){const mb=pt(mo.bas),me=pt(mo.bit);if(mb!=null&&me!=null){let dur=me-mb;if(dur<0)dur+=24*60;if(dur>0)mol+=dur;}}
   if(r.molaMin)mol+=parseInt(r.molaMin)||0;
@@ -1037,21 +1029,26 @@ function setSyncUI(state,txt){
   if(dot)dot.style.background=state==='ok'?'var(--green)':state==='syncing'?'var(--gold)':'var(--red)';
   if(t)t.textContent=txt;
 }
-function debouncePush(){clearTimeout(syncTimer);syncTimer=setTimeout(pushSheet,2500);}
+function debouncePush(){clearTimeout(syncTimer);syncTimer=setTimeout(pushSheet,1500);}
+
+// Sayfa kapanmadan önce bekleyen push varsa hemen gönder
+window.addEventListener('beforeunload',()=>{
+  if(syncTimer){clearTimeout(syncTimer);if(accessToken&&spreadsheetId)pushSheet();}
+});
 
 function setField(key,field,val){if(!dayData[key])dayData[key]={};dayData[key][field]=val;saveLocal();debouncePush();refreshCard(key);}
 function setVardiya(key,field,val){
   if(!dayData[key])dayData[key]={};
   dayData[key][field]=val;
-  // Make sure both are set together — if only one is set, grab the other from inheritance
   const r=dayData[key];
   if(!r.vardiyaS||!r.vardiyaB){
     const inh=getVardiya(key);
     if(!r.vardiyaS)r.vardiyaS=fmtT(inh.s);
     if(!r.vardiyaB)r.vardiyaB=fmtT(inh.b);
   }
-  saveLocal();debouncePush();refreshCard(key);
-  // Update inheritance label
+  saveLocal();debouncePush();
+  // Rebuild full overlay so calc uses new vardiya immediately
+  refreshDayOv(key);
   const lbl=$('vrd-inh-'+key);if(lbl)lbl.textContent='Bu güne özel';
 }
 function toggleExtra(key,field){if(!dayData[key])dayData[key]={};dayData[key][field]=!dayData[key][field];saveLocal();debouncePush();refreshCard(key);}
