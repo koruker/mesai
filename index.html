@@ -646,7 +646,7 @@ body{display:flex;flex-direction:column;position:relative}
 </script>
 
 <script>
-const VERSION='v2.466';
+const VERSION='v2.467';
 const CLIENT_ID='390842439862-ks2rqj0cgh4t0aefea31cei42rea2usg.apps.googleusercontent.com';
 const SCOPES='https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
 const SHEET_NAME='Mesai Takip';
@@ -727,7 +727,6 @@ function calcDay(key){
     let vardiyaSure=vrd.b-vrd.s;
     if(vardiyaSure<=0) vardiyaSure+=24*60;
     netMin=totalWork-vardiyaSure;
-    console.log(`[calcDay ${key}] blocks:`,blocks.length,'totalWork:',totalWork,'vardiyaSure:',vardiyaSure,'netMin:',netMin,'vrd:',vrd);
   }
   let mol=0;
   if(r.molalar)for(const mo of r.molalar){const mb=pt(mo.bas),me=pt(mo.bit);if(mb!=null&&me!=null){let dur=me-mb;if(dur<0)dur+=24*60;if(dur>0)mol+=dur;}}
@@ -884,53 +883,41 @@ function dayToRow(key){
   return row;
 }
 
-function rowToDay(row,existingDay){
-  // Detect schema: new schema has DD.MM.YYYY in col0, old has it in col1
-  const col0hasDate=row[0]&&row[0].includes('.');
-  const col1hasDate=row[1]&&row[1].includes('.');
-  const isOld=!col0hasDate&&col1hasDate;
-  let tarih,vardiyaS,vardiyaB,carpan,molaMin,yol,yemek,aciklama,mesailer;
-  if(isOld){
-    tarih=row[1];
-    vardiyaS=existingDay?.vardiyaS??null;
-    vardiyaB=existingDay?.vardiyaB??null;
-    carpan=row[11]?parseFloat(row[11]):null;
-    molaMin='';
-    yol=row[7]&&row[7]!=='₺0,00'?String(row[7]).replace(/[₺,]/g,''):'';
-    yemek=row[8]&&row[8]!=='₺0,00'?String(row[8]).replace(/[₺,]/g,''):'';
-    aciklama=row[4]||'';
-    const ga=(row[2]||'').split(',').map(s=>s.trim()).filter(Boolean);
-    const ca=(row[3]||'').split(',').map(s=>s.trim()).filter(Boolean);
-    mesailer=ga.map((g,i)=>({giris:g,cikis:ca[i]||''}));
-  } else {
-    tarih=row[0];
-    vardiyaS=row[1]||null;
-    vardiyaB=row[2]||null;
-    carpan=row[3]!=null&&row[3]!==''?parseFloat(row[3]):null;
-    molaMin=row[4]||'';
-    yol=row[5]||'';
-    yemek=row[6]||'';
-    aciklama=row[7]||'';
-    mesailer=[];
-    for(let i=0;i<MAX_BLOK;i++){
-      const g=row[8+i*2]||'',c=row[9+i*2]||'';
-      if(g||c)mesailer.push({giris:g,cikis:c});
-    }
-  }
-  if(!tarih||!tarih.includes('.'))return null;
-  const dp=tarih.split('.');
-  if(dp.length<3)return null;
+function rowToDay(row){
+  // Sadece yeni şema: A=DD.MM.YYYY, B=VardiyaS, C=VardiyaB, D=Carpan, E=MolaMin, F=Yol, G=Yemek, H=Aciklama, I+=Giris/Cikis
+  const tarih=row[0]||'';
+  // Geçerli tarih formatı: DD.MM.YYYY
+  if(!/^\d{1,2}\.\d{1,2}\.\d{4}$/.test(tarih.trim())) return null;
+  const dp=tarih.trim().split('.');
   const d=parseInt(dp[0]),m=parseInt(dp[1])-1,y=parseInt(dp[2]);
-  if(isNaN(d)||isNaN(m)||isNaN(y))return null;
+  if(isNaN(d)||isNaN(m)||isNaN(y)) return null;
   const key=dk(y,m,d);
-  const hasData=mesailer.length>0||yol||yemek||aciklama||vardiyaS;
-  if(!hasData)return null;
+
+  const vardiyaS=row[1]&&/^\d{1,2}:\d{2}$/.test(row[1].trim())?row[1].trim():null;
+  const vardiyaB=row[2]&&/^\d{1,2}:\d{2}$/.test(row[2].trim())?row[2].trim():null;
+  const carpanRaw=row[3];
+  const carpan=carpanRaw!=null&&carpanRaw!==''&&!isNaN(parseFloat(carpanRaw))?parseFloat(carpanRaw):null;
+  const molaMin=row[4]||'';
+  const yol=row[5]||'';
+  const yemek=row[6]||'';
+  const aciklama=row[7]||'';
+
+  const mesailer=[];
+  for(let i=0;i<MAX_BLOK;i++){
+    const g=(row[8+i*2]||'').trim();
+    const c=(row[9+i*2]||'').trim();
+    if(g||c) mesailer.push({giris:g,cikis:c});
+  }
+
+  const hasData=mesailer.length>0||yol||yemek||aciklama||vardiyaS||carpan!=null;
+  if(!hasData) return null;
+
   return{key,data:{
-    vardiyaS:vardiyaS||null, vardiyaB:vardiyaB||null,
-    carpanOverride:carpan!=null&&!isNaN(carpan)?carpan:null,
-    molaMin, molalar:existingDay?.molalar||[],
+    vardiyaS, vardiyaB,
+    carpanOverride:carpan,
+    molaMin, molalar:[],
     yolTutar:yol, yemekTutar:yemek, aciklama,
-    mesailer:mesailer.length?mesailer:(existingDay?.mesailer||[])
+    mesailer
   }};
 }
 
@@ -985,14 +972,10 @@ async function pullSheet(){
     const aS=vRanges[monthSheets.length+1];
     const nd={};
     vRanges.slice(0,monthSheets.length).forEach((vS)=>{
-      const rows=(vS.values||[]).filter(r=>r[0]&&r[0].includes('.')||r[1]&&r[1].includes('.'));
+      const rows=(vS.values||[]).filter(r=>r[0]&&/^\d{1,2}\.\d{1,2}\.\d{4}$/.test((r[0]||'').trim()));
       for(const row of rows){
-        const dateCol=row[0]&&row[0].includes('.')?row[0]:row[1];
-        const dp2=dateCol?dateCol.split('.'):[];
-        if(dp2.length<3)continue;
-        const existKey=dk(parseInt(dp2[2]),parseInt(dp2[1])-1,parseInt(dp2[0]));
-        const result=rowToDay(row,dayData[existKey]||{});
-        if(result)nd[result.key]=result.data;
+        const result=rowToDay(row);
+        if(result) nd[result.key]=result.data;
       }
     });
     dayData=nd;
@@ -1067,7 +1050,12 @@ function saveSettings(){
 
 let curScreen='';
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));$(id).classList.remove('hidden');curScreen=id;}
-function showApp(){applySettings();updateUser();showScreen('homeScreen');renderHome();}
+async function showApp(){
+  applySettings();updateUser();showScreen('homeScreen');renderHome();
+  // Her açılışta Sheets'ten çek — tek kaynak Sheets
+  await pullSheet();
+  renderAll();
+}
 function goHome(){showScreen('homeScreen');renderHome();}
 function goCalendar(){
   showScreen('calScreen');
