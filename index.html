@@ -1,0 +1,1348 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Depo · Stok Takip</title>
+<meta name="theme-color" content="#0a0e14">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+/* ============ TOKENS ============ */
+:root{
+  --bg-0:#0a0e14;
+  --bg-1:#0e131b;
+  --bg-2:#141a24;
+  --bg-3:#1b232f;
+  --line:#232c3a;
+  --line-soft:#1a212c;
+  --text-0:#eef2f7;
+  --text-1:#a8b3c2;
+  --text-2:#5f6b7d;
+  --accent:#ff7a33;
+  --accent-dim:#ff7a3322;
+  --good:#3ddc97;
+  --good-dim:#3ddc9722;
+  --warn:#ffc857;
+  --warn-dim:#ffc85722;
+  --bad:#ff5d6c;
+  --bad-dim:#ff5d6c22;
+  --font-display:'Space Grotesk',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+  --radius:14px;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+html,body{
+  background:var(--bg-0);
+  color:var(--text-0);
+  font-family:var(--font-display);
+  -webkit-font-smoothing:antialiased;
+  height:100%;
+  overflow-x:hidden;
+}
+body{
+  background-image:
+    radial-gradient(circle at 15% 8%, #ff7a3318 0%, transparent 38%),
+    radial-gradient(circle at 88% 18%, #3ddc9712 0%, transparent 42%),
+    radial-gradient(circle at 50% 95%, #4d6bff14 0%, transparent 45%);
+  background-attachment:fixed;
+  min-height:100vh;
+}
+/* mesh grid overlay */
+body::before{
+  content:'';
+  position:fixed; inset:0; z-index:0; pointer-events:none;
+  background-image:
+    linear-gradient(var(--line-soft) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line-soft) 1px, transparent 1px);
+  background-size:48px 48px;
+  mask-image:radial-gradient(ellipse 80% 60% at 50% 0%, black 0%, transparent 70%);
+  opacity:.5;
+}
+#app{position:relative; z-index:1; min-height:100vh; display:flex; flex-direction:column;}
+.hidden{display:none !important;}
+
+/* ============ ROTATE LOCK (mobile must be portrait) ============ */
+#rotateLock{
+  position:fixed; inset:0; z-index:9999; background:var(--bg-0);
+  display:none; flex-direction:column; align-items:center; justify-content:center; gap:16px;
+  text-align:center; padding:32px;
+}
+@media (orientation:landscape) and (max-width:900px){
+  #rotateLock{display:flex;}
+  #app{display:none;}
+}
+.rotate-icon{font-size:48px; animation:tilt 1.6s ease-in-out infinite;}
+@keyframes tilt{0%,100%{transform:rotate(0deg);}50%{transform:rotate(90deg);}}
+
+/* ============ TOPBAR ============ */
+.topbar{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:16px 20px; border-bottom:1px solid var(--line);
+  position:sticky; top:0; backdrop-filter:blur(12px); background:rgba(10,14,20,.72); z-index:50;
+}
+.brand{display:flex; align-items:center; gap:10px;}
+.brand-mark{
+  width:34px; height:34px; border-radius:9px;
+  background:linear-gradient(135deg,var(--accent),#ff9a5c);
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--font-mono); font-weight:600; font-size:15px; color:#1a0e06;
+  box-shadow:0 0 0 1px #ffffff14 inset, 0 6px 18px -6px #ff7a3366;
+}
+.brand-name{font-weight:600; font-size:16px; letter-spacing:-.01em;}
+.brand-name .sub{display:block; font-family:var(--font-mono); font-size:10px; color:var(--text-2); letter-spacing:.08em; text-transform:uppercase; font-weight:500;}
+.topbar-right{display:flex; align-items:center; gap:10px;}
+.user-chip{
+  display:flex; align-items:center; gap:8px;
+  font-size:12px; color:var(--text-1); font-family:var(--font-mono);
+  padding:6px 10px; border:1px solid var(--line); border-radius:999px;
+}
+.role-tag{
+  font-size:10px; text-transform:uppercase; letter-spacing:.06em; font-weight:600;
+  padding:2px 7px; border-radius:6px; background:var(--accent-dim); color:var(--accent);
+}
+.btn-icon{
+  width:34px; height:34px; border-radius:9px; border:1px solid var(--line); background:var(--bg-2);
+  color:var(--text-1); display:flex; align-items:center; justify-content:center; cursor:pointer;
+  transition:.15s;
+}
+.btn-icon:hover{border-color:var(--text-2); color:var(--text-0);}
+
+/* ============ LOGIN VIEW ============ */
+.login-wrap{
+  flex:1; display:flex; align-items:center; justify-content:center; padding:24px;
+}
+.login-card{
+  width:100%; max-width:380px; text-align:center;
+  background:var(--bg-1); border:1px solid var(--line); border-radius:20px;
+  padding:40px 28px; box-shadow:0 30px 60px -30px #000a;
+}
+.login-mark{
+  width:64px; height:64px; border-radius:16px; margin:0 auto 20px;
+  background:linear-gradient(135deg,var(--accent),#ff9a5c);
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--font-mono); font-size:26px; font-weight:700; color:#1a0e06;
+  box-shadow:0 0 0 1px #ffffff1a inset, 0 12px 30px -10px #ff7a3366;
+}
+.login-card h1{font-size:21px; font-weight:600; margin-bottom:6px;}
+.login-card p{font-size:13px; color:var(--text-1); line-height:1.5; margin-bottom:26px;}
+#googleBtnContainer{display:flex; justify-content:center;}
+.login-status{margin-top:18px; font-size:12px; color:var(--text-2); font-family:var(--font-mono); min-height:16px;}
+.status-pending{
+  margin-top:18px; padding:14px; border-radius:12px; background:var(--warn-dim); border:1px solid #ffc85740;
+  font-size:12.5px; color:var(--warn); text-align:left; line-height:1.5;
+}
+.status-rejected{
+  margin-top:18px; padding:14px; border-radius:12px; background:var(--bad-dim); border:1px solid #ff5d6c40;
+  font-size:12.5px; color:var(--bad); text-align:left; line-height:1.5;
+}
+
+/* ============ TABS ============ */
+.tabbar{
+  display:flex; gap:6px; padding:10px 16px; overflow-x:auto;
+  border-bottom:1px solid var(--line); position:sticky; top:65px; z-index:40;
+  background:rgba(10,14,20,.72); backdrop-filter:blur(12px);
+}
+.tab{
+  font-family:var(--font-mono); font-size:11.5px; letter-spacing:.03em; text-transform:uppercase;
+  padding:9px 14px; border-radius:9px; color:var(--text-2); cursor:pointer; white-space:nowrap;
+  border:1px solid transparent; transition:.15s; font-weight:500;
+}
+.tab.active{background:var(--bg-2); color:var(--text-0); border-color:var(--line);}
+.tab:not(.active):hover{color:var(--text-1);}
+
+/* ============ MAIN CONTENT ============ */
+.view{padding:18px 16px 90px; max-width:760px; margin:0 auto; width:100%;}
+.section-title{
+  font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--text-2);
+  font-family:var(--font-mono); margin:22px 4px 10px; font-weight:600;
+}
+.section-title:first-child{margin-top:4px;}
+
+/* search/filter bar */
+.filter-row{display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap;}
+.search-input{
+  flex:1; min-width:140px; background:var(--bg-2); border:1px solid var(--line); border-radius:11px;
+  padding:11px 14px; color:var(--text-0); font-size:14px; font-family:var(--font-display);
+}
+.search-input:focus{outline:none; border-color:var(--accent);}
+.chip-scroll{display:flex; gap:6px; overflow-x:auto; padding-bottom:4px;}
+.chip{
+  font-family:var(--font-mono); font-size:11px; padding:6px 11px; border-radius:999px;
+  background:var(--bg-2); border:1px solid var(--line); color:var(--text-1); white-space:nowrap; cursor:pointer;
+}
+.chip.active{background:var(--accent-dim); border-color:#ff7a3350; color:var(--accent);}
+
+/* product card */
+.product-card{
+  background:var(--bg-1); border:1px solid var(--line); border-radius:14px; padding:14px 16px;
+  margin-bottom:10px; display:flex; align-items:center; gap:14px; cursor:pointer; transition:.15s;
+}
+.product-card:hover{border-color:#2c3747; transform:translateY(-1px);}
+.product-card .stock-pill{
+  font-family:var(--font-mono); font-size:13px; font-weight:600; min-width:54px; text-align:center;
+  padding:8px 6px; border-radius:10px; background:var(--bg-2); color:var(--text-0); flex-shrink:0;
+}
+.stock-pill.low{color:var(--bad); background:var(--bad-dim);}
+.stock-pill.mid{color:var(--warn); background:var(--warn-dim);}
+.stock-pill.ok{color:var(--good); background:var(--good-dim);}
+.product-info{flex:1; min-width:0;}
+.product-name{font-size:14.5px; font-weight:600; margin-bottom:4px;}
+.product-meta{font-size:11.5px; color:var(--text-2); font-family:var(--font-mono); display:flex; gap:6px; flex-wrap:wrap; align-items:center;}
+.tag-dot{display:inline-flex; align-items:center; gap:4px; background:var(--bg-2); padding:2px 7px; border-radius:6px;}
+
+.empty-state{
+  text-align:center; padding:50px 20px; color:var(--text-2);
+}
+.empty-state .ico{font-size:30px; margin-bottom:10px; opacity:.5;}
+.empty-state p{font-size:13px;}
+
+/* balance card */
+.balance-card{
+  background:var(--bg-1); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-bottom:10px;
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+}
+.balance-card .qty{font-family:var(--font-mono); font-size:19px; font-weight:700; color:var(--good);}
+.balance-actions{display:flex; gap:8px;}
+.mini-btn{
+  font-family:var(--font-mono); font-size:11px; padding:7px 11px; border-radius:8px; border:1px solid var(--line);
+  background:var(--bg-2); color:var(--text-1); cursor:pointer; font-weight:600;
+}
+.mini-btn.iade{color:var(--good); border-color:#3ddc9740;}
+.mini-btn.hurda{color:var(--bad); border-color:#ff5d6c40;}
+
+/* ============ MODAL / SHEET ============ */
+.sheet-overlay{
+  position:fixed; inset:0; background:#000a; backdrop-filter:blur(3px); z-index:200;
+  display:flex; align-items:flex-end; justify-content:center;
+}
+.sheet{
+  width:100%; max-width:480px; background:var(--bg-1); border:1px solid var(--line);
+  border-bottom:none; border-radius:22px 22px 0 0; padding:22px 20px 28px;
+  animation:slideUp .25s ease; max-height:88vh; overflow-y:auto;
+}
+@keyframes slideUp{from{transform:translateY(100%);} to{transform:translateY(0);}}
+.sheet-handle{width:36px; height:4px; background:var(--line); border-radius:99px; margin:0 auto 18px;}
+.sheet h2{font-size:18px; font-weight:600; margin-bottom:4px;}
+.sheet .sub{font-size:12.5px; color:var(--text-2); margin-bottom:20px; font-family:var(--font-mono);}
+
+.action-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:18px;}
+.action-grid.single{grid-template-columns:1fr;}
+.action-card{
+  border:1px solid var(--line); border-radius:13px; padding:14px 12px; text-align:center; cursor:pointer;
+  background:var(--bg-2); transition:.15s;
+}
+.action-card.selected{border-color:var(--accent); background:var(--accent-dim);}
+.action-card .ico{font-size:20px; display:block; margin-bottom:6px;}
+.action-card .label{font-size:12.5px; font-weight:600;}
+
+.field-group{margin-bottom:16px;}
+.field-label{font-size:11.5px; color:var(--text-2); font-family:var(--font-mono); text-transform:uppercase; letter-spacing:.05em; margin-bottom:7px; display:block;}
+.field-input, .field-select{
+  width:100%; background:var(--bg-2); border:1px solid var(--line); border-radius:11px; padding:12px 14px;
+  color:var(--text-0); font-size:15px; font-family:var(--font-display);
+}
+.field-input:focus, .field-select:focus{outline:none; border-color:var(--accent);}
+.qty-stepper{display:flex; align-items:center; gap:12px;}
+.qty-btn{
+  width:42px; height:42px; border-radius:11px; border:1px solid var(--line); background:var(--bg-2);
+  color:var(--text-0); font-size:18px; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0;
+}
+.qty-stepper .field-input{text-align:center; font-family:var(--font-mono); font-weight:600; font-size:18px;}
+
+.btn-primary{
+  width:100%; padding:14px; border-radius:12px; border:none; cursor:pointer;
+  background:linear-gradient(135deg,var(--accent),#ff9a5c); color:#1a0e06; font-weight:700; font-size:14.5px;
+  font-family:var(--font-display); box-shadow:0 10px 24px -10px #ff7a3366;
+}
+.btn-primary:disabled{opacity:.4; cursor:not-allowed;}
+.btn-secondary{
+  width:100%; padding:13px; border-radius:12px; border:1px solid var(--line); cursor:pointer;
+  background:var(--bg-2); color:var(--text-1); font-weight:600; font-size:14px; font-family:var(--font-display); margin-top:8px;
+}
+.error-msg{
+  background:var(--bad-dim); border:1px solid #ff5d6c40; color:var(--bad); border-radius:10px;
+  padding:11px 14px; font-size:12.5px; margin-bottom:14px;
+}
+.success-msg{
+  background:var(--good-dim); border:1px solid #3ddc9740; color:var(--good); border-radius:10px;
+  padding:11px 14px; font-size:12.5px; margin-bottom:14px;
+}
+
+/* ============ ADMIN TABLES ============ */
+.admin-row{
+  background:var(--bg-1); border:1px solid var(--line); border-radius:13px; padding:13px 15px; margin-bottom:8px;
+  display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+}
+.admin-row-main{flex:1; min-width:160px;}
+.admin-row-title{font-size:13.5px; font-weight:600;}
+.admin-row-sub{font-size:11.5px; color:var(--text-2); font-family:var(--font-mono); margin-top:2px;}
+.admin-row-actions{display:flex; gap:6px; flex-wrap:wrap;}
+.pill-status{
+  font-family:var(--font-mono); font-size:10px; text-transform:uppercase; padding:3px 8px; border-radius:6px; font-weight:600;
+}
+.pill-approved{background:var(--good-dim); color:var(--good);}
+.pill-pending{background:var(--warn-dim); color:var(--warn);}
+.pill-rejected{background:var(--bad-dim); color:var(--bad);}
+
+.fab{
+  position:fixed; bottom:24px; right:20px; width:56px; height:56px; border-radius:16px; z-index:60;
+  background:linear-gradient(135deg,var(--accent),#ff9a5c); color:#1a0e06; border:none; cursor:pointer;
+  font-size:26px; display:flex; align-items:center; justify-content:center;
+  box-shadow:0 14px 30px -10px #ff7a3366;
+}
+
+.loading-overlay{
+  position:fixed; inset:0; background:#0a0e14ee; z-index:300; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:14px;
+}
+.spinner{
+  width:32px; height:32px; border-radius:50%; border:3px solid var(--line); border-top-color:var(--accent);
+  animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-overlay span{font-family:var(--font-mono); font-size:12px; color:var(--text-2);}
+
+.toast{
+  position:fixed; bottom:24px; left:50%; transform:translateX(-50%); z-index:400;
+  background:var(--bg-3); border:1px solid var(--line); border-radius:12px; padding:13px 20px;
+  font-size:13px; box-shadow:0 14px 30px -10px #000a; max-width:90vw; text-align:center;
+  animation:toastIn .25s ease;
+}
+@keyframes toastIn{from{opacity:0; transform:translate(-50%,10px);} to{opacity:1; transform:translate(-50%,0);}}
+.toast.success{border-color:#3ddc9750; color:var(--good);}
+.toast.error{border-color:#ff5d6c50; color:var(--bad);}
+
+.tx-row{display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--line-soft); font-size:12.5px;}
+.tx-row:last-child{border-bottom:none;}
+.tx-type{font-family:var(--font-mono); font-size:9.5px; text-transform:uppercase; padding:3px 7px; border-radius:6px; font-weight:700; flex-shrink:0;}
+.tx-cekim{background:var(--bad-dim); color:var(--bad);}
+.tx-iade{background:var(--good-dim); color:var(--good);}
+.tx-hurda{background:var(--warn-dim); color:var(--warn);}
+.tx-admin_duzeltme{background:#4d6bff22; color:#7b93ff;}
+.tx-detail{flex:1; min-width:0;}
+.tx-detail .main{font-weight:500;}
+.tx-detail .sub{color:var(--text-2); font-family:var(--font-mono); font-size:11px;}
+
+@media (min-width:640px){
+  .view{padding-top:24px;}
+}
+</style>
+</head>
+<body>
+
+<div id="rotateLock">
+  <div class="rotate-icon">📱</div>
+  <div style="font-family:var(--font-mono); font-size:13px; color:var(--text-1);">Lütfen telefonunuzu dikey çevirin</div>
+</div>
+
+<div id="app">
+
+  <!-- ============ LOGIN VIEW ============ -->
+  <div id="loginView">
+    <div class="login-wrap">
+      <div class="login-card">
+        <div class="login-mark">D</div>
+        <h1>Depo Stok Takip</h1>
+        <p>Devam etmek için Google hesabınızla giriş yapın. Erişiminiz yöneticiniz tarafından onaylanmalıdır.</p>
+        <div id="googleBtnContainer"></div>
+        <div id="loginStatus" class="login-status"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ MAIN APP (after login) ============ -->
+  <div id="mainApp" class="hidden">
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-mark">D</div>
+        <div class="brand-name">Depo<span class="sub" id="userNameLabel">—</span></div>
+      </div>
+      <div class="topbar-right">
+        <span class="user-chip"><span class="role-tag" id="roleTag">—</span></span>
+        <button class="btn-icon" id="logoutBtn" title="Çıkış yap">⏻</button>
+      </div>
+    </div>
+
+    <div class="tabbar" id="tabbar">
+      <div class="tab active" data-tab="stock">Stok</div>
+      <div class="tab" data-tab="balances">Bakiyem</div>
+      <div class="tab admin-only hidden" data-tab="admin-users">Kullanıcılar</div>
+      <div class="tab admin-only hidden" data-tab="admin-products">Ürünler</div>
+      <div class="tab admin-only hidden" data-tab="admin-categories">Kategoriler</div>
+      <div class="tab admin-only hidden" data-tab="admin-machines">Makineler</div>
+      <div class="tab admin-only hidden" data-tab="admin-log">Hareketler</div>
+    </div>
+
+    <!-- ---- STOCK LIST (operator + admin) ---- -->
+    <div class="view" id="view-stock">
+      <div class="filter-row">
+        <input class="search-input" id="stockSearch" placeholder="Ürün ara…">
+      </div>
+      <div class="chip-scroll" id="categoryChips"></div>
+      <div id="stockList" style="margin-top:14px;"></div>
+    </div>
+
+    <!-- ---- MY BALANCES (operator) ---- -->
+    <div class="view hidden" id="view-balances">
+      <div class="section-title">Üzerimdeki Stok</div>
+      <div id="balanceList"></div>
+    </div>
+
+    <!-- ---- ADMIN: USERS ---- -->
+    <div class="view hidden" id="view-admin-users">
+      <div class="section-title">Onay Bekleyenler</div>
+      <div id="pendingUsersList"></div>
+      <div class="section-title">Tüm Kullanıcılar</div>
+      <div id="allUsersList"></div>
+    </div>
+
+    <!-- ---- ADMIN: PRODUCTS ---- -->
+    <div class="view hidden" id="view-admin-products">
+      <div class="section-title">Ürün Yönetimi</div>
+      <div id="adminProductsList"></div>
+    </div>
+
+    <!-- ---- ADMIN: CATEGORIES ---- -->
+    <div class="view hidden" id="view-admin-categories">
+      <div class="section-title">Ana Kategoriler</div>
+      <div id="adminCategoriesList"></div>
+    </div>
+
+    <!-- ---- ADMIN: MACHINES ---- -->
+    <div class="view hidden" id="view-admin-machines">
+      <div class="section-title">Makineler</div>
+      <div id="adminMachinesList"></div>
+    </div>
+
+    <!-- ---- ADMIN: TRANSACTION LOG ---- -->
+    <div class="view hidden" id="view-admin-log">
+      <div class="section-title">Son Hareketler</div>
+      <div id="txLogList" style="background:var(--bg-1); border:1px solid var(--line); border-radius:14px; padding:6px 15px;"></div>
+    </div>
+
+    <button class="fab hidden" id="fabAdd" title="Ekle">＋</button>
+  </div>
+</div>
+
+<div id="modalRoot"></div>
+<div id="toastRoot"></div>
+
+<script>
+/* ============================================================
+   AYARLAR — bunları kendi değerlerinle değiştir
+   ============================================================ */
+const API_URL = 'https://script.google.com/macros/s/AKfycbzhofwZDIEju4-FHs8D-byHU-4Q9YqBLW9_88pNkvh8vE4GdUUZDY-_MKM7E6aDcBJtWA/exec';
+const GOOGLE_CLIENT_ID = '48721393532-h3phnsf14rj4mpdfsg11l26h4mt64qdr.apps.googleusercontent.com';
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let state = {
+  user: null,
+  products: [],
+  categories: [],
+  machines: [],
+  myBalances: [],
+  allBalances: [],
+  transactions: [],
+  users: [],
+  activeCategory: null,
+  searchTerm: ''
+};
+
+/* ============================================================
+   UTIL
+   ============================================================ */
+function $(sel){ return document.querySelector(sel); }
+function $all(sel){ return document.querySelectorAll(sel); }
+function el(tag, attrs={}, html=''){
+  const e = document.createElement(tag);
+  Object.entries(attrs).forEach(([k,v])=> { if(k==='class') e.className=v; else e.setAttribute(k,v); });
+  if(html) e.innerHTML = html;
+  return e;
+}
+function showToast(msg, type='success'){
+  const root = $('#toastRoot');
+  root.innerHTML = '';
+  const t = el('div', {class:'toast '+type}, msg);
+  root.appendChild(t);
+  setTimeout(()=> t.remove(), 3200);
+}
+function showLoading(msg='Yükleniyor…'){
+  const root = $('#modalRoot');
+  root.innerHTML = `<div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div><span>${msg}</span></div>`;
+}
+function hideLoading(){
+  const o = $('#loadingOverlay');
+  if(o) o.remove();
+}
+function closeSheet(){
+  const o = $('.sheet-overlay');
+  if(o) o.remove();
+}
+
+async function api(action, payload={}){
+  const body = { action, email: state.user ? state.user.email : payload.email, ...payload };
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  if(data.error){
+    throw new Error(data.message || data.error);
+  }
+  return data;
+}
+
+/* ============================================================
+   ROTATE LOCK via Screen Orientation API (best-effort)
+   ============================================================ */
+function tryLockOrientation(){
+  if(screen.orientation && screen.orientation.lock){
+    screen.orientation.lock('portrait').catch(()=>{ /* tarayıcı izin vermeyebilir, CSS fallback zaten devrede */ });
+  }
+}
+
+/* ============================================================
+   GOOGLE SIGN-IN
+   ============================================================ */
+function initGoogleSignIn(){
+  if(!window.google || GOOGLE_CLIENT_ID.indexOf('BURAYA') === 0){
+    $('#loginStatus').textContent = 'Google Client ID tanımlanmamış. (Geliştirici: index.html içinde GOOGLE_CLIENT_ID ayarlanmalı.)';
+    return;
+  }
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: handleGoogleCredential
+  });
+  google.accounts.id.renderButton(
+    $('#googleBtnContainer'),
+    { theme: 'filled_black', size: 'large', shape: 'pill', text: 'continue_with' }
+  );
+}
+
+function decodeJwt(token){
+  const payload = token.split('.')[1];
+  return JSON.parse(decodeURIComponent(atob(payload).split('').map(c => '%' + ('00'+c.charCodeAt(0).toString(16)).slice(-2)).join('')));
+}
+
+async function handleGoogleCredential(response){
+  const payload = decodeJwt(response.credential);
+  const email = payload.email;
+  const name = payload.name;
+
+  $('#loginStatus').textContent = 'Kontrol ediliyor…';
+  try {
+    const data = await api('login', { email });
+    state.user = data.user;
+    await loadAppData();
+    enterApp();
+  } catch(err) {
+    handleLoginError(err, email, name);
+  }
+}
+
+function handleLoginError(err, email, name){
+  const statusEl = $('#loginStatus');
+  if(err.message && err.message.indexOf('onay bekliyor') > -1){
+    statusEl.innerHTML = '';
+    const card = el('div', {class:'status-pending'},
+      `<b>Hesabınız onay bekliyor.</b><br>${email} adresi yönetici tarafından onaylandığında giriş yapabileceksiniz.`);
+    statusEl.appendChild(card);
+  } else if(err.message && err.message.indexOf('reddedildi') > -1){
+    statusEl.innerHTML = '';
+    const card = el('div', {class:'status-rejected'}, `<b>Erişiminiz reddedildi.</b><br>Yöneticinizle iletişime geçin.`);
+    statusEl.appendChild(card);
+  } else {
+    statusEl.textContent = 'Hata: ' + err.message;
+  }
+}
+
+/* ============================================================
+   APP ENTRY
+   ============================================================ */
+function enterApp(){
+  $('#loginView').classList.add('hidden');
+  $('#mainApp').classList.remove('hidden');
+  $('#userNameLabel').textContent = state.user.name || state.user.email;
+  $('#roleTag').textContent = state.user.role === 'admin' ? 'Admin' : 'Operatör';
+  if(state.user.role === 'admin'){
+    $all('.admin-only').forEach(t => t.classList.remove('hidden'));
+  }
+  renderCategoryChips();
+  renderStockList();
+  renderBalances();
+}
+
+async function loadAppData(){
+  const data = await api('getAppData', { email: state.user.email });
+  state.products = data.products || [];
+  state.categories = data.categories || [];
+  state.machines = data.machines || [];
+  state.myBalances = data.myBalances || [];
+  if(data.allBalances) state.allBalances = data.allBalances;
+  if(data.transactions) state.transactions = data.transactions;
+}
+
+/* ============================================================
+   TABS
+   ============================================================ */
+$('#tabbar').addEventListener('click', (e) => {
+  const tab = e.target.closest('.tab');
+  if(!tab) return;
+  $all('.tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  const name = tab.dataset.tab;
+  $all('.view').forEach(v => v.classList.add('hidden'));
+  $('#view-' + name).classList.remove('hidden');
+  $('#fabAdd').classList.add('hidden');
+
+  if(name === 'balances') renderBalances();
+  if(name === 'admin-users') loadAndRenderUsers();
+  if(name === 'admin-products') { renderAdminProducts(); $('#fabAdd').classList.remove('hidden'); $('#fabAdd').onclick = () => openProductEditor(); }
+  if(name === 'admin-categories') { renderAdminCategories(); $('#fabAdd').classList.remove('hidden'); $('#fabAdd').onclick = () => openCategoryEditor(); }
+  if(name === 'admin-machines') { renderAdminMachines(); $('#fabAdd').classList.remove('hidden'); $('#fabAdd').onclick = () => openMachineEditor(); }
+  if(name === 'admin-log') renderTxLog();
+});
+
+/* ============================================================
+   CATEGORY HELPERS
+   ============================================================ */
+function getCategoryName(id){
+  const c = state.categories.find(c => c.id === id);
+  return c ? c.name : '—';
+}
+function getCategoryPath(id){
+  const c = state.categories.find(c => c.id === id);
+  if(!c) return '—';
+  if(c.parentId){
+    return getCategoryName(c.parentId) + ' / ' + c.name;
+  }
+  return c.name;
+}
+function getTopCategories(){
+  return state.categories.filter(c => !c.parentId);
+}
+
+function renderCategoryChips(){
+  const wrap = $('#categoryChips');
+  wrap.innerHTML = '';
+  const allChip = el('div', {class:'chip' + (state.activeCategory===null?' active':'')}, 'Tümü');
+  allChip.onclick = () => { state.activeCategory = null; renderCategoryChips(); renderStockList(); };
+  wrap.appendChild(allChip);
+  getTopCategories().forEach(cat => {
+    const chip = el('div', {class:'chip' + (state.activeCategory===cat.id?' active':'')}, cat.name);
+    chip.onclick = () => { state.activeCategory = cat.id; renderCategoryChips(); renderStockList(); };
+    wrap.appendChild(chip);
+  });
+}
+
+$('#stockSearch').addEventListener('input', (e) => {
+  state.searchTerm = e.target.value.toLowerCase();
+  renderStockList();
+});
+
+/* ============================================================
+   STOCK LIST (operator view)
+   ============================================================ */
+function stockPillClass(stock){
+  if(stock <= 0) return 'low';
+  if(stock < 10) return 'mid';
+  return 'ok';
+}
+
+function productMatchesCategory(p, catId){
+  if(catId === null) return true;
+  if(p.categoryId === catId) return true;
+  const cat = state.categories.find(c => c.id === p.categoryId);
+  return cat && cat.parentId === catId;
+}
+
+function renderStockList(){
+  const wrap = $('#stockList');
+  wrap.innerHTML = '';
+  let list = state.products.filter(p => productMatchesCategory(p, state.activeCategory));
+  if(state.searchTerm){
+    list = list.filter(p =>
+      p.name.toLowerCase().includes(state.searchTerm) ||
+      (p.tags||'').toLowerCase().includes(state.searchTerm)
+    );
+  }
+  if(list.length === 0){
+    wrap.appendChild(el('div', {class:'empty-state'}, `<div class="ico">📦</div><p>Ürün bulunamadı.</p>`));
+    return;
+  }
+  list.forEach(p => {
+    const stock = Number(p.totalStock) || 0;
+    const tags = (p.tags||'').split(',').map(t=>t.trim()).filter(Boolean);
+    const card = el('div', {class:'product-card'});
+    card.innerHTML = `
+      <div class="stock-pill ${stockPillClass(stock)}">${stock}</div>
+      <div class="product-info">
+        <div class="product-name">${escapeHtml(p.name)}</div>
+        <div class="product-meta">
+          <span>${escapeHtml(getCategoryPath(p.categoryId))}</span>
+          ${tags.map(t => `<span class="tag-dot">#${escapeHtml(t)}</span>`).join('')}
+        </div>
+      </div>
+    `;
+    card.onclick = () => openStockActionSheet(p);
+    wrap.appendChild(card);
+  });
+}
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str || '';
+  return d.innerHTML;
+}
+
+/* ============================================================
+   STOCK ACTION SHEET (çekim / iade / hurda)
+   ============================================================ */
+function openStockActionSheet(product){
+  const myBalance = state.myBalances.find(b => b.productId === product.id);
+  const balanceQty = myBalance ? Number(myBalance.quantity) : 0;
+
+  const overlay = el('div', {class:'sheet-overlay'});
+  const sheet = el('div', {class:'sheet'});
+  sheet.innerHTML = `
+    <div class="sheet-handle"></div>
+    <h2>${escapeHtml(product.name)}</h2>
+    <div class="sub">Stokta: ${product.totalStock} ${product.unit||'adet'} · Bakiyenizde: ${balanceQty}</div>
+    <div id="sheetError"></div>
+    <div class="action-grid" id="actionTypeGrid">
+      <div class="action-card" data-type="cekim"><span class="ico">📤</span><span class="label">Çekim Yap</span></div>
+      <div class="action-card" data-type="iade" ${balanceQty<=0?'style="opacity:.4;pointer-events:none;"':''}><span class="ico">↩️</span><span class="label">İade Et</span></div>
+      <div class="action-card" data-type="hurda" ${balanceQty<=0?'style="opacity:.4;pointer-events:none;"':''}><span class="ico">🗑️</span><span class="label">Hurdaya Çıkar</span></div>
+    </div>
+    <div id="dynamicFields"></div>
+    <button class="btn-primary" id="confirmActionBtn" disabled>İşlemi Onayla</button>
+    <button class="btn-secondary" id="cancelActionBtn">Vazgeç</button>
+  `;
+  overlay.appendChild(sheet);
+  $('#modalRoot').appendChild(overlay);
+
+  let selectedType = null;
+
+  sheet.querySelectorAll('.action-card').forEach(card => {
+    card.onclick = () => {
+      if(card.style.pointerEvents === 'none') return;
+      sheet.querySelectorAll('.action-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      selectedType = card.dataset.type;
+      renderDynamicFields(selectedType);
+      $('#confirmActionBtn').disabled = false;
+    };
+  });
+
+  function renderDynamicFields(type){
+    const dyn = $('#dynamicFields');
+    const maxQty = type === 'cekim' ? Number(product.totalStock) : balanceQty;
+    let machineOptions = '';
+    if(type === 'cekim'){
+      machineOptions = `
+        <div class="field-group">
+          <label class="field-label">Hangi makinede kullanılacak</label>
+          <select class="field-select" id="machineSelect">
+            <option value="">Makine seçin…</option>
+            ${state.machines.map(m => `<option value="${m.id}">${escapeHtml(m.name)}</option>`).join('')}
+          </select>
+        </div>
+      `;
+    }
+    dyn.innerHTML = `
+      <div class="field-group">
+        <label class="field-label">Adet (maks. ${maxQty})</label>
+        <div class="qty-stepper">
+          <button type="button" class="qty-btn" id="qtyMinus">−</button>
+          <input class="field-input" type="number" id="qtyInput" value="1" min="1" max="${maxQty}">
+          <button type="button" class="qty-btn" id="qtyPlus">+</button>
+        </div>
+      </div>
+      ${machineOptions}
+    `;
+    $('#qtyMinus').onclick = () => { const i=$('#qtyInput'); i.value = Math.max(1, Number(i.value)-1); };
+    $('#qtyPlus').onclick = () => { const i=$('#qtyInput'); i.value = Math.min(maxQty, Number(i.value)+1); };
+  }
+
+  $('#cancelActionBtn').onclick = closeSheet;
+
+  $('#confirmActionBtn').onclick = async () => {
+    const qty = Number($('#qtyInput').value);
+    const errorBox = $('#sheetError');
+    errorBox.innerHTML = '';
+
+    if(!qty || qty <= 0){
+      errorBox.innerHTML = `<div class="error-msg">Geçerli bir adet girin.</div>`;
+      return;
+    }
+    let machineId = null;
+    if(selectedType === 'cekim'){
+      machineId = $('#machineSelect').value;
+      if(!machineId){
+        errorBox.innerHTML = `<div class="error-msg">Lütfen makine seçin.</div>`;
+        return;
+      }
+    }
+
+    $('#confirmActionBtn').disabled = true;
+    $('#confirmActionBtn').textContent = 'İşleniyor…';
+
+    try {
+      await api('stockAction', {
+        productId: product.id,
+        type: selectedType,
+        quantity: qty,
+        machineId: machineId
+      });
+      closeSheet();
+      showToast(actionLabel(selectedType) + ' başarılı.', 'success');
+      await loadAppData();
+      renderStockList();
+      renderBalances();
+    } catch(err) {
+      errorBox.innerHTML = `<div class="error-msg">${escapeHtml(err.message)}</div>`;
+      $('#confirmActionBtn').disabled = false;
+      $('#confirmActionBtn').textContent = 'İşlemi Onayla';
+    }
+  };
+}
+
+function actionLabel(type){
+  return { cekim:'Çekim', iade:'İade', hurda:'Hurda işlemi' }[type] || type;
+}
+
+/* ============================================================
+   MY BALANCES VIEW
+   ============================================================ */
+function renderBalances(){
+  const wrap = $('#balanceList');
+  wrap.innerHTML = '';
+  if(state.myBalances.length === 0){
+    wrap.appendChild(el('div', {class:'empty-state'}, `<div class="ico">🧾</div><p>Üzerinizde kayıtlı stok yok.</p>`));
+    return;
+  }
+  state.myBalances.forEach(b => {
+    const product = state.products.find(p => p.id === b.productId);
+    if(!product) return;
+    const card = el('div', {class:'balance-card'});
+    card.innerHTML = `
+      <div>
+        <div class="product-name">${escapeHtml(product.name)}</div>
+        <div class="product-meta">${escapeHtml(getCategoryPath(product.categoryId))}</div>
+      </div>
+      <div class="qty">${b.quantity}</div>
+    `;
+    card.onclick = () => openStockActionSheet(product);
+    wrap.appendChild(card);
+  });
+}
+
+/* ============================================================
+   ADMIN: USERS
+   ============================================================ */
+async function loadAndRenderUsers(){
+  const data = await api('adminGetUsers', {});
+  state.users = data.users;
+  renderUsers();
+}
+
+function renderUsers(){
+  const pendingWrap = $('#pendingUsersList');
+  const allWrap = $('#allUsersList');
+  pendingWrap.innerHTML = '';
+  allWrap.innerHTML = '';
+
+  const pending = state.users.filter(u => u.status === 'pending');
+  if(pending.length === 0){
+    pendingWrap.appendChild(el('div', {class:'empty-state'}, `<p style="font-size:12.5px;">Bekleyen kullanıcı yok.</p>`));
+  }
+  pending.forEach(u => {
+    const row = el('div', {class:'admin-row'});
+    row.innerHTML = `
+      <div class="admin-row-main">
+        <div class="admin-row-title">${escapeHtml(u.name)}</div>
+        <div class="admin-row-sub">${escapeHtml(u.email)}</div>
+      </div>
+      <div class="admin-row-actions">
+        <button class="mini-btn iade" data-action="approve">Onayla</button>
+        <button class="mini-btn hurda" data-action="reject">Reddet</button>
+      </div>
+    `;
+    row.querySelector('[data-action="approve"]').onclick = () => updateUserStatus(u.email, 'approved');
+    row.querySelector('[data-action="reject"]').onclick = () => updateUserStatus(u.email, 'rejected');
+    pendingWrap.appendChild(row);
+  });
+
+  state.users.forEach(u => {
+    const row = el('div', {class:'admin-row'});
+    const statusPillClass = { approved:'pill-approved', pending:'pill-pending', rejected:'pill-rejected' }[u.status];
+    row.innerHTML = `
+      <div class="admin-row-main">
+        <div class="admin-row-title">${escapeHtml(u.name)} <span class="pill-status ${statusPillClass}">${u.status}</span></div>
+        <div class="admin-row-sub">${escapeHtml(u.email)} · ${u.role}</div>
+      </div>
+      <div class="admin-row-actions">
+        <button class="mini-btn" data-action="role">${u.role === 'admin' ? 'Operatör Yap' : 'Admin Yap'}</button>
+        <button class="mini-btn" data-action="balance">Bakiye Düzenle</button>
+        ${u.status === 'approved' ? '<button class="mini-btn hurda" data-action="revoke">Erişimi Kaldır</button>' : ''}
+      </div>
+    `;
+    row.querySelector('[data-action="role"]').onclick = () => updateUserRole(u.email, u.role === 'admin' ? 'operator' : 'admin');
+    row.querySelector('[data-action="balance"]').onclick = () => openBalanceEditor(u.email);
+    const revokeBtn = row.querySelector('[data-action="revoke"]');
+    if(revokeBtn) revokeBtn.onclick = () => updateUserStatus(u.email, 'rejected');
+    allWrap.appendChild(row);
+  });
+}
+
+async function updateUserStatus(targetEmail, status){
+  showLoading();
+  try {
+    await api('adminUpdateUserStatus', { targetEmail, status });
+    await loadAndRenderUsers();
+    hideLoading();
+    showToast('Kullanıcı durumu güncellendi.', 'success');
+  } catch(err) {
+    hideLoading();
+    showToast(err.message, 'error');
+  }
+}
+
+async function updateUserRole(targetEmail, role){
+  showLoading();
+  try {
+    await api('adminUpdateUserRole', { targetEmail, role });
+    await loadAndRenderUsers();
+    hideLoading();
+    showToast('Rol güncellendi.', 'success');
+  } catch(err) {
+    hideLoading();
+    showToast(err.message, 'error');
+  }
+}
+
+function openBalanceEditor(targetEmail){
+  const userBalances = state.allBalances.filter(b => b.userEmail === targetEmail);
+  const overlay = el('div', {class:'sheet-overlay'});
+  const sheet = el('div', {class:'sheet'});
+  sheet.innerHTML = `
+    <div class="sheet-handle"></div>
+    <h2>Bakiye Düzenle</h2>
+    <div class="sub">${escapeHtml(targetEmail)}</div>
+    <div id="balanceEditList"></div>
+    <div class="section-title" style="margin-top:18px;">Yeni Ürün Bakiyesi Ekle</div>
+    <div class="field-group">
+      <select class="field-select" id="newBalanceProduct">
+        <option value="">Ürün seçin…</option>
+        ${state.products.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field-group">
+      <input class="field-input" type="number" id="newBalanceQty" placeholder="Adet" min="0">
+    </div>
+    <button class="btn-primary" id="addBalanceBtn">Ekle / Güncelle</button>
+    <button class="btn-secondary" id="closeBalanceEditor">Kapat</button>
+  `;
+  overlay.appendChild(sheet);
+  $('#modalRoot').appendChild(overlay);
+
+  const listWrap = sheet.querySelector('#balanceEditList');
+  userBalances.forEach(b => {
+    const product = state.products.find(p => p.id === b.productId);
+    const row = el('div', {class:'balance-card'});
+    row.innerHTML = `
+      <div class="product-name">${product ? escapeHtml(product.name) : b.productId}</div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <input class="field-input" style="width:80px; text-align:center;" type="number" value="${b.quantity}" min="0" data-product="${b.productId}">
+        <button class="mini-btn" data-save="${b.productId}">Kaydet</button>
+      </div>
+    `;
+    row.querySelector('[data-save]').onclick = async () => {
+      const input = row.querySelector(`input[data-product="${b.productId}"]`);
+      await saveBalance(targetEmail, b.productId, input.value);
+    };
+    listWrap.appendChild(row);
+  });
+
+  sheet.querySelector('#addBalanceBtn').onclick = async () => {
+    const productId = sheet.querySelector('#newBalanceProduct').value;
+    const qty = sheet.querySelector('#newBalanceQty').value;
+    if(!productId || qty === '') { showToast('Ürün ve adet girin.', 'error'); return; }
+    await saveBalance(targetEmail, productId, qty);
+  };
+
+  sheet.querySelector('#closeBalanceEditor').onclick = closeSheet;
+}
+
+async function saveBalance(targetEmail, productId, newQuantity){
+  showLoading();
+  try {
+    await api('adminAdjustBalance', { targetEmail, productId, newQuantity });
+    await loadAppData();
+    closeSheet();
+    hideLoading();
+    showToast('Bakiye güncellendi.', 'success');
+  } catch(err) {
+    hideLoading();
+    showToast(err.message, 'error');
+  }
+}
+
+/* ============================================================
+   ADMIN: PRODUCTS
+   ============================================================ */
+function renderAdminProducts(){
+  const wrap = $('#adminProductsList');
+  wrap.innerHTML = '';
+  if(state.products.length === 0){
+    wrap.appendChild(el('div', {class:'empty-state'}, `<p style="font-size:12.5px;">Henüz ürün yok. Sağ alttaki + ile ekleyin.</p>`));
+    return;
+  }
+  state.products.forEach(p => {
+    const row = el('div', {class:'admin-row'});
+    row.innerHTML = `
+      <div class="admin-row-main">
+        <div class="admin-row-title">${escapeHtml(p.name)}</div>
+        <div class="admin-row-sub">${escapeHtml(getCategoryPath(p.categoryId))} · Stok: ${p.totalStock} ${p.unit||''}</div>
+      </div>
+      <div class="admin-row-actions">
+        <button class="mini-btn" data-action="edit">Düzenle</button>
+        <button class="mini-btn hurda" data-action="delete">Sil</button>
+      </div>
+    `;
+    row.querySelector('[data-action="edit"]').onclick = () => openProductEditor(p);
+    row.querySelector('[data-action="delete"]').onclick = () => deleteProduct(p.id);
+    wrap.appendChild(row);
+  });
+}
+
+function openProductEditor(product=null){
+  const isEdit = !!product;
+  const overlay = el('div', {class:'sheet-overlay'});
+  const sheet = el('div', {class:'sheet'});
+  sheet.innerHTML = `
+    <div class="sheet-handle"></div>
+    <h2>${isEdit ? 'Ürünü Düzenle' : 'Yeni Ürün'}</h2>
+    <div id="prodFormError"></div>
+    <div class="field-group">
+      <label class="field-label">Ürün Adı</label>
+      <input class="field-input" id="prodName" value="${isEdit ? escapeHtml(product.name) : ''}" placeholder="Örn: Küre Freze 8mm">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Kategori</label>
+      <select class="field-select" id="prodCategory">
+        <option value="">Kategori seçin…</option>
+        ${state.categories.map(c => `<option value="${c.id}" ${isEdit && product.categoryId===c.id?'selected':''}>${c.parentId ? '— ' : ''}${escapeHtml(getCategoryPath(c.id))}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Etiketler (virgülle ayırın)</label>
+      <input class="field-input" id="prodTags" value="${isEdit ? escapeHtml(product.tags||'') : ''}" placeholder="Örn: HSS, 8mm, kaplama">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Toplam Stok</label>
+      <input class="field-input" type="number" id="prodStock" value="${isEdit ? product.totalStock : 0}" min="0">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Birim</label>
+      <input class="field-input" id="prodUnit" value="${isEdit ? escapeHtml(product.unit||'adet') : 'adet'}">
+    </div>
+    <button class="btn-primary" id="saveProductBtn">${isEdit ? 'Güncelle' : 'Ürünü Ekle'}</button>
+    <button class="btn-secondary" id="cancelProductBtn">Vazgeç</button>
+  `;
+  overlay.appendChild(sheet);
+  $('#modalRoot').appendChild(overlay);
+
+  sheet.querySelector('#cancelProductBtn').onclick = closeSheet;
+  sheet.querySelector('#saveProductBtn').onclick = async () => {
+    const name = sheet.querySelector('#prodName').value.trim();
+    const categoryId = sheet.querySelector('#prodCategory').value;
+    const tags = sheet.querySelector('#prodTags').value.trim();
+    const totalStock = sheet.querySelector('#prodStock').value;
+    const unit = sheet.querySelector('#prodUnit').value.trim();
+    const errBox = sheet.querySelector('#prodFormError');
+
+    if(!name || !categoryId){
+      errBox.innerHTML = `<div class="error-msg">Ürün adı ve kategori zorunlu.</div>`;
+      return;
+    }
+
+    showLoading('Kaydediliyor…');
+    try {
+      await api('adminSaveProduct', {
+        id: isEdit ? product.id : null,
+        name, categoryId, tags, totalStock, unit
+      });
+      await loadAppData();
+      closeSheet();
+      hideLoading();
+      renderAdminProducts();
+      showToast('Ürün kaydedildi.', 'success');
+    } catch(err) {
+      hideLoading();
+      errBox.innerHTML = `<div class="error-msg">${escapeHtml(err.message)}</div>`;
+    }
+  };
+}
+
+async function deleteProduct(id){
+  if(!confirm('Bu ürünü silmek istediğinize emin misiniz?')) return;
+  showLoading();
+  try {
+    await api('adminDeleteProduct', { id });
+    await loadAppData();
+    hideLoading();
+    renderAdminProducts();
+    showToast('Ürün silindi.', 'success');
+  } catch(err) {
+    hideLoading();
+    showToast(err.message, 'error');
+  }
+}
+
+/* ============================================================
+   ADMIN: CATEGORIES
+   ============================================================ */
+function renderAdminCategories(){
+  const wrap = $('#adminCategoriesList');
+  wrap.innerHTML = '';
+  if(state.categories.length === 0){
+    wrap.appendChild(el('div', {class:'empty-state'}, `<p style="font-size:12.5px;">Henüz kategori yok.</p>`));
+    return;
+  }
+  getTopCategories().forEach(top => {
+    const row = el('div', {class:'admin-row'});
+    row.innerHTML = `
+      <div class="admin-row-main">
+        <div class="admin-row-title">${escapeHtml(top.name)}</div>
+        <div class="admin-row-sub">Ana kategori</div>
+      </div>
+      <div class="admin-row-actions">
+        <button class="mini-btn" data-action="addsub">+ Alt Kategori</button>
+        <button class="mini-btn" data-action="edit">Düzenle</button>
+        <button class="mini-btn hurda" data-action="delete">Sil</button>
+      </div>
+    `;
+    row.querySelector('[data-action="addsub"]').onclick = () => openCategoryEditor(null, top.id);
+    row.querySelector('[data-action="edit"]').onclick = () => openCategoryEditor(top);
+    row.querySelector('[data-action="delete"]').onclick = () => deleteCategory(top.id);
+    wrap.appendChild(row);
+
+    const subs = state.categories.filter(c => c.parentId === top.id);
+    subs.forEach(sub => {
+      const subRow = el('div', {class:'admin-row', style:'margin-left:18px; border-left:2px solid var(--accent-dim);'});
+      subRow.innerHTML = `
+        <div class="admin-row-main">
+          <div class="admin-row-title">${escapeHtml(sub.name)}</div>
+          <div class="admin-row-sub">Alt kategori</div>
+        </div>
+        <div class="admin-row-actions">
+          <button class="mini-btn" data-action="edit">Düzenle</button>
+          <button class="mini-btn hurda" data-action="delete">Sil</button>
+        </div>
+      `;
+      subRow.querySelector('[data-action="edit"]').onclick = () => openCategoryEditor(sub);
+      subRow.querySelector('[data-action="delete"]').onclick = () => deleteCategory(sub.id);
+      wrap.appendChild(subRow);
+    });
+  });
+}
+
+function openCategoryEditor(category=null, presetParentId=null){
+  const isEdit = !!category;
+  const overlay = el('div', {class:'sheet-overlay'});
+  const sheet = el('div', {class:'sheet'});
+  sheet.innerHTML = `
+    <div class="sheet-handle"></div>
+    <h2>${isEdit ? 'Kategoriyi Düzenle' : 'Yeni Kategori'}</h2>
+    <div id="catFormError"></div>
+    <div class="field-group">
+      <label class="field-label">Kategori Adı</label>
+      <input class="field-input" id="catName" value="${isEdit ? escapeHtml(category.name) : ''}" placeholder="Örn: Freze / Küre Freze">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Üst Kategori (boş = ana kategori)</label>
+      <select class="field-select" id="catParent">
+        <option value="">— Ana kategori —</option>
+        ${getTopCategories().filter(c => !isEdit || c.id !== category.id).map(c => `<option value="${c.id}" ${(isEdit && category.parentId===c.id) || presetParentId===c.id ? 'selected':''}>${escapeHtml(c.name)}</option>`).join('')}
+      </select>
+    </div>
+    <button class="btn-primary" id="saveCatBtn">${isEdit ? 'Güncelle' : 'Kategoriyi Ekle'}</button>
+    <button class="btn-secondary" id="cancelCatBtn">Vazgeç</button>
+  `;
+  overlay.appendChild(sheet);
+  $('#modalRoot').appendChild(overlay);
+
+  sheet.querySelector('#cancelCatBtn').onclick = closeSheet;
+  sheet.querySelector('#saveCatBtn').onclick = async () => {
+    const name = sheet.querySelector('#catName').value.trim();
+    const parentId = sheet.querySelector('#catParent').value;
+    if(!name){
+      sheet.querySelector('#catFormError').innerHTML = `<div class="error-msg">Kategori adı gerekli.</div>`;
+      return;
+    }
+    showLoading('Kaydediliyor…');
+    try {
+      await api('adminSaveCategory', { id: isEdit ? category.id : null, name, parentId });
+      await loadAppData();
+      closeSheet();
+      hideLoading();
+      renderAdminCategories();
+      renderCategoryChips();
+      showToast('Kategori kaydedildi.', 'success');
+    } catch(err) {
+      hideLoading();
+      sheet.querySelector('#catFormError').innerHTML = `<div class="error-msg">${escapeHtml(err.message)}</div>`;
+    }
+  };
+}
+
+async function deleteCategory(id){
+  if(!confirm('Bu kategoriyi silmek istediğinize emin misiniz? (Alt kategorileri veya ürünleri etkileyebilir)')) return;
+  showLoading();
+  try {
+    await api('adminDeleteCategory', { id });
+    await loadAppData();
+    hideLoading();
+    renderAdminCategories();
+    renderCategoryChips();
+    showToast('Kategori silindi.', 'success');
+  } catch(err) {
+    hideLoading();
+    showToast(err.message, 'error');
+  }
+}
+
+/* ============================================================
+   ADMIN: MACHINES
+   ============================================================ */
+function renderAdminMachines(){
+  const wrap = $('#adminMachinesList');
+  wrap.innerHTML = '';
+  if(state.machines.length === 0){
+    wrap.appendChild(el('div', {class:'empty-state'}, `<p style="font-size:12.5px;">Henüz makine yok.</p>`));
+    return;
+  }
+  state.machines.forEach(m => {
+    const row = el('div', {class:'admin-row'});
+    row.innerHTML = `
+      <div class="admin-row-main"><div class="admin-row-title">${escapeHtml(m.name)}</div></div>
+      <div class="admin-row-actions">
+        <button class="mini-btn" data-action="edit">Düzenle</button>
+        <button class="mini-btn hurda" data-action="delete">Sil</button>
+      </div>
+    `;
+    row.querySelector('[data-action="edit"]').onclick = () => openMachineEditor(m);
+    row.querySelector('[data-action="delete"]').onclick = () => deleteMachine(m.id);
+    wrap.appendChild(row);
+  });
+}
+
+function openMachineEditor(machine=null){
+  const isEdit = !!machine;
+  const overlay = el('div', {class:'sheet-overlay'});
+  const sheet = el('div', {class:'sheet'});
+  sheet.innerHTML = `
+    <div class="sheet-handle"></div>
+    <h2>${isEdit ? 'Makineyi Düzenle' : 'Yeni Makine'}</h2>
+    <div id="macFormError"></div>
+    <div class="field-group">
+      <label class="field-label">Makine Adı</label>
+      <input class="field-input" id="macName" value="${isEdit ? escapeHtml(machine.name) : ''}" placeholder="Örn: CNC Torna 3">
+    </div>
+    <button class="btn-primary" id="saveMacBtn">${isEdit ? 'Güncelle' : 'Makineyi Ekle'}</button>
+    <button class="btn-secondary" id="cancelMacBtn">Vazgeç</button>
+  `;
+  overlay.appendChild(sheet);
+  $('#modalRoot').appendChild(overlay);
+
+  sheet.querySelector('#cancelMacBtn').onclick = closeSheet;
+  sheet.querySelector('#saveMacBtn').onclick = async () => {
+    const name = sheet.querySelector('#macName').value.trim();
+    if(!name){
+      sheet.querySelector('#macFormError').innerHTML = `<div class="error-msg">Makine adı gerekli.</div>`;
+      return;
+    }
+    showLoading('Kaydediliyor…');
+    try {
+      await api('adminSaveMachine', { id: isEdit ? machine.id : null, name });
+      await loadAppData();
+      closeSheet();
+      hideLoading();
+      renderAdminMachines();
+      showToast('Makine kaydedildi.', 'success');
+    } catch(err) {
+      hideLoading();
+      sheet.querySelector('#macFormError').innerHTML = `<div class="error-msg">${escapeHtml(err.message)}</div>`;
+    }
+  };
+}
+
+async function deleteMachine(id){
+  if(!confirm('Bu makineyi silmek istediğinize emin misiniz?')) return;
+  showLoading();
+  try {
+    await api('adminDeleteMachine', { id });
+    await loadAppData();
+    hideLoading();
+    renderAdminMachines();
+    showToast('Makine silindi.', 'success');
+  } catch(err) {
+    hideLoading();
+    showToast(err.message, 'error');
+  }
+}
+
+/* ============================================================
+   ADMIN: TRANSACTION LOG
+   ============================================================ */
+function renderTxLog(){
+  const wrap = $('#txLogList');
+  wrap.innerHTML = '';
+  if(!state.transactions || state.transactions.length === 0){
+    wrap.appendChild(el('div', {class:'empty-state'}, `<p style="font-size:12.5px;">Henüz hareket yok.</p>`));
+    return;
+  }
+  state.transactions.forEach(tx => {
+    const product = state.products.find(p => p.id === tx.productId);
+    const machine = state.machines.find(m => m.id === tx.machineId);
+    const date = new Date(tx.timestamp);
+    const dateStr = date.toLocaleString('tr-TR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+    const row = el('div', {class:'tx-row'});
+    row.innerHTML = `
+      <span class="tx-type tx-${tx.type}">${tx.type}</span>
+      <div class="tx-detail">
+        <div class="main">${product ? escapeHtml(product.name) : tx.productId} · ${tx.quantity}</div>
+        <div class="sub">${escapeHtml(tx.userEmail)} ${machine ? '· ' + escapeHtml(machine.name) : ''} · ${dateStr}</div>
+      </div>
+    `;
+    wrap.appendChild(row);
+  });
+}
+
+/* ============================================================
+   LOGOUT
+   ============================================================ */
+$('#logoutBtn').onclick = () => {
+  if(window.google) google.accounts.id.disableAutoSelect();
+  state.user = null;
+  $('#mainApp').classList.add('hidden');
+  $('#loginView').classList.remove('hidden');
+  $('#loginStatus').textContent = '';
+};
+
+/* ============================================================
+   INIT
+   ============================================================ */
+window.addEventListener('load', () => {
+  tryLockOrientation();
+  setTimeout(initGoogleSignIn, 300); // gsi script'in yüklenmesi için kısa bekleme
+});
+</script>
+</body>
+</html>
