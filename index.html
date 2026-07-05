@@ -646,7 +646,7 @@ body{display:flex;flex-direction:column;position:relative}
 </script>
 
 <script>
-const VERSION='v2.3';
+const VERSION='v2.31';
 const CLIENT_ID='390842439862-ks2rqj0cgh4t0aefea31cei42rea2usg.apps.googleusercontent.com';
 const SCOPES='https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
 const SHEET_NAME='Mesai Takip';
@@ -787,17 +787,33 @@ function initAuth(){
     client_id:CLIENT_ID,scope:SCOPES,
     callback:async(resp)=>{
       if(resp.error){
-        // Silent refresh failed — show login
-        if(resp.error==='interaction_required'||resp.error==='login_required'){showScreen('loginScreen');}
-        else{toast('Giriş hatası: '+resp.error);showScreen('loginScreen');}
+        if(resp.error==='interaction_required'||resp.error==='login_required'){
+          // Sessiz yenileme başarısız — sadece o zaman login sor
+          showScreen('loginScreen');
+        } else {
+          toast('Giriş hatası: '+resp.error);
+          showScreen('loginScreen');
+        }
         return;
       }
+      const isFirstLogin=!accessToken;
       accessToken=resp.access_token;
       tokenExpiry=Date.now()+(resp.expires_in||3600)*1000;
       if(!userInfo)await getUser();
       saveToken();
-      if(!spreadsheetId){await initSheet();await pullSheet();}
-      showApp();
+      if(isFirstLogin&&!spreadsheetId){
+        await initSheet();
+        await showApp();
+      } else {
+        // Token yenilendi — sadece pull yap, ekranı değiştirme
+        updateUser();
+        if(curScreen==='loginScreen'){
+          await showApp();
+        } else {
+          await pullSheet();
+          renderAll();
+        }
+      }
     }
   });
 }
@@ -884,39 +900,69 @@ function dayToRow(key){
 }
 
 function rowToDay(row){
-  // Sadece yeni şema: A=DD.MM.YYYY, B=VardiyaS, C=VardiyaB, D=Carpan, E=MolaMin, F=Yol, G=Yemek, H=Aciklama, I+=Giris/Cikis
-  const tarih=row[0]||'';
-  // Geçerli tarih formatı: DD.MM.YYYY
-  if(!/^\d{1,2}\.\d{1,2}\.\d{4}$/.test(tarih.trim())) return null;
-  const dp=tarih.trim().split('.');
+  const col0=String(row[0]||'').trim();
+  const col1=String(row[1]||'').trim();
+
+  // Yeni şema: A=DD.MM.YYYY, B=VardiyaS (HH:MM veya boş)
+  // Eski şema: A=DD.MM.YYYY veya YYYY-MM-DD, B=Gün adı (Pazartesi vb) veya saat
+  const newDateFmt=/^\d{1,2}\.\d{1,2}\.\d{4}$/.test(col0);
+  const oldDateFmt=/^\d{4}-\d{1,2}-\d{1,2}$/.test(col0);
+  const isNewSchema=newDateFmt&&(/^\d{1,2}:\d{2}$/.test(col1)||col1==='');
+  const isOldSchema=(newDateFmt||oldDateFmt)&&!isNewSchema;
+
+  let tarih,vardiyaS=null,vardiyaB=null,carpan=null,molaMin='',yol='',yemek='',aciklama='',mesailer=[];
+
+  if(isOldSchema){
+    // Eski: A=Tarih, B=Gün, C=Giriş, D=Çıkış, E=Mesai, F=Çarpan, G=Mola, H=Yol, I=Yemek, L=Not
+    if(oldDateFmt){
+      // ISO format — bozuk veri, atla
+      return null;
+    }
+    tarih=col0;
+    const girisRaw=String(row[2]||'').trim();
+    const cikisRaw=String(row[3]||'').trim();
+    const carpanRaw=parseFloat(String(row[5]||'').replace(',','.'));
+    carpan=(carpanRaw&&carpanRaw>1.01)?carpanRaw:null;
+    molaMin=String(row[6]||'').trim();
+    yol=String(row[7]||'').replace(/[₺,\s]/g,'').trim();
+    yemek=String(row[8]||'').replace(/[₺,\s]/g,'').trim();
+    aciklama=String(row[11]||'').trim();
+    if(girisRaw&&cikisRaw) mesailer=[{giris:girisRaw,cikis:cikisRaw}];
+  } else if(isNewSchema){
+    // Yeni: A=Tarih, B=VardiyaS, C=VardiyaB, D=Carpan, E=MolaMin, F=Yol, G=Yemek, H=Aciklama, I+=bloklar
+    tarih=col0;
+    vardiyaS=/^\d{1,2}:\d{2}$/.test(col1)?col1:null;
+    const col2=String(row[2]||'').trim();
+    vardiyaB=/^\d{1,2}:\d{2}$/.test(col2)?col2:null;
+    const carpanRaw=parseFloat(String(row[3]||'').replace(',','.'));
+    carpan=(carpanRaw&&carpanRaw>1.01)?carpanRaw:null;
+    molaMin=String(row[4]||'').trim();
+    yol=String(row[5]||'').trim();
+    yemek=String(row[6]||'').trim();
+    aciklama=String(row[7]||'').trim();
+    for(let i=0;i<MAX_BLOK;i++){
+      const g=String(row[8+i*2]||'').trim();
+      const c=String(row[9+i*2]||'').trim();
+      if(g||c) mesailer.push({giris:g,cikis:c});
+    }
+  } else {
+    return null;
+  }
+
+  if(!tarih||!/^\d{1,2}\.\d{1,2}\.\d{4}$/.test(tarih)) return null;
+  const dp=tarih.split('.');
   const d=parseInt(dp[0]),m=parseInt(dp[1])-1,y=parseInt(dp[2]);
   if(isNaN(d)||isNaN(m)||isNaN(y)) return null;
   const key=dk(y,m,d);
-
-  const vardiyaS=row[1]&&/^\d{1,2}:\d{2}$/.test(row[1].trim())?row[1].trim():null;
-  const vardiyaB=row[2]&&/^\d{1,2}:\d{2}$/.test(row[2].trim())?row[2].trim():null;
-  const carpanRaw=row[3];
-  const carpan=carpanRaw!=null&&carpanRaw!==''&&!isNaN(parseFloat(carpanRaw))?parseFloat(carpanRaw):null;
-  const molaMin=row[4]||'';
-  const yol=row[5]||'';
-  const yemek=row[6]||'';
-  const aciklama=row[7]||'';
-
-  const mesailer=[];
-  for(let i=0;i<MAX_BLOK;i++){
-    const g=(row[8+i*2]||'').trim();
-    const c=(row[9+i*2]||'').trim();
-    if(g||c) mesailer.push({giris:g,cikis:c});
-  }
 
   const hasData=mesailer.length>0||yol||yemek||aciklama||vardiyaS||carpan!=null;
   if(!hasData) return null;
 
   return{key,data:{
-    vardiyaS, vardiyaB,
+    vardiyaS,vardiyaB,
     carpanOverride:carpan,
-    molaMin, molalar:[],
-    yolTutar:yol, yemekTutar:yemek, aciklama,
+    molaMin,molalar:[],
+    yolTutar:yol,yemekTutar:yemek,aciklama,
     mesailer
   }};
 }
@@ -1481,7 +1527,7 @@ function exportJSON(){
 }
 function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2500);}
 
-window.onerror=function(msg,src,line){showScreen('loginScreen');toast('Hata: '+msg+' ('+line+')');return false;};
+window.onerror=function(msg,src,line){toast('Hata: '+msg+' ('+line+')');return false;};
 ['vb1','vb2'].forEach(id=>{const el=$(id);if(el)el.textContent=VERSION;});
 loadLocal();
 window.addEventListener('load',()=>{
@@ -1490,9 +1536,13 @@ window.addEventListener('load',()=>{
       clearInterval(w);
       try{initAuth();}catch(e){showScreen('loginScreen');toast('initAuth hatası: '+e.message);return;}
       if(loadToken()){
-        try{updateUser();showApp();}catch(e){showScreen('loginScreen');toast('showApp hatası: '+e.message);return;}
+        // Token geçerli — direkt uygulama, arka planda yenile
+        try{showApp();}catch(e){showScreen('loginScreen');toast('showApp hatası: '+e.message);return;}
         tokenClient.requestAccessToken({prompt:''});
       } else if(spreadsheetId){
+        // Token süresi dolmuş ama daha önce giriş yapılmış
+        // Önce cached veriyle uygulamayı göster, sessiz token dene
+        try{showScreen('homeScreen');renderHome();}catch(e){}
         tokenClient.requestAccessToken({prompt:''});
       } else {
         showScreen('loginScreen');
