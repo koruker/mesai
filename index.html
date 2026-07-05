@@ -8,6 +8,128 @@
 <title>Mesai Takip</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<script type="module">
+import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import{getAuth,GoogleAuthProvider,signInWithPopup,signInWithRedirect,getRedirectResult,signOut as fbSignOut,onAuthStateChanged,setPersistence,browserLocalPersistence}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import{getDatabase,ref,set,get,update,onValue,off}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+const FB_CFG={
+  apiKey:'AIzaSyDPJQV3IC0y9w5cHOCm9Cf-fWmCCyc7-hQ',
+  authDomain:'koruker-mesai-takip.firebaseapp.com',
+  databaseURL:'https://koruker-mesai-takip-default-rtdb.europe-west1.firebasedatabase.app',
+  projectId:'koruker-mesai-takip',
+  storageBucket:'koruker-mesai-takip.firebasestorage.app',
+  messagingSenderId:'558071273909',
+  appId:'1:558071273909:web:19d90aeb57d3e07d7c61fc'
+};
+const fbApp=initializeApp(FB_CFG);
+const fbAuth=getAuth(fbApp);
+const fbDb=getDatabase(fbApp);
+
+let fbUid=null,fbYear=null,dbListener=null;
+
+function userRef(path){return ref(fbDb,`users/${fbUid}/${fbYear}/${path}`);}
+
+async function fbPush(){
+  if(!fbUid||isSyncing)return;
+  isSyncing=true;setSyncUI('syncing','Kaydediliyor…');
+  try{
+    const updates={};
+    updates[`users/${fbUid}/${fbYear}/cfg`]=cfg;
+    updates[`users/${fbUid}/${fbYear}/salaries`]=salaries;
+    updates[`users/${fbUid}/${fbYear}/monthData`]=monthData;
+    for(const[k,v] of Object.entries(dayData)){
+      updates[`users/${fbUid}/${fbYear}/days/${k}`]=v;
+    }
+    await update(ref(fbDb),updates);
+    setSyncUI('ok','Kaydedildi ✓');
+  }catch(e){setSyncUI('err','Hata ✗');toast('Firebase hata: '+e.message);}
+  finally{isSyncing=false;}
+}
+
+async function fbPull(){
+  if(!fbUid)return;
+  setSyncUI('syncing','Çekiliyor…');
+  try{
+    const snap=await get(ref(fbDb,`users/${fbUid}/${fbYear}`));
+    if(snap.exists()){
+      const d=snap.val();
+      if(d.cfg)cfg=Object.assign(cfg,d.cfg);
+      if(d.salaries)salaries=d.salaries;
+      if(d.monthData)monthData=d.monthData;
+      if(d.days)dayData=d.days;
+    }
+    saveLocal();applySettings();setSyncUI('ok','Senkronize ✓');
+  }catch(e){setSyncUI('err','Hata ✗');toast('Çekme hata: '+e.message);}
+}
+
+function startRealtimeSync(){
+  if(dbListener)off(ref(fbDb,`users/${fbUid}/${fbYear}`));
+  dbListener=onValue(ref(fbDb,`users/${fbUid}/${fbYear}`),(snap)=>{
+    if(!snap.exists())return;
+    const d=snap.val();
+    if(d.cfg)cfg=Object.assign(cfg,d.cfg);
+    if(d.salaries)salaries=d.salaries;
+    if(d.monthData)monthData=d.monthData;
+    if(d.days)dayData=d.days;
+    saveLocal();applySettings();renderAll();
+    setSyncUI('ok','Senkronize ✓');
+  });
+}
+
+function debouncePush(){clearTimeout(syncTimer);syncTimer=setTimeout(()=>{if(window._fbPush)window._fbPush();},1500);}
+async function syncNow(){await fbPull();renderAll();}
+
+async function signIn(){
+  try{
+    const provider=new GoogleAuthProvider();
+    await setPersistence(fbAuth,browserLocalPersistence);
+    await signInWithPopup(fbAuth,provider);
+  }catch(e){
+    if(e.code==='auth/popup-blocked'){
+      // Popup engellenirse redirect dene
+      const provider=new GoogleAuthProvider();
+      await signInWithRedirect(fbAuth,provider);
+    } else {
+      toast('Giriş hatası: '+e.message);
+    }
+  }
+}
+
+function signOut(){
+  if(dbListener){off(ref(fbDb,`users/${fbUid}/${fbYear}`));dbListener=null;}
+  fbSignOut(fbAuth);
+  fbUid=null;userInfo=null;
+  dayData={};salaries={};monthData={};
+  localStorage.removeItem('mt_v4');
+  showScreen('loginScreen');
+}
+
+// Oturum durumunu izle — sayfa yenilenince Firebase oturumu hatırlar
+setPersistence(fbAuth,browserLocalPersistence).then(()=>{
+  onAuthStateChanged(fbAuth,async(user)=>{
+    if(user){
+      fbUid=user.uid;
+      fbYear=new Date().getFullYear();
+      userInfo={name:user.displayName,email:user.email,picture:user.photoURL};
+      loadLocal();
+      applySettings();updateUser();
+      showScreen('homeScreen');renderHome();
+      await fbPull();
+      renderAll();
+      startRealtimeSync();
+    } else {
+      // Oturum yok — login ekranı göster
+      showScreen('loginScreen');
+    }
+  });
+});
+
+window.signIn=signIn;
+window.signOut=signOut;
+window.syncNow=syncNow;
+window._fbPush=fbPush;
+window.debouncePush=debouncePush;
 <style>
 /* PORTRAIT LOCK OVERLAY */
 #orientWarn{display:none;position:fixed;inset:0;z-index:9999;background:#080c18;align-items:center;justify-content:center;flex-direction:column;gap:16px}
@@ -646,10 +768,8 @@ body{display:flex;flex-direction:column;position:relative}
 </script>
 
 <script>
-const VERSION='v2.3';
+const VERSION='v2.4';
 const CLIENT_ID='390842439862-ks2rqj0cgh4t0aefea31cei42rea2usg.apps.googleusercontent.com';
-const SCOPES='https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
-const SHEET_NAME='Mesai Takip';
 const MONTHS=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
 const DAYS=['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
 const DAYS_S=['Paz','Pzt','Sal','Çar','Per','Cum','Cmt'];
@@ -657,7 +777,7 @@ const today=new Date();
 const todayKey=dk(today.getFullYear(),today.getMonth(),today.getDate());
 let curY=today.getFullYear(),curM=today.getMonth();
 let openDays={},modalKey=null,syncTimer=null,isSyncing=false;
-let accessToken=null,userInfo=null,spreadsheetId=null;
+let accessToken=null,userInfo=null;
 let cfg={vardiyaS:'15:00',vardiyaB:'23:00',carpan:1.5,aylikSaat:225};
 let salaries={},dayData={},monthData={};
 
@@ -764,67 +884,10 @@ function calcMonth(y,m){
   return{mn,tm,yl,yk};
 }
 
-function saveLocal(){try{localStorage.setItem('mt_v4',JSON.stringify({cfg,salaries,dayData,monthData,spreadsheetId,ts:Date.now()}));}catch(e){}}
-function loadLocal(){try{const r=localStorage.getItem('mt_v4');if(r){const d=JSON.parse(r);cfg=Object.assign(cfg,d.cfg||{});
-  if(cfg.bitis&&!cfg.vardiyaB){cfg.vardiyaB=cfg.bitis;}
-  salaries=d.salaries||{};dayData=d.dayData||{};monthData=d.monthData||{};spreadsheetId=d.spreadsheetId||null;
-  // migrate old devamPrimi/performansPrimi from cfg into monthData for current month
-  if(d.cfg&&(d.cfg.devamPrimi||d.cfg.performansPrimi)){
-    const k=mk(today.getFullYear(),today.getMonth());
-    if(!monthData[k])monthData[k]={devamPrimi:0,performansPrimi:0};
-    if(!monthData[k].devamPrimi)monthData[k].devamPrimi=d.cfg.devamPrimi||0;
-    if(!monthData[k].performansPrimi)monthData[k].performansPrimi=d.cfg.performansPrimi||0;
-  }
-}}catch(e){}}
+function saveLocal(){try{localStorage.setItem('mt_v4',JSON.stringify({cfg,salaries,dayData,monthData,ts:Date.now()}));}catch(e){}}
+function loadLocal(){try{const r=localStorage.getItem('mt_v4');if(r){const d=JSON.parse(r);cfg=Object.assign(cfg,d.cfg||{});if(cfg.bitis&&!cfg.vardiyaB)cfg.vardiyaB=cfg.bitis;salaries=d.salaries||{};dayData=d.dayData||{};monthData=d.monthData||{};}}catch(e){}}
 
-function saveToken(){try{localStorage.setItem('mt_tok',JSON.stringify({t:accessToken,e:tokenExpiry,u:userInfo}));}catch(e){}}
-function loadToken(){try{const r=localStorage.getItem('mt_tok');if(r){const d=JSON.parse(r);if(d.t&&d.e&&Date.now()<d.e-60000){accessToken=d.t;tokenExpiry=d.e;userInfo=d.u||null;return true;}}return false;}catch(e){return false;}}
 
-// AUTH
-let tokenClient,tokenExpiry=0;
-function initAuth(){
-  tokenClient=google.accounts.oauth2.initTokenClient({
-    client_id:CLIENT_ID,scope:SCOPES,
-    callback:async(resp)=>{
-      if(resp.error){
-        if(resp.error==='interaction_required'||resp.error==='login_required'){
-          // Sessiz yenileme başarısız — sadece o zaman login sor
-          showScreen('loginScreen');
-        } else {
-          toast('Giriş hatası: '+resp.error);
-          showScreen('loginScreen');
-        }
-        return;
-      }
-      const isFirstLogin=!accessToken;
-      accessToken=resp.access_token;
-      tokenExpiry=Date.now()+(resp.expires_in||3600)*1000;
-      if(!userInfo)await getUser();
-      saveToken();
-      if(isFirstLogin&&!spreadsheetId){
-        await initSheet();
-        await showApp();
-      } else {
-        // Token yenilendi — sadece pull yap, ekranı değiştirme
-        updateUser();
-        if(curScreen==='loginScreen'){
-          await showApp();
-        } else {
-          await pullSheet();
-          renderAll();
-        }
-      }
-    }
-  });
-}
-function signIn(){if(!tokenClient){toast('Yükleniyor...');return;}tokenClient.requestAccessToken({prompt:'select_account'});}
-function signOut(){
-  if(accessToken)google.accounts.oauth2.revoke(accessToken);
-  accessToken=null;userInfo=null;spreadsheetId=null;tokenExpiry=0;
-  localStorage.removeItem('mt_v4');localStorage.removeItem('mt_tok');
-  showScreen('loginScreen');
-}
-async function getUser(){const r=await fetch('https://www.googleapis.com/oauth2/v2/userinfo',{headers:{Authorization:'Bearer '+accessToken}});userInfo=await r.json();updateUser();}
 function updateUser(){
   if(!userInfo)return;
   const pic=userInfo.picture||'';
@@ -837,213 +900,6 @@ function updateUser(){
   if($('uEmail'))$('uEmail').textContent=userInfo.email||'';
 }
 
-// SHEETS
-async function api(method,path,body){
-  const r=await fetch('https://sheets.googleapis.com/v4/spreadsheets'+path,{
-    method,headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},
-    body:body?JSON.stringify(body):undefined
-  });
-  if(!r.ok)throw new Error(await r.text());
-  return r.status===204?null:r.json();
-}
-async function driveSearch(){
-  const q=encodeURIComponent(`name='${SHEET_NAME}' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false`);
-  const r=await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)&spaces=drive`,{headers:{Authorization:'Bearer '+accessToken}});
-  if(!r.ok)throw new Error('Drive: '+r.status);
-  return(await r.json()).files||[];
-}
-async function initSheet(){
-  const found=await driveSearch();
-  if(found.length){spreadsheetId=found[0].id;}
-  else{
-    const s=await api('POST','',{properties:{title:SHEET_NAME},sheets:[
-      {properties:{title:'Maaslar',sheetId:0}},
-      {properties:{title:'Ayarlar',sheetId:1}}
-    ]});
-    spreadsheetId=s.spreadsheetId;
-    await api('PUT',`/${spreadsheetId}/values/Maaslar!A1:B1?valueInputOption=RAW`,{values:[['Ay','Maaş (₺)']]});
-    await api('PUT',`/${spreadsheetId}/values/Ayarlar!A1:B1?valueInputOption=RAW`,{values:[['Ayar','Değer']]});
-  }
-  saveLocal();
-}
-// ── SHEETS SCHEMA v2 ────────────────────────────────────────────────────
-// Her ay sekmesi:
-// A=Tarih  B=VardiyaS  C=VardiyaB  D=Carpan  E=MolaMin
-// F=Yol    G=Yemek     H=Aciklama
-// I=Giris1 J=Cikis1  K=Giris2 L=Cikis2 ... (max 50 blok)
-const MAX_BLOK=50;
-const SCHEMA_HDR=(()=>{
-  const h=['Tarih','VardiyaS','VardiyaB','Carpan','MolaMin','Yol','Yemek','Aciklama'];
-  for(let i=1;i<=MAX_BLOK;i++){h.push('Giris'+i,'Cikis'+i);}
-  return h;
-})();
-function colLetter(n){let s='';while(n>0){s=String.fromCharCode(65+(n-1)%26)+s;n=Math.floor((n-1)/26);}return s;}
-
-function dayToRow(key){
-  const r=getDay(key);
-  const[y,m,d]=key.split('-').map(Number);
-  const dateStr=`${String(d).padStart(2,'0')}.${String(m+1).padStart(2,'0')}.${y}`;
-  const row=[
-    dateStr,
-    r.vardiyaS||'', r.vardiyaB||'',
-    r.carpanOverride!=null?r.carpanOverride:'',
-    r.molaMin||'',
-    r.yolTutar||'', r.yemekTutar||'',
-    r.aciklama||''
-  ];
-  const bloks=getMesailer(r);
-  for(let i=0;i<MAX_BLOK;i++){
-    row.push(bloks[i]?bloks[i].giris||'':'');
-    row.push(bloks[i]?bloks[i].cikis||'':'');
-  }
-  return row;
-}
-
-function rowToDay(row){
-  const col0=String(row[0]||'').trim();
-  const col1=String(row[1]||'').trim();
-
-  // Yeni şema: A=DD.MM.YYYY, B=VardiyaS (HH:MM veya boş)
-  // Eski şema: A=DD.MM.YYYY veya YYYY-MM-DD, B=Gün adı (Pazartesi vb) veya saat
-  const newDateFmt=/^\d{1,2}\.\d{1,2}\.\d{4}$/.test(col0);
-  const oldDateFmt=/^\d{4}-\d{1,2}-\d{1,2}$/.test(col0);
-  const isNewSchema=newDateFmt&&(/^\d{1,2}:\d{2}$/.test(col1)||col1==='');
-  const isOldSchema=(newDateFmt||oldDateFmt)&&!isNewSchema;
-
-  let tarih,vardiyaS=null,vardiyaB=null,carpan=null,molaMin='',yol='',yemek='',aciklama='',mesailer=[];
-
-  if(isOldSchema){
-    // Eski: A=Tarih, B=Gün, C=Giriş, D=Çıkış, E=Mesai, F=Çarpan, G=Mola, H=Yol, I=Yemek, L=Not
-    if(oldDateFmt){
-      // ISO format — bozuk veri, atla
-      return null;
-    }
-    tarih=col0;
-    const girisRaw=String(row[2]||'').trim();
-    const cikisRaw=String(row[3]||'').trim();
-    const carpanRaw=parseFloat(String(row[5]||'').replace(',','.'));
-    carpan=(carpanRaw&&carpanRaw>1.01)?carpanRaw:null;
-    molaMin=String(row[6]||'').trim();
-    yol=String(row[7]||'').replace(/[₺,\s]/g,'').trim();
-    yemek=String(row[8]||'').replace(/[₺,\s]/g,'').trim();
-    aciklama=String(row[11]||'').trim();
-    if(girisRaw&&cikisRaw) mesailer=[{giris:girisRaw,cikis:cikisRaw}];
-  } else if(isNewSchema){
-    // Yeni: A=Tarih, B=VardiyaS, C=VardiyaB, D=Carpan, E=MolaMin, F=Yol, G=Yemek, H=Aciklama, I+=bloklar
-    tarih=col0;
-    vardiyaS=/^\d{1,2}:\d{2}$/.test(col1)?col1:null;
-    const col2=String(row[2]||'').trim();
-    vardiyaB=/^\d{1,2}:\d{2}$/.test(col2)?col2:null;
-    const carpanRaw=parseFloat(String(row[3]||'').replace(',','.'));
-    carpan=(carpanRaw&&carpanRaw>1.01)?carpanRaw:null;
-    molaMin=String(row[4]||'').trim();
-    yol=String(row[5]||'').trim();
-    yemek=String(row[6]||'').trim();
-    aciklama=String(row[7]||'').trim();
-    for(let i=0;i<MAX_BLOK;i++){
-      const g=String(row[8+i*2]||'').trim();
-      const c=String(row[9+i*2]||'').trim();
-      if(g||c) mesailer.push({giris:g,cikis:c});
-    }
-  } else {
-    return null;
-  }
-
-  if(!tarih||!/^\d{1,2}\.\d{1,2}\.\d{4}$/.test(tarih)) return null;
-  const dp=tarih.split('.');
-  const d=parseInt(dp[0]),m=parseInt(dp[1])-1,y=parseInt(dp[2]);
-  if(isNaN(d)||isNaN(m)||isNaN(y)) return null;
-  const key=dk(y,m,d);
-
-  const hasData=mesailer.length>0||yol||yemek||aciklama||vardiyaS||carpan!=null;
-  if(!hasData) return null;
-
-  return{key,data:{
-    vardiyaS,vardiyaB,
-    carpanOverride:carpan,
-    molaMin,molalar:[],
-    yolTutar:yol,yemekTutar:yemek,aciklama,
-    mesailer
-  }};
-}
-
-async function pushSheet(){
-  if(!spreadsheetId||!accessToken||isSyncing)return;
-  isSyncing=true;setSyncUI('syncing','Kaydediliyor…');
-  try{
-    const byMonth={};
-    for(const k of Object.keys(dayData)){
-      const[ys,ms]=k.split('-').map(Number),mk2=`${ys}-${ms}`;
-      if(!byMonth[mk2])byMonth[mk2]=[];
-      byMonth[mk2].push(k);
-    }
-    const meta=await api('GET',`/${spreadsheetId}?fields=sheets(properties(sheetId,title))`);
-    const existingSheets={};
-    for(const sh of(meta.sheets||[]))existingSheets[sh.properties.title]=sh.properties.sheetId;
-    for(const[monthKey] of Object.entries(byMonth)){
-      const[ys,ms]=monthKey.split('-').map(Number);
-      const sheetTitle=`${MONTHS[ms]} ${ys}`;
-      if(existingSheets[sheetTitle]==null){
-        const addRes=await api('POST',`/${spreadsheetId}:batchUpdate`,{requests:[{addSheet:{properties:{title:sheetTitle}}}]});
-        existingSheets[sheetTitle]=addRes.replies[0].addSheet.properties.sheetId;
-      }
-      const rows=[SCHEMA_HDR];
-      for(let d=1;d<=daysIn(ys,ms);d++) rows.push(dayToRow(dk(ys,ms,d)));
-      await api('PUT',`/${spreadsheetId}/values/${encodeURIComponent(sheetTitle+'!A1')}?valueInputOption=RAW`,{values:rows,majorDimension:'ROWS'});
-    }
-    const cfgR=[['Ayar','Değer'],['vardiyaS',cfg.vardiyaS],['vardiyaB',cfg.vardiyaB],['mesaiCarpani',cfg.carpan],['aylikCalisma',cfg.aylikSaat]];
-    await api('PUT',`/${spreadsheetId}/values/Ayarlar!A1:B${cfgR.length}?valueInputOption=RAW`,{values:cfgR});
-    const salR=[['Ay','Maaş (₺)','Devam Primi','Performans Primi'],
-      ...Object.entries(salaries).sort().map(([k,v])=>{const[sy,sm]=k.split('-').map(Number);const md=getMonthData(sy,sm);return[k,v,md.devamPrimi||0,md.performansPrimi||0];})];
-    await api('PUT',`/${spreadsheetId}/values/Maaslar!A1:D${salR.length}?valueInputOption=RAW`,{values:salR});
-    saveLocal();setSyncUI('ok','Kaydedildi ✓');
-  }catch(e){setSyncUI('err','Hata ✗');toast('Hata: '+e.message.slice(0,80));console.error(e);}
-  finally{isSyncing=false;}
-}
-
-async function pullSheet(){
-  if(!spreadsheetId||!accessToken)return;
-  setSyncUI('syncing','Çekiliyor…');
-  try{
-    const meta=await api('GET',`/${spreadsheetId}?fields=sheets(properties(title))`);
-    const sheets=(meta.sheets||[]).map(s=>s.properties.title);
-    const monthSheets=sheets.filter(t=>MONTHS.some(m=>t.startsWith(m)));
-    const allRanges=[
-      ...monthSheets.map(t=>encodeURIComponent(t+'!A1:CJ200')),
-      'Maaslar!A2:D','Ayarlar!A2:B'
-    ];
-    const res=await api('GET',`/${spreadsheetId}/values:batchGet?ranges=${allRanges.join('&ranges=')}`);
-    const vRanges=res.valueRanges||[];
-    const mS=vRanges[monthSheets.length];
-    const aS=vRanges[monthSheets.length+1];
-    const nd={};
-    vRanges.slice(0,monthSheets.length).forEach((vS)=>{
-      const rows=(vS.values||[]).filter(r=>r[0]&&/^\d{1,2}\.\d{1,2}\.\d{4}$/.test((r[0]||'').trim()));
-      for(const row of rows){
-        const result=rowToDay(row);
-        if(result) nd[result.key]=result.data;
-      }
-    });
-    dayData=nd;
-    salaries={};monthData={};
-    for(const row of(mS?.values||[])){
-      const[k,v,dp,pp]=row;
-      if(k){
-        salaries[k]=parseFloat(v)||0;
-        if(dp||pp){if(!monthData[k])monthData[k]={devamPrimi:0,performansPrimi:0};monthData[k].devamPrimi=parseFloat(dp)||0;monthData[k].performansPrimi=parseFloat(pp)||0;}
-      }
-    }
-    for(const[k,v]of(aS?.values||[])){
-      if(k==='vardiyaS')cfg.vardiyaS=v;
-      else if(k==='vardiyaB')cfg.vardiyaB=v;
-      else if(k==='bitisSaati')cfg.vardiyaB=v;
-      else if(k==='mesaiCarpani'){const p=parseFloat(v);cfg.carpan=(p&&p>1.01)?p:1.5;}
-      else if(k==='aylikCalisma')cfg.aylikSaat=parseFloat(v)||225;
-    }
-    saveLocal();applySettings();setSyncUI('ok','Senkronize ✓');
-  }catch(e){setSyncUI('err','Hata ✗');toast('Çekme hatası: '+e.message.slice(0,80));console.error(e);}
-}
-async function syncNow(){await pullSheet();renderAll();}
 function setSyncUI(state,txt){
   const dot=$('sdot'),t=$('stxt');
   if(dot)dot.style.background=state==='ok'?'var(--green)':state==='syncing'?'var(--gold)':'var(--red)';
@@ -1058,12 +914,8 @@ function setSyncUI(state,txt){
     }
   }
 }
-function debouncePush(){clearTimeout(syncTimer);syncTimer=setTimeout(pushSheet,1500);}
+function debouncePush(){clearTimeout(syncTimer);syncTimer=setTimeout(()=>{if(window._fbPush)window._fbPush();},1500);}
 
-// Sayfa kapanmadan önce bekleyen push varsa hemen gönder
-window.addEventListener('beforeunload',()=>{
-  if(syncTimer){clearTimeout(syncTimer);if(accessToken&&spreadsheetId)pushSheet();}
-});
 
 function clearCarpan(key){if(!dayData[key])dayData[key]={};dayData[key].carpanOverride=null;saveLocal();debouncePush();refreshDayOv(key);}
 function setField(key,field,val){if(!dayData[key])dayData[key]={};dayData[key][field]=val;saveLocal();debouncePush();refreshCard(key);}
@@ -1530,26 +1382,8 @@ function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show')
 window.onerror=function(msg,src,line){toast('Hata: '+msg+' ('+line+')');return false;};
 ['vb1','vb2'].forEach(id=>{const el=$(id);if(el)el.textContent=VERSION;});
 loadLocal();
-window.addEventListener('load',()=>{
-  let n=0;const w=setInterval(()=>{n++;
-    if(typeof google!=='undefined'&&google.accounts){
-      clearInterval(w);
-      try{initAuth();}catch(e){showScreen('loginScreen');toast('initAuth hatası: '+e.message);return;}
-      if(loadToken()){
-        // Token geçerli — direkt uygulama, arka planda yenile
-        try{showApp();}catch(e){showScreen('loginScreen');toast('showApp hatası: '+e.message);return;}
-        tokenClient.requestAccessToken({prompt:''});
-      } else if(spreadsheetId){
-        // Token süresi dolmuş ama daha önce giriş yapılmış
-        // Önce cached veriyle uygulamayı göster, sessiz token dene
-        try{showScreen('homeScreen');renderHome();}catch(e){}
-        tokenClient.requestAccessToken({prompt:''});
-      } else {
-        showScreen('loginScreen');
-      }
-    }else if(n>60){clearInterval(w);showScreen('loginScreen');toast('Google API yüklenemedi');}
-  },100);
-});
+// Firebase onAuthStateChanged login/logout'u hallediyor
+// İlk yükleme loading ekranında başlasın, Firebase auth hazır olunca geçiş yapılır
 </script>
 </body>
 </html>
