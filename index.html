@@ -646,7 +646,7 @@ body{display:flex;flex-direction:column;position:relative}
 </script>
 
 <script>
-const VERSION='v2.467';
+const VERSION='v2.3';
 const CLIENT_ID='390842439862-ks2rqj0cgh4t0aefea31cei42rea2usg.apps.googleusercontent.com';
 const SCOPES='https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
 const SHEET_NAME='Mesai Takip';
@@ -991,7 +991,7 @@ async function pullSheet(){
       if(k==='vardiyaS')cfg.vardiyaS=v;
       else if(k==='vardiyaB')cfg.vardiyaB=v;
       else if(k==='bitisSaati')cfg.vardiyaB=v;
-      else if(k==='mesaiCarpani')cfg.carpan=parseFloat(v)||1.5;
+      else if(k==='mesaiCarpani'){const p=parseFloat(v);cfg.carpan=(p&&p>1.01)?p:1.5;}
       else if(k==='aylikCalisma')cfg.aylikSaat=parseFloat(v)||225;
     }
     saveLocal();applySettings();setSyncUI('ok','Senkronize ✓');
@@ -1019,6 +1019,7 @@ window.addEventListener('beforeunload',()=>{
   if(syncTimer){clearTimeout(syncTimer);if(accessToken&&spreadsheetId)pushSheet();}
 });
 
+function clearCarpan(key){if(!dayData[key])dayData[key]={};dayData[key].carpanOverride=null;saveLocal();debouncePush();refreshDayOv(key);}
 function setField(key,field,val){if(!dayData[key])dayData[key]={};dayData[key][field]=val;saveLocal();debouncePush();refreshCard(key);}
 function setVardiya(key,field,val){
   if(!dayData[key])dayData[key]={};
@@ -1313,7 +1314,7 @@ function buildDayDetailHTML(key,r,c){
   </div>
   <div class="det-s"><div class="det-lbl">Bu Güne Özel</div>
     <div class="frow">
-      <div class="fi"><label>Mesai Çarpanı</label><input type="number" step="0.25" min="1" value="${cp}" onchange="setField('${key}','carpanOverride',parseFloat(this.value));refreshDayOv('${key}')"></div>
+      <div class="fi"><label>Mesai Çarpanı <span onclick="clearCarpan('${key}')" style="color:var(--t3);font-size:10px;cursor:pointer;margin-left:4px">[varsayılan]</span></label><input type="number" step="0.25" min="1" value="${cp}" oninput="setField('${key}','carpanOverride',parseFloat(this.value));refreshDayOv('${key}')"></div>
       <div class="fi"><label>Not</label><input type="text" value="${r.aciklama||''}" placeholder="not..." onchange="setField('${key}','aciklama',this.value)"></div>
     </div>
   </div>
