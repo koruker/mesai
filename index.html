@@ -207,6 +207,18 @@ window.debouncePush=debouncePush;
 window.startMigration=startMigration;
 </script>
 <style>
+/* PORTRAIT LOCK — uyarısız, sadece döndürme engeli */
+@media(orientation:landscape) and (max-width:1024px){
+  #app-root{
+    transform:rotate(-90deg);
+    transform-origin:left top;
+    width:100vh;
+    height:100vw;
+    position:fixed;
+    top:100%;
+    left:0;
+  }
+}
 :root{
   --c0:#080c18;
   --g1:rgba(255,255,255,0.06);--g2:rgba(255,255,255,0.1);--g3:rgba(255,255,255,0.15);
@@ -650,7 +662,7 @@ body{display:flex;flex-direction:column;position:relative}
       </div>
       <div class="mdet-params">
         <div class="mparam">
-          <div class="mparam-lbl">Maaş</div>
+          <div class="mparam-lbl">Net Maaş</div>
           <input type="number" id="mdetMaas" min="0" onchange="onMaasChange(this.value)">
         </div>
         <div class="mparam">
@@ -722,6 +734,11 @@ body{display:flex;flex-direction:column;position:relative}
       <div class="sg-lbl">Mesai Ayarları</div>
       <div class="slist">
         <div class="si">
+          <div class="si-ic green"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
+          <div class="si-t"><div class="n">Brüt Maaş (₺)</div><div class="s">Mesai saatlik ücreti buradan hesaplanır</div></div>
+          <input class="si-inp" type="number" id="stBrutMaas" value="0" min="0" onchange="saveSettings()">
+        </div>
+        <div class="si">
           <div class="si-ic blue"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
           <div class="si-t"><div class="n">Varsayılan Vardiya Başlangıcı</div><div class="s">Hiç vardiya girilmemişse kullanılır</div></div>
           <input class="si-inp" type="time" id="stVardiyaS" value="15:00" onchange="saveSettings()">
@@ -733,7 +750,7 @@ body{display:flex;flex-direction:column;position:relative}
         </div>
         <div class="si">
           <div class="si-ic green"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
-          <div class="si-t"><div class="n">Aylık Çalışma Saati</div><div class="s">Saatlik ücret = Maaş ÷ bu sayı</div></div>
+          <div class="si-t"><div class="n">Aylık Çalışma Saati</div><div class="s">Saatlik ücret = Brüt Maaş ÷ bu sayı</div></div>
           <input class="si-inp" type="number" id="stAylikSaat" value="225" min="1" onchange="saveSettings()">
         </div>
         <div class="si">
@@ -850,7 +867,7 @@ const todayKey=dk(today.getFullYear(),today.getMonth(),today.getDate());
 let curY=today.getFullYear(),curM=today.getMonth();
 let openDays={},modalKey=null,syncTimer=null,isSyncing=false;
 let accessToken=null,userInfo=null;
-let cfg={vardiyaS:'15:00',vardiyaB:'23:00',carpan:1.5,aylikSaat:225};
+let cfg={vardiyaS:'15:00',vardiyaB:'23:00',carpan:1.5,aylikSaat:225,brutMaas:0};
 let salaries={},dayData={},monthData={};
 
 function dk(y,m,d){return `${y}-${m}-${d}`;}
@@ -874,6 +891,9 @@ function getSalary(y,m){
   for(let i=1;i<=24;i++){let pm=m-i,py=y;if(pm<0){pm+=12;py--;}if(salaries[mk(py,pm)]!=null)return salaries[mk(py,pm)];}
   return 30000;
 }
+// Brüt maaş — mesai saatlik ücreti hesabında kullanılır
+function getBrutMaas(){return cfg.brutMaas&&cfg.brutMaas>0?cfg.brutMaas:getSalary(today.getFullYear(),today.getMonth());}
+
 function getDay(key){return dayData[key]||{};}
 function getMonthData(y,m){return monthData[mk(y,m)]||{devamPrimi:0,performansPrimi:0};}
 function setMonthData(y,m,field,val){const k=mk(y,m);if(!monthData[k])monthData[k]={devamPrimi:0,performansPrimi:0};monthData[k][field]=val;saveLocal();debouncePush();}
@@ -897,7 +917,7 @@ function getVardiya(key){
 
 function calcDay(key){
   const[ys,ms,ds]=key.split('-').map(Number),dt=new Date(ys,ms,ds),dow=dt.getDay();
-  const r=getDay(key),maas=getSalary(ys,ms),saatlik=maas/(cfg.aylikSaat||225);
+  const r=getDay(key),brutMaas=getBrutMaas(),saatlik=brutMaas/(cfg.aylikSaat||225);
   const carpan=r.carpanOverride!=null?r.carpanOverride:cfg.carpan;
   const vrd=getVardiya(key);
   let netMin=0;
@@ -1011,11 +1031,11 @@ function removeMola(key,idx){if(!dayData[key]||!dayData[key].molalar)return;dayD
 function updateMola(key,idx,f,val){if(!dayData[key]||!dayData[key].molalar)return;dayData[key].molalar[idx][f]=val;saveLocal();debouncePush();refreshDayOv(key);}
 
 function applySettings(){
-  const vs=$('stVardiyaS'),vb=$('stVardiyaB'),cp=$('stCarpan'),as=$('stAylikSaat');
-  if(vs)vs.value=cfg.vardiyaS||'15:00';if(vb)vb.value=cfg.vardiyaB||'23:00';if(cp)cp.value=cfg.carpan||1.5;if(as)as.value=cfg.aylikSaat||225;
+  const vs=$('stVardiyaS'),vb=$('stVardiyaB'),cp=$('stCarpan'),as=$('stAylikSaat'),bm=$('stBrutMaas');
+  if(vs)vs.value=cfg.vardiyaS||'15:00';if(vb)vb.value=cfg.vardiyaB||'23:00';if(cp)cp.value=cfg.carpan||1.5;if(as)as.value=cfg.aylikSaat||225;if(bm)bm.value=cfg.brutMaas||0;
 }
 function saveSettings(){
-  cfg.vardiyaS=$('stVardiyaS').value||'15:00';cfg.vardiyaB=$('stVardiyaB').value||'23:00';cfg.carpan=parseFloat($('stCarpan').value)||1.5;cfg.aylikSaat=parseFloat($('stAylikSaat').value)||225;
+  cfg.vardiyaS=$('stVardiyaS').value||'15:00';cfg.vardiyaB=$('stVardiyaB').value||'23:00';cfg.carpan=parseFloat($('stCarpan').value)||1.5;cfg.aylikSaat=parseFloat($('stAylikSaat').value)||225;cfg.brutMaas=parseFloat($('stBrutMaas')?.value)||0;
   saveLocal();debouncePush();renderAll();toast('Ayarlar kaydedildi ✓');
 }
 
@@ -1089,13 +1109,13 @@ function renderHome(){
     </div>`;
   }
   if($('mhead'))$('mhead').textContent=MONTHS[today.getMonth()]+' Özeti';
-  const mc=calcMonth(today.getFullYear(),today.getMonth()),maas=getSalary(today.getFullYear(),today.getMonth());
+  const mc=calcMonth(today.getFullYear(),today.getMonth()),netMaas=getSalary(today.getFullYear(),today.getMonth());
   const md=getMonthData(today.getFullYear(),today.getMonth());
   const primTop=(md.devamPrimi||0)+(md.performansPrimi||0);
   if($('ss1'))$('ss1').textContent=fmtD(mc.mn);if($('ss1s'))$('ss1s').textContent=fmtTL(mc.tm)+' mesai ücreti';
-  if($('ss2'))$('ss2').textContent=fmtTL(mc.yl+mc.yk+(md.devamPrimi||0)+(md.performansPrimi||0));
-  if($('ss3'))$('ss3').textContent=fmtTL(maas+mc.tm+mc.yl+mc.yk+primTop);
-  const subParts=[fmtTL(maas)+' maaş'];if(mc.tm>0)subParts.push(fmtTL(mc.tm)+' mesai');if(primTop>0)subParts.push(fmtTL(primTop)+' prim');
+  if($('ss2'))$('ss2').textContent=fmtTL(mc.yl+mc.yk+primTop);
+  if($('ss3'))$('ss3').textContent=fmtTL(netMaas+mc.tm+mc.yl+mc.yk+primTop);
+  const subParts=[fmtTL(netMaas)+' net maaş'];if(mc.tm!==0)subParts.push(fmtTL(mc.tm)+' mesai');if(primTop>0)subParts.push(fmtTL(primTop)+' prim');
   if($('ss3s'))$('ss3s').textContent=subParts.join(' + ');
 }
 function openEditToday(){goCalendar();setTimeout(()=>openDayDetail(todayKey),350);}
@@ -1201,15 +1221,15 @@ function renderMonthDetailGrid(y,m){
 }
 
 function updateMonthDetailFooter(y,m){
-  const mc=calcMonth(y,m),maas=getSalary(y,m),md=getMonthData(y,m);
+  const mc=calcMonth(y,m),netMaas=getSalary(y,m),md=getMonthData(y,m);
   const primTop=(md.devamPrimi||0)+(md.performansPrimi||0);
-  const grand=maas+mc.tm+mc.yl+mc.yk+primTop;
+  const grand=netMaas+mc.tm+mc.yl+mc.yk+primTop;
   if($('mdetTotal'))$('mdetTotal').textContent=grand>0?fmtTL(grand):'';
   if($('mdetGrand'))$('mdetGrand').textContent=fmtTL(grand);
-  const parts=[];
-  if(mc.mn!==0)parts.push(fmtD(Math.abs(mc.mn))+(mc.mn<0?' eksik':' mesai'));
+  const parts=[fmtTL(netMaas)+' net'];
+  if(mc.mn!==0)parts.push(fmtTL(mc.tm)+(mc.mn<0?' eksik':' mesai'));
   if(primTop>0)parts.push(fmtTL(primTop)+' prim');
-  if($('mdetSub'))$('mdetSub').textContent=parts.join(' · ')||'Mesai yok';
+  if($('mdetSub'))$('mdetSub').textContent=parts.join(' + ');
 }
 
 function onMaasChange(val){
