@@ -864,7 +864,7 @@ body{display:flex;flex-direction:column;position:relative}
 </script>
 
 <script>
-const VERSION='v2.4';
+const VERSION='v2.41';
 const CLIENT_ID='390842439862-ks2rqj0cgh4t0aefea31cei42rea2usg.apps.googleusercontent.com';
 const MONTHS=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
 const DAYS=['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
@@ -1140,6 +1140,7 @@ function renderHome(){
         <div class="slbl">${MONTHS[pm]} ${py}</div>
         <div class="sval" style="font-size:20px;color:var(--t1)">${fmtTL(pGrand)}</div>
         <div class="ssub">${fmtTL(pNet)} net + ${fmtTL(pmc.tm)} mesai${pPrim>0?' + '+fmtTL(pPrim)+' prim':''}</div>
+        ${pmc.mn!==0?`<div class="ssub" style="margin-top:2px">${fmtD(pmc.mn)} mesai saati</div>`:''}
         <div style="position:absolute;top:12px;right:14px;font-size:10px;font-weight:700;color:var(--t3)">Detay →</div>
       </div>`;
     }
