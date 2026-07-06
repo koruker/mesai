@@ -608,7 +608,14 @@ body{display:flex;flex-direction:column;position:relative}
     <div class="sgrid">
       <div class="scard"><div class="slbl">Mesai Saati</div><div class="sval blue" id="ss1">0s</div><div class="ssub" id="ss1s">—</div></div>
       <div class="scard"><div class="slbl">Yol + Yemek</div><div class="sval gold" id="ss2">0₺</div><div class="ssub">Ekstra ödemeler</div></div>
-      <div class="scard wide"><div class="slbl">Bu Ay Toplam (Maaş Dahil)</div><div class="sval green" id="ss3">—</div><div class="ssub" id="ss3s">—</div></div>
+      <div class="scard wide" onclick="goCalendar();setTimeout(()=>openMonthDetail(today.getFullYear(),today.getMonth()),350)" style="cursor:pointer;position:relative">
+        <div class="slbl">Bu Ay Toplam (Maaş Dahil)</div>
+        <div class="sval green" id="ss3">—</div>
+        <div class="ssub" id="ss3s">—</div>
+        <div style="position:absolute;top:12px;right:14px;font-size:10px;font-weight:700;color:var(--t3)">Detay →</div>
+      </div>
+      <div class="sec-lbl" style="margin-top:18px">Geçmiş Aylar</div>
+      <div id="prevMonths"></div>
     </div>
   </div>
   <nav class="nav">
@@ -1117,6 +1124,27 @@ function renderHome(){
   if($('ss3'))$('ss3').textContent=fmtTL(netMaas+mc.tm+mc.yl+mc.yk+primTop);
   const subParts=[fmtTL(netMaas)+' net maaş'];if(mc.tm!==0)subParts.push(fmtTL(mc.tm)+' mesai');if(primTop>0)subParts.push(fmtTL(primTop)+' prim');
   if($('ss3s'))$('ss3s').textContent=subParts.join(' + ');
+
+  // Geçmiş aylar listesi
+  const prevEl=$('prevMonths');
+  if(prevEl){
+    let html='';
+    for(let i=1;i<=11;i++){
+      let pm=today.getMonth()-i,py=today.getFullYear();
+      if(pm<0){pm+=12;py--;}
+      const pmc=calcMonth(py,pm),pNet=getSalary(py,pm),pmd=getMonthData(py,pm);
+      const pPrim=(pmd.devamPrimi||0)+(pmd.performansPrimi||0);
+      const pGrand=pNet+pmc.tm+pmc.yl+pmc.yk+pPrim;
+      if(pGrand===0&&pmc.mn===0&&!salaries[mk(py,pm)])continue;
+      html+=`<div class="scard wide" onclick="goCalendar();setTimeout(()=>openMonthDetail(${py},${pm}),350)" style="cursor:pointer;position:relative;margin-bottom:10px">
+        <div class="slbl">${MONTHS[pm]} ${py}</div>
+        <div class="sval" style="font-size:20px;color:var(--t1)">${fmtTL(pGrand)}</div>
+        <div class="ssub">${fmtTL(pNet)} net + ${fmtTL(pmc.tm)} mesai${pPrim>0?' + '+fmtTL(pPrim)+' prim':''}</div>
+        <div style="position:absolute;top:12px;right:14px;font-size:10px;font-weight:700;color:var(--t3)">Detay →</div>
+      </div>`;
+    }
+    prevEl.innerHTML=html||'<div style="font-size:13px;color:var(--t3);padding:8px 0">Geçmiş ay verisi yok</div>';
+  }
 }
 function openEditToday(){goCalendar();setTimeout(()=>openDayDetail(todayKey),350);}
 
