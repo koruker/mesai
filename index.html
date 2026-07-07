@@ -690,12 +690,9 @@ body{display:flex;flex-direction:column;position:relative}
         </div>
         <div class="mdet-daygrid" id="mdetGrid"></div>
       </div>
-      <div class="mdet-footer" style="flex-direction:column;align-items:stretch;gap:3px">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div class="mdet-fl" id="mdetSub">—</div>
-          <div class="mdet-fr" id="mdetGrand">—</div>
-        </div>
-        <div class="mdet-fl" id="mdetHours"></div>
+      <div class="mdet-footer">
+        <div class="mdet-fl" id="mdetSub">—</div>
+        <div class="mdet-fr" id="mdetGrand">—</div>
       </div>
     </div>
 
@@ -867,7 +864,7 @@ body{display:flex;flex-direction:column;position:relative}
 </script>
 
 <script>
-const VERSION='v2.42';
+const VERSION='v2.4';
 const CLIENT_ID='390842439862-ks2rqj0cgh4t0aefea31cei42rea2usg.apps.googleusercontent.com';
 const MONTHS=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
 const DAYS=['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
@@ -1143,7 +1140,6 @@ function renderHome(){
         <div class="slbl">${MONTHS[pm]} ${py}</div>
         <div class="sval" style="font-size:20px;color:var(--t1)">${fmtTL(pGrand)}</div>
         <div class="ssub">${fmtTL(pNet)} net + ${fmtTL(pmc.tm)} mesai${pPrim>0?' + '+fmtTL(pPrim)+' prim':''}</div>
-        ${pmc.mn!==0?`<div class="ssub" style="margin-top:2px">${fmtD(pmc.mn)} mesai saati</div>`:''}
         <div style="position:absolute;top:12px;right:14px;font-size:10px;font-weight:700;color:var(--t3)">Detay →</div>
       </div>`;
     }
@@ -1159,16 +1155,12 @@ let detailY=null,detailM=null;
 function changeYear(d){calYear+=d;if($('yearLbl'))$('yearLbl').textContent=calYear;renderYearGrid();}
 
 function renderCal(){
-  // Sadece içeriği tazele — kullanıcı hangi alt görünümdeyse orada kalsın.
-  // (Yıl görünümüne zorla dönüş sadece goCalendar() içinde, kullanıcı bilerek
-  // Takvim'e girdiğinde yapılır; burada yapılırsa arka planda gelen her
-  // senkronizasyon/realtime güncellemesi kullanıcıyı ay detayından dışarı atar.)
   if($('yearLbl'))$('yearLbl').textContent=calYear;
+  // Reset to year view when opening
+  $('yearView').className='cal-sub active';
+  $('monthView').className='cal-sub right';
+  if($('calTitle'))$('calTitle').textContent='Takvim';
   renderYearGrid();
-  if(detailY!==null&&$('monthView')&&$('monthView').classList.contains('active')){
-    renderMonthDetailGrid(detailY,detailM);
-    updateMonthDetailFooter(detailY,detailM);
-  }
 }
 
 function renderYearGrid(){
@@ -1228,7 +1220,6 @@ function calGoBack(){
   if($('calTitle'))$('calTitle').textContent='Takvim';
   $('yearView').className='cal-sub active';
   $('monthView').className='cal-sub right';
-  detailY=null;detailM=null;
 }
 
 function renderMonthDetailGrid(y,m){
@@ -1267,7 +1258,6 @@ function updateMonthDetailFooter(y,m){
   if(mc.mn!==0)parts.push(fmtTL(mc.tm)+(mc.mn<0?' eksik':' mesai'));
   if(primTop>0)parts.push(fmtTL(primTop)+' prim');
   if($('mdetSub'))$('mdetSub').textContent=parts.join(' + ');
-  if($('mdetHours'))$('mdetHours').textContent=mc.mn!==0?fmtD(Math.abs(mc.mn))+(mc.mn<0?' eksik':' toplam mesai saati'):'';
 }
 
 function onMaasChange(val){
