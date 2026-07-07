@@ -783,7 +783,9 @@ function renderHome(){
   const setC=(id,val)=>{const el=$(id);if(!el)return;el.textContent=val||'—';el.className='tc-cv'+(val?'':' dim');};
   const dispGiris=todayBlks.length>1?todayBlks.length+' blok':lastBlk?.giris||'';
   const dispCikis=todayBlks.length>1?'':lastBlk?.cikis||'';
-  setC('tcG',dispGiris);setC('tcC',dispCikis);setC('tcS',c.netMin>0?fmtD(c.netMin):'');
+  setC('tcG',dispGiris);setC('tcC',dispCikis);
+  const sureVal=c.netMin>0?fmtD(c.netMin):c.netMin<0?fmtD(Math.abs(c.netMin))+' eksik':'';
+  setC('tcS',sureVal);
   const parts=[];if(c.yol>0)parts.push('Yol '+fmtTL(c.yol));if(c.yemek>0)parts.push('Yemek '+fmtTL(c.yemek));
   if($('tcDet'))$('tcDet').textContent=parts.join(' · ');if($('tcEarn'))$('tcEarn').textContent=c.top>0?fmtTL(c.top):'';
   const acts=$('acts');if(!acts)return;acts.innerHTML='';
