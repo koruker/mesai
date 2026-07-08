@@ -892,7 +892,8 @@ function ovClick(e,id){if(e.target===$(id))closeOv(id);}
 function openGirisSheet(key){
   modalKey=key||todayKey;const[ys,ms,ds]=modalKey.split('-').map(Number),dt=new Date(ys,ms,ds);
   if($('gTitle'))$('gTitle').textContent=DAYS[dt.getDay()]+', '+ds+' '+MONTHS[ms];if($('gSub'))$('gSub').textContent='Mesaiye başlama saatini gir';
-  if($('gInp'))$('gInp').value=fmtT(getVardiya(modalKey).s);openOv('girisOv');
+  const nowH=String(new Date().getHours()).padStart(2,'0'),nowM=String(new Date().getMinutes()).padStart(2,'0');
+  if($('gInp'))$('gInp').value=nowH+':'+nowM;openOv('girisOv');
 }
 function confirmGiris(){
   const val=$('gInp').value;if(!val){closeOv('girisOv');return;}
@@ -900,8 +901,9 @@ function confirmGiris(){
   const key=modalKey;closeOv('girisOv');setTimeout(()=>openCikisSheet(key),350);renderAll();
 }
 function openCikisSheet(key){
-  modalKey=key;const r=getDay(key);const blocks=getMesailer(r);const last=blocks[blocks.length-1];const girisVal=last?last.giris:'';const g=pt(girisVal),def=g?g+120:20*60;const defH=Math.floor(def/60)%24,defM=def%60;
-  if($('cInp'))$('cInp').value=String(defH).padStart(2,'0')+':'+String(defM).padStart(2,'0');if($('cSub'))$('cSub').textContent=girisVal?'Giriş: '+girisVal:'';openOv('cikisOv');
+  modalKey=key;const r=getDay(key);const blocks=getMesailer(r);const last=blocks[blocks.length-1];const girisVal=last?last.giris:'';
+  const now=new Date();const nowStr=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  if($('cInp'))$('cInp').value=nowStr;if($('cSub'))$('cSub').textContent=girisVal?'Giriş: '+girisVal:'';openOv('cikisOv');
 }
 function confirmCikis(){
   const val=$('cInp').value;if(val&&modalKey){const r=ensureMesailer(modalKey);const last=r.mesailer[r.mesailer.length-1];if(last&&!last.cikis)last.cikis=val;saveLocal();debouncePush();}
