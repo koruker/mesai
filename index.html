@@ -429,7 +429,13 @@ body{display:flex;flex-direction:column;position:relative}
           <img id="avImg" alt="">
         </div>
       </div>
-      <div class="sync-row"><span class="sdot" id="sdot"></span><span id="stxt">Senkronize</span></div>
+      <div class="sync-row"><span class="sdot" id="sdot"></span><span id="stxt">Senkronize</span>
+        <span style="flex:1"></span>
+        <span style="font-size:11px;color:var(--t3);margin-right:6px">Gizle</span>
+        <div id="privToggle" onclick="togglePrivacy()" style="width:36px;height:20px;border-radius:10px;background:var(--gb);cursor:pointer;position:relative;transition:background .2s;flex-shrink:0">
+          <div id="privKnob" style="width:16px;height:16px;border-radius:50%;background:var(--t2);position:absolute;top:2px;left:2px;transition:transform .2s"></div>
+        </div>
+      </div>
     </div>
     <div class="tc">
       <div class="tc-top">
@@ -804,13 +810,15 @@ function renderHome(){
   if($('mhead'))$('mhead').textContent=MONTHS[today.getMonth()]+' Özeti';
   const mc=calcMonth(today.getFullYear(),today.getMonth()),netMaas=getSalary(today.getFullYear(),today.getMonth());
   const md=getMonthData(today.getFullYear(),today.getMonth());const primTop=(md.devamPrimi||0)+(md.performansPrimi||0);
-  if($('ss1'))$('ss1').textContent=fmtD(Math.abs(mc.mn));if($('ss1s'))$('ss1s').textContent=fmtTL(mc.tm)+' mesai ücreti';
-  if($('ss2'))$('ss2').textContent=fmtTL(mc.yl+mc.yk+primTop);
-  if($('ss3'))$('ss3').textContent=fmtTL(netMaas+mc.tm+mc.yl+mc.yk+primTop);
-  const subParts=[fmtTL(netMaas)+' net maaş'];if(mc.tm!==0)subParts.push(fmtTL(mc.tm)+' mesai');if(primTop>0)subParts.push(fmtTL(primTop)+' prim');
+  if($('ss1'))$('ss1').textContent=fmtD(Math.abs(mc.mn));if($('ss1s'))$('ss1s').textContent=maskTL(fmtTL(mc.tm))+' mesai ücreti';
+  if($('ss2'))$('ss2').textContent=maskTL(fmtTL(mc.yl+mc.yk+primTop));
+  if($('ss3'))$('ss3').textContent=maskTL(fmtTL(netMaas+mc.tm+mc.yl+mc.yk+primTop));
+  const subParts=[maskTL(fmtTL(netMaas))+' net maaş'];if(mc.tm!==0)subParts.push(maskTL(fmtTL(mc.tm))+' mesai');if(primTop>0)subParts.push(maskTL(fmtTL(primTop))+' prim');
   if($('ss3s'))$('ss3s').textContent=subParts.join(' + ');
+  if($('tcEarn'))$('tcEarn').textContent=c.top>0?maskTL(fmtTL(c.top)):'';
+  applyPrivacyUI();
   const prevEl=$('prevMonths');
-  if(prevEl){let html='';for(let i=1;i<=11;i++){let pm=today.getMonth()-i,py=today.getFullYear();if(pm<0){pm+=12;py--;}const pmc=calcMonth(py,pm),pNet=getSalary(py,pm),pmd=getMonthData(py,pm);const pPrim=(pmd.devamPrimi||0)+(pmd.performansPrimi||0);const pGrand=pNet+pmc.tm+pmc.yl+pmc.yk+pPrim;if(pGrand===0&&pmc.mn===0&&!salaries[mk(py,pm)])continue;html+=`<div class="scard wide" onclick="goCalendar();setTimeout(()=>openMonthDetail(${py},${pm}),350)" style="cursor:pointer;position:relative;margin-bottom:10px"><div class="slbl">${MONTHS[pm]} ${py}</div><div class="sval" style="font-size:20px;color:var(--t1)">${fmtTL(pGrand)}</div><div class="ssub">${fmtTL(pNet)} net + ${fmtTL(pmc.tm)} mesai${pPrim>0?' + '+fmtTL(pPrim)+' prim':''}</div>${pmc.mn!==0?`<div class="ssub" style="margin-top:2px">${fmtD(Math.abs(pmc.mn))} mesai saati</div>`:''}<div style="position:absolute;top:12px;right:14px;font-size:10px;font-weight:700;color:var(--t3)">Detay →</div></div>`;}prevEl.innerHTML=html||'<div style="font-size:13px;color:var(--t3);padding:8px 0">Geçmiş ay verisi yok</div>';}
+  if(prevEl){let html='';for(let i=1;i<=11;i++){let pm=today.getMonth()-i,py=today.getFullYear();if(pm<0){pm+=12;py--;}const pmc=calcMonth(py,pm),pNet=getSalary(py,pm),pmd=getMonthData(py,pm);const pPrim=(pmd.devamPrimi||0)+(pmd.performansPrimi||0);const pGrand=pNet+pmc.tm+pmc.yl+pmc.yk+pPrim;if(pGrand===0&&pmc.mn===0&&!salaries[mk(py,pm)])continue;html+=`<div class="scard wide" onclick="goCalendar();setTimeout(()=>openMonthDetail(${py},${pm}),350)" style="cursor:pointer;position:relative;margin-bottom:10px"><div class="slbl">${MONTHS[pm]} ${py}</div><div class="sval" style="font-size:20px;color:var(--t1)">${maskTL(fmtTL(pGrand))}</div><div class="ssub">${maskTL(fmtTL(pNet))} net + ${maskTL(fmtTL(pmc.tm))} mesai${pPrim>0?' + '+maskTL(fmtTL(pPrim))+' prim':''}</div>${pmc.mn!==0?`<div class="ssub" style="margin-top:2px">${fmtD(Math.abs(pmc.mn))} mesai saati</div>`:''}<div style="position:absolute;top:12px;right:14px;font-size:10px;font-weight:700;color:var(--t3)">Detay →</div></div>`;}prevEl.innerHTML=html||'<div style="font-size:13px;color:var(--t3);padding:8px 0">Geçmiş ay verisi yok</div>';}
 }
 function openEditToday(){goCalendar();setTimeout(()=>openDayDetail(todayKey),350);}
 
@@ -949,6 +957,21 @@ function handleImport(input){
   input.value='';
 }
 
+let privacyOn=localStorage.getItem('mt_privacy')==='1';
+function togglePrivacy(){
+  privacyOn=!privacyOn;
+  localStorage.setItem('mt_privacy',privacyOn?'1':'0');
+  applyPrivacyUI();renderHome();
+}
+function applyPrivacyUI(){
+  const tog=$('privToggle'),knob=$('privKnob');
+  if(!tog)return;
+  tog.style.background=privacyOn?'var(--blue)':'var(--gb)';
+  knob.style.transform=privacyOn?'translateX(16px)':'translateX(0)';
+  knob.style.background=privacyOn?'#fff':'var(--t2)';
+}
+function mask(val){return privacyOn?'••••':val;}
+function maskTL(val){return privacyOn?'•••₺':val;}
 function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2500);}
 
 window.onerror=function(msg,src,line){toast('Hata: '+msg+' ('+line+')');return false;};
