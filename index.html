@@ -431,7 +431,7 @@ body{display:flex;flex-direction:column;position:relative}
       </div>
       <div class="sync-row"><span class="sdot" id="sdot"></span><span id="stxt">Senkronize</span>
         <span style="flex:1"></span>
-        <span style="font-size:11px;color:var(--t3);margin-right:6px">Maaşı Gizle</span>
+        <span style="font-size:11px;color:var(--t3);margin-right:6px">Gizle</span>
         <div id="privToggle" onclick="togglePrivacy()" style="width:36px;height:20px;border-radius:10px;background:var(--gb);cursor:pointer;position:relative;transition:background .2s;flex-shrink:0">
           <div id="privKnob" style="width:16px;height:16px;border-radius:50%;background:var(--t2);position:absolute;top:2px;left:2px;transition:transform .2s"></div>
         </div>
@@ -667,7 +667,7 @@ body{display:flex;flex-direction:column;position:relative}
 </script>
 
 <script>
-const VERSION='v2.5';
+const VERSION='v2.6';
 const MONTHS=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
 const DAYS=['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
 const DAYS_S=['Paz','Pzt','Sal','Çar','Per','Cum','Cmt'];
@@ -957,7 +957,7 @@ function handleImport(input){
   input.value='';
 }
 
-let privacyOn=localStorage.getItem('mt_privacy')==='1';
+let privacyOn=true;
 function togglePrivacy(){
   privacyOn=!privacyOn;
   localStorage.setItem('mt_privacy',privacyOn?'1':'0');
