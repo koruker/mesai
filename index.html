@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   loadLocal();applySettings();
   userInfo={name:'Yerel Kullanıcı',email:'',picture:''};
   showScreen('homeScreen');renderHome();
-  setSyncUI('ok','Offline Mod');
+  setSyncUI('ok','Yerel mod');
 });
 </script>
 <style>
@@ -265,7 +265,7 @@ body{display:flex;flex-direction:column;position:relative}
 <div id="app-root">
 <div class="mesh"><div class="m1"></div><div class="m2"></div><div class="m3"></div></div>
 
-  <div class="loader-t"></div>
+  <div class="loader-t">Yükleniyor…</div>
 </div>
 
 <div class="screen hidden" id="homeScreen">
@@ -312,7 +312,7 @@ body{display:flex;flex-direction:column;position:relative}
     <div class="sec-head" id="mhead"></div>
     <div class="sgrid">
       <div class="scard"><div class="slbl">Mesai Saati</div><div class="sval blue" id="ss1">0s</div><div class="ssub" id="ss1s">—</div></div>
-      <div class="scard"><div class="slbl">Yol + Yemek + Prim</div><div class="sval gold" id="ss2">0₺</div><div class="ssub">Ekstra ödemeler</div></div>
+      <div class="scard"><div class="slbl">Yol + Yemek</div><div class="sval gold" id="ss2">0₺</div><div class="ssub">Ekstra ödemeler</div></div>
       <div class="scard wide" onclick="goCalendar();setTimeout(()=>openMonthDetail(today.getFullYear(),today.getMonth()),350)" style="cursor:pointer;position:relative">
         <div class="slbl">Bu Ay Toplam (Maaş Dahil)</div>
         <div class="sval green" id="ss3">—</div>
@@ -526,7 +526,7 @@ body{display:flex;flex-direction:column;position:relative}
 </script>
 
 <script>
-const VERSION='v2.5';
+const VERSION='v2.6';
 const MONTHS=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
 const DAYS=['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
 const DAYS_S=['Paz','Pzt','Sal','Çar','Per','Cum','Cmt'];
@@ -601,7 +601,8 @@ function calcDay(key){
   if(r.molaMin)mol+=parseInt(r.molaMin)||0;
   netMin=netMin-mol;
   const tm=netMin!==0?Math.round(saatlik*carpan*(netMin/60)):0;
-  const yol=getYol(key),yemek=parseFloat(r.yemekTutar)||0;
+  const hasMesai=blocks.length>0;
+  const yol=hasMesai?getYol(key):0,yemek=hasMesai?(parseFloat(r.yemekTutar)||0):0;
   return{netMin,tm,yol,yemek,top:tm+yol+yemek};
 }
 function getMesailer(r){if(r.mesailer&&r.mesailer.length)return r.mesailer;if(r.giris)return[{giris:r.giris,cikis:r.cikis||''}];return[];}
