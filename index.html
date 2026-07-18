@@ -21,10 +21,12 @@ function signOut(){
 }
 // Sayfa açılınca direkt uygulamaya gir
 document.addEventListener('DOMContentLoaded',()=>{
-  loadLocal();applySettings();
-  userInfo={name:'Yerel Kullanıcı',email:'',picture:''};
+  loadLocal();
+  document.documentElement.setAttribute('data-theme',cfg.theme||'default');
+  applySettings();
   showScreen('homeScreen');renderHome();
   setSyncUI('ok','Yerel mod');
+  checkBackupReminder();
 });
 </script>
 <style>
@@ -40,16 +42,34 @@ document.addEventListener('DOMContentLoaded',()=>{
   --green:#3de8a0;--grd:rgba(61,232,160,0.13);--grb:rgba(61,232,160,0.28);
   --red:#ff6b80;--rdd:rgba(255,107,128,0.14);
   --gold:#ffd166;--gld:rgba(255,209,102,0.13);
+  --m1:rgba(50,85,210,0.38);--m2:rgba(95,38,185,0.3);--m3:rgba(18,125,115,0.24);
   --r:14px;--r2:20px;
   --st:env(safe-area-inset-top,0px);--sb:env(safe-area-inset-bottom,0px);
 }
+[data-theme="black"]{--c0:#000000;--blue:#ffffff;--bd:rgba(255,255,255,.08);--bb:rgba(255,255,255,.25);--gold:#cfcfcf;--gld:rgba(255,255,255,.08);--m1:rgba(255,255,255,.10);--m2:rgba(255,255,255,.06);--m3:rgba(255,255,255,.04)}
+[data-theme="midnight-green"]{--c0:#04120e;--blue:#22c3a6;--bd:rgba(34,195,166,.14);--bb:rgba(34,195,166,.32);--m1:rgba(20,120,95,.34);--m2:rgba(10,80,70,.28);--m3:rgba(30,140,110,.20)}
+[data-theme="deep-purple"]{--c0:#0d0620;--blue:#a78bfa;--bd:rgba(167,139,250,.15);--bb:rgba(167,139,250,.32);--m1:rgba(110,50,200,.36);--m2:rgba(80,20,160,.30);--m3:rgba(140,70,220,.20)}
+[data-theme="sunset"]{--c0:#1a0a12;--blue:#ff8a5c;--bd:rgba(255,138,92,.15);--bb:rgba(255,138,92,.34);--gold:#ffb86b;--m1:rgba(255,90,120,.34);--m2:rgba(255,150,60,.28);--m3:rgba(200,40,90,.22)}
+[data-theme="ocean"]{--c0:#020e18;--blue:#38bdf8;--bd:rgba(56,189,248,.15);--bb:rgba(56,189,248,.32);--m1:rgba(30,120,200,.34);--m2:rgba(10,80,140,.30);--m3:rgba(20,160,180,.22)}
+[data-theme="forest"]{--c0:#0a1408;--blue:#65c96a;--bd:rgba(101,201,106,.15);--bb:rgba(101,201,106,.32);--green:#7ee08a;--grd:rgba(126,224,138,.15);--m1:rgba(40,110,40,.32);--m2:rgba(20,70,25,.30);--m3:rgba(80,140,50,.20)}
+[data-theme="rose-gold"]{--c0:#180d10;--blue:#f6b8c1;--bd:rgba(246,184,193,.16);--bb:rgba(246,184,193,.32);--gold:#f0c987;--m1:rgba(230,150,160,.30);--m2:rgba(200,120,140,.26);--m3:rgba(240,190,150,.20)}
+[data-theme="amber"]{--c0:#160f02;--blue:#fbbf24;--bd:rgba(251,191,36,.16);--bb:rgba(251,191,36,.34);--gold:#ffcf5c;--m1:rgba(220,150,20,.32);--m2:rgba(180,110,10,.28);--m3:rgba(255,190,60,.18)}
+[data-theme="slate"]{--c0:#0b0f16;--blue:#94a3b8;--bd:rgba(148,163,184,.15);--bb:rgba(148,163,184,.30);--m1:rgba(80,100,130,.30);--m2:rgba(50,65,90,.28);--m3:rgba(110,130,160,.18)}
+[data-theme="crimson"]{--c0:#150507;--blue:#ff5468;--bd:rgba(255,84,104,.15);--bb:rgba(255,84,104,.34);--m1:rgba(200,20,40,.34);--m2:rgba(140,10,30,.30);--m3:rgba(230,60,70,.20)}
+[data-theme="ice"]{--c0:#050e14;--blue:#7fe3ff;--bd:rgba(127,227,255,.16);--bb:rgba(127,227,255,.34);--m1:rgba(90,200,230,.30);--m2:rgba(60,150,200,.26);--m3:rgba(150,230,255,.18)}
+[data-theme="graphite"]{--c0:#0e0e10;--blue:#c4c4cc;--bd:rgba(196,196,204,.13);--bb:rgba(196,196,204,.28);--m1:rgba(120,120,130,.26);--m2:rgba(70,70,80,.24);--m3:rgba(160,160,170,.16)}
+[data-theme="wine"]{--c0:#140508;--blue:#c2455f;--bd:rgba(194,69,95,.15);--bb:rgba(194,69,95,.32);--m1:rgba(120,20,45,.32);--m2:rgba(80,10,30,.28);--m3:rgba(160,40,60,.18)}
+[data-theme="teal"]{--c0:#031412;--blue:#2dd4bf;--bd:rgba(45,212,191,.15);--bb:rgba(45,212,191,.32);--m1:rgba(20,140,130,.32);--m2:rgba(10,90,85,.28);--m3:rgba(40,180,165,.18)}
+[data-theme="indigo"]{--c0:#080a1e;--blue:#6b7cff;--bd:rgba(107,124,255,.15);--bb:rgba(107,124,255,.32);--m1:rgba(60,70,200,.34);--m2:rgba(40,45,150,.28);--m3:rgba(90,100,230,.20)}
+[data-theme="copper"]{--c0:#160b04;--blue:#e08a52;--bd:rgba(224,138,82,.16);--bb:rgba(224,138,82,.34);--gold:#e6a45c;--m1:rgba(180,90,30,.32);--m2:rgba(130,60,15,.28);--m3:rgba(220,130,60,.18)}
+[data-theme="mono"]{--c0:#0c0c0c;--blue:#dddddd;--bd:rgba(255,255,255,.10);--bb:rgba(255,255,255,.24);--gold:#e5e5e5;--m1:rgba(255,255,255,.08);--m2:rgba(255,255,255,.05);--m3:rgba(255,255,255,.03)}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow:hidden;background:var(--c0);color:var(--t1);font-family:'Inter',sans-serif;width:100%;-webkit-font-smoothing:antialiased}
 body{display:flex;flex-direction:column;position:relative}
 .mesh{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
-.m1{position:absolute;width:72vw;height:72vw;border-radius:50%;background:radial-gradient(circle,rgba(50,85,210,0.38) 0%,transparent 68%);top:-18vw;left:-14vw;animation:m1a 18s ease-in-out infinite alternate}
-.m2{position:absolute;width:62vw;height:62vw;border-radius:50%;background:radial-gradient(circle,rgba(95,38,185,0.3) 0%,transparent 68%);bottom:-12vw;right:-12vw;animation:m2a 13s ease-in-out infinite alternate}
-.m3{position:absolute;width:52vw;height:52vw;border-radius:50%;background:radial-gradient(circle,rgba(18,125,115,0.24) 0%,transparent 68%);top:36%;left:16%;animation:m3a 22s ease-in-out infinite alternate}
+.m1{position:absolute;width:72vw;height:72vw;border-radius:50%;background:radial-gradient(circle,var(--m1) 0%,transparent 68%);top:-18vw;left:-14vw;animation:m1a 18s ease-in-out infinite alternate}
+.m2{position:absolute;width:62vw;height:62vw;border-radius:50%;background:radial-gradient(circle,var(--m2) 0%,transparent 68%);bottom:-12vw;right:-12vw;animation:m2a 13s ease-in-out infinite alternate}
+.m3{position:absolute;width:52vw;height:52vw;border-radius:50%;background:radial-gradient(circle,var(--m3) 0%,transparent 68%);top:36%;left:16%;animation:m3a 22s ease-in-out infinite alternate}
 @keyframes m1a{to{transform:translate(8vw,7vw) scale(1.18)}}
 @keyframes m2a{to{transform:translate(-7vw,-9vw) scale(1.12)}}
 @keyframes m3a{to{transform:translate(5vw,-8vw) scale(0.86)}}
@@ -220,6 +240,16 @@ body{display:flex;flex-direction:column;position:relative}
 .sact svg{width:20px;height:20px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
 .sact.blue{color:var(--blue)}
 .sact.red{color:var(--red)}
+.theme-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px 6px;padding:6px 4px 2px}
+.sel-inp{padding:8px 10px;background:rgba(255,255,255,.08);border:1px solid var(--gb);border-radius:10px;color:var(--t1);font-size:13px;font-family:'Inter',sans-serif;outline:none}
+.banner{margin:0 14px 14px;padding:14px 16px;background:var(--gld);border:1px solid rgba(255,209,102,.35);border-radius:var(--r2);display:none;align-items:center;gap:12px;position:relative;z-index:1}
+.banner-txt{flex:1}
+.banner-t{font-size:13px;font-weight:700;color:var(--t1)}
+.banner-s{font-size:11px;color:var(--t3);margin-top:1px}
+.banner-btn{padding:9px 16px;background:var(--gold);color:#1a1400;border:none;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;font-family:'Inter',sans-serif;flex-shrink:0}
+.av-emoji-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:14px;max-height:180px;overflow-y:auto}
+.av-emoji{font-size:23px;text-align:center;padding:8px 0;border-radius:10px;background:rgba(255,255,255,.05);cursor:pointer}
+.av-emoji:active{background:rgba(255,255,255,.12)}
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s;backdrop-filter:blur(6px)}
 .ov.show{opacity:1;pointer-events:all}
 .sh{background:rgba(8,12,24,0.97);backdrop-filter:blur(32px);-webkit-backdrop-filter:blur(32px);border-radius:24px 24px 0 0;border-top:1px solid var(--gb);padding:0 0 calc(24px + var(--sb));width:100%;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1)}
@@ -264,8 +294,6 @@ body{display:flex;flex-direction:column;position:relative}
 <body>
 <div id="app-root">
 <div class="mesh"><div class="m1"></div><div class="m2"></div><div class="m3"></div></div>
-
-  <div class="loader-t">Yükleniyor…</div>
 </div>
 
 <div class="screen hidden" id="homeScreen">
@@ -284,6 +312,7 @@ body{display:flex;flex-direction:column;position:relative}
           <div class="hero-day" id="hDay"></div>
         </div>
         <div class="avbtn" id="avbtn" onclick="goSettings()">
+          <span id="avEmoji" style="font-size:20px;display:none"></span>
           <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           <img id="avImg" alt="">
         </div>
@@ -295,6 +324,11 @@ body{display:flex;flex-direction:column;position:relative}
           <div id="privKnob" style="width:16px;height:16px;border-radius:50%;background:var(--t2);position:absolute;top:2px;left:2px;transition:transform .2s"></div>
         </div>
       </div>
+    </div>
+    <div class="banner" id="backupBanner">
+      <svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:var(--gold);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <div class="banner-txt"><div class="banner-t">Yedekleme zamanı geldi</div><div class="banner-s">Verilerini JSON olarak indir</div></div>
+      <button class="banner-btn" onclick="doAutoBackup()">Şimdi İndir</button>
     </div>
     <div class="tc">
       <div class="tc-top">
@@ -399,12 +433,40 @@ body{display:flex;flex-direction:column;position:relative}
     <div style="width:38px"></div>
   </div>
   <div class="scroll">
-    <div class="uhero">
+    <div class="uhero" id="uheroBtn" onclick="openProfileEdit()" style="cursor:pointer">
       <div class="uhero-av" id="uhav">
+        <span id="uhavEmoji" style="font-size:24px;display:none"></span>
         <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         <img id="uImg" alt="">
       </div>
-      <div><div class="uname" id="uName">—</div><div class="uemail" id="uEmail">—</div></div>
+      <div style="flex:1"><div class="uname" id="uName">Kullanıcı</div><div class="uemail" id="uEmail">İşyeri belirtilmedi</div></div>
+      <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:var(--t3);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>
+    <div class="sg">
+      <div class="sg-lbl">Görünüm</div>
+      <div class="slist" style="padding:6px">
+        <div class="theme-grid" id="themeGrid"></div>
+      </div>
+    </div>
+    <div class="sg">
+      <div class="sg-lbl">Yedekleme</div>
+      <div class="slist">
+        <div class="si">
+          <div class="si-ic blue"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+          <div class="si-t"><div class="n">Yedekleme Sıklığı</div><div class="s" id="backupInfoTxt">—</div></div>
+          <select class="sel-inp" id="stBackupPeriod" onchange="saveBackupSettings()">
+            <option value="daily">Günlük</option>
+            <option value="weekly">Haftalık</option>
+            <option value="monthly">Aylık</option>
+            <option value="custom">Ayın Günü</option>
+          </select>
+        </div>
+        <div class="si" id="customDayRow" style="display:none">
+          <div class="si-ic gold"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+          <div class="si-t"><div class="n">Ayın Kaçıncı Günü</div><div class="s">1-28 arası seç</div></div>
+          <input class="si-inp" type="number" id="stBackupCustomDay" min="1" max="28" value="1" onchange="saveBackupSettings()">
+        </div>
+      </div>
     </div>
     <div class="sg">
       <div class="sg-lbl">Mesai Ayarları</div>
@@ -503,6 +565,47 @@ body{display:flex;flex-direction:column;position:relative}
   </div>
 </div>
 
+<div class="ov" id="profileOv" onclick="ovClick(event,'profileOv')">
+  <div class="sh"><div class="sh-drag"></div>
+    <div class="sh-head"><h3>Profil</h3><p>Adın, işyerin ve fotoğrafın</p></div>
+    <div class="sh-body">
+      <div style="display:flex;justify-content:center;margin-bottom:18px">
+        <div id="profAvWrap" onclick="openAvatarPicker()" style="width:84px;height:84px;border-radius:50%;background:var(--bd);border:2.5px solid var(--bb);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden">
+          <span id="profAvEmoji" style="font-size:38px;display:none"></span>
+          <img id="profAvImg" alt="" style="width:100%;height:100%;object-fit:cover;display:none">
+          <svg viewBox="0 0 24 24" style="width:34px;height:34px;stroke:var(--blue);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.55);text-align:center;font-size:9px;font-weight:700;padding:3px 0">DEĞİŞTİR</div>
+        </div>
+      </div>
+      <div class="sh-lbl">İsim</div>
+      <input type="text" id="profName" placeholder="Adın" style="width:100%;padding:14px;background:rgba(255,255,255,.08);border:1px solid var(--gb);border-radius:var(--r);color:var(--t1);font-size:15px;font-family:'Inter',sans-serif;outline:none;margin-bottom:14px">
+      <div class="sh-lbl">İşyeri</div>
+      <input type="text" id="profWork" placeholder="İşyeri adı" style="width:100%;padding:14px;background:rgba(255,255,255,.08);border:1px solid var(--gb);border-radius:var(--r);color:var(--t1);font-size:15px;font-family:'Inter',sans-serif;outline:none;margin-bottom:16px">
+      <div class="sh-btns">
+        <button class="sh-cancel" onclick="closeOv('profileOv')">Vazgeç</button>
+        <button class="sh-ok" onclick="saveProfile()">Kaydet ✓</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="ov" id="avatarOv" style="z-index:260" onclick="ovClick(event,'avatarOv')">
+  <div class="sh"><div class="sh-drag"></div>
+    <div class="sh-head"><h3>Avatar Seç</h3><p>Emoji seç veya fotoğraf yükle</p></div>
+    <div class="sh-body">
+      <div class="sh-btns" style="margin-bottom:16px">
+        <button class="sh-cancel" onclick="openCamera()" style="display:flex;align-items:center;justify-content:center;gap:8px"><svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>Kamera</button>
+        <button class="sh-cancel" onclick="openGallery()" style="display:flex;align-items:center;justify-content:center;gap:8px"><svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>Galeri</button>
+      </div>
+      <input type="file" accept="image/*" capture="environment" id="avFileCamera" style="display:none" onchange="handleAvatarUpload(this)">
+      <input type="file" accept="image/*" id="avFileGallery" style="display:none" onchange="handleAvatarUpload(this)">
+      <div class="sh-lbl">veya emoji seç</div>
+      <div class="av-emoji-grid" id="avEmojiGrid"></div>
+      <button class="sh-cancel" onclick="removeAvatar()" style="width:100%;color:var(--red)">Avatarı Kaldır</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 </div>
 
@@ -526,7 +629,7 @@ body{display:flex;flex-direction:column;position:relative}
 </script>
 
 <script>
-const VERSION='v2.6';
+const VERSION='v2.5';
 const MONTHS=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
 const DAYS=['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
 const DAYS_S=['Paz','Pzt','Sal','Çar','Per','Cum','Cmt'];
@@ -535,8 +638,31 @@ const todayKey=dk(today.getFullYear(),today.getMonth(),today.getDate());
 let curY=today.getFullYear(),curM=today.getMonth();
 let openDays={},modalKey=null,syncTimer=null,isSyncing=false;
 let userInfo=null;
-let cfg={vardiyaS:'15:00',vardiyaB:'23:00',carpan:1.5,aylikSaat:225,brutMaas:0};
+let cfg={vardiyaS:'15:00',vardiyaB:'23:00',carpan:1.5,aylikSaat:225,brutMaas:0,theme:'default'};
 let salaries={},dayData={},monthData={};
+let profile={name:'',workName:'',avatar:'',avatarType:'emoji'};
+let backupSettings={period:'weekly',customDay:1,lastBackup:null};
+const THEMES=[
+{id:'default',name:'Gece Mavisi',c0:'#080c18',ac:'#5b9cf6'},
+{id:'black',name:'Siyah',c0:'#000000',ac:'#ffffff'},
+{id:'midnight-green',name:'Gece Yeşili',c0:'#04120e',ac:'#22c3a6'},
+{id:'deep-purple',name:'Koyu Mor',c0:'#0d0620',ac:'#a78bfa'},
+{id:'sunset',name:'Gün Batımı',c0:'#1a0a12',ac:'#ff8a5c'},
+{id:'ocean',name:'Okyanus',c0:'#020e18',ac:'#38bdf8'},
+{id:'forest',name:'Orman',c0:'#0a1408',ac:'#65c96a'},
+{id:'rose-gold',name:'Rose Gold',c0:'#180d10',ac:'#f6b8c1'},
+{id:'amber',name:'Amber',c0:'#160f02',ac:'#fbbf24'},
+{id:'slate',name:'Slate',c0:'#0b0f16',ac:'#94a3b8'},
+{id:'crimson',name:'Crimson',c0:'#150507',ac:'#ff5468'},
+{id:'ice',name:'Buz',c0:'#050e14',ac:'#7fe3ff'},
+{id:'graphite',name:'Grafit',c0:'#0e0e10',ac:'#c4c4cc'},
+{id:'wine',name:'Bordo',c0:'#140508',ac:'#c2455f'},
+{id:'teal',name:'Teal',c0:'#031412',ac:'#2dd4bf'},
+{id:'indigo',name:'İndigo',c0:'#080a1e',ac:'#6b7cff'},
+{id:'copper',name:'Bakır',c0:'#160b04',ac:'#e08a52'},
+{id:'mono',name:'Mono',c0:'#0c0c0c',ac:'#dddddd'}
+];
+const AV_EMOJIS=['🧑‍🔧','👨‍🔧','👩‍🔧','🧑‍💼','👨‍💼','👩‍💼','🧑‍🏭','👨‍🏭','👩‍🏭','😀','😎','🤓','🧑','👨','👩','🦾','⚙️','🔧','🔩','🏭','⚡','🛠️','💪','🚀','🎯','🔥','⭐','🏆','☕','🎧'];
 
 function dk(y,m,d){return`${y}-${m}-${d}`;}
 function mk(y,m){return`${y}-${m}`;}
@@ -609,8 +735,8 @@ function getMesailer(r){if(r.mesailer&&r.mesailer.length)return r.mesailer;if(r.
 function ensureMesailer(key){if(!dayData[key])dayData[key]={};const r=dayData[key];if(!r.mesailer){if(r.giris){r.mesailer=[{giris:r.giris,cikis:r.cikis||''}];delete r.giris;delete r.cikis;}else r.mesailer=[];}return r;}
 function calcMonth(y,m){let mn=0,tm=0,yl=0,yk=0;for(let d=1;d<=daysIn(y,m);d++){const c=calcDay(dk(y,m,d));mn+=c.netMin;tm+=c.tm;yl+=c.yol;yk+=c.yemek;}return{mn,tm,yl,yk};}
 
-function saveLocal(){try{localStorage.setItem('mt_v4',JSON.stringify({cfg,salaries,dayData,monthData,ts:Date.now()}));}catch(e){}}
-function loadLocal(){try{const r=localStorage.getItem('mt_v4');if(r){const d=JSON.parse(r);cfg=Object.assign(cfg,d.cfg||{});if(cfg.bitis&&!cfg.vardiyaB)cfg.vardiyaB=cfg.bitis;salaries=d.salaries||{};dayData=d.dayData||{};monthData=d.monthData||{};}}catch(e){}}
+function saveLocal(){try{localStorage.setItem('mt_v4',JSON.stringify({cfg,salaries,dayData,monthData,profile,backupSettings,ts:Date.now()}));}catch(e){}}
+function loadLocal(){try{const r=localStorage.getItem('mt_v4');if(r){const d=JSON.parse(r);cfg=Object.assign(cfg,d.cfg||{});if(cfg.bitis&&!cfg.vardiyaB)cfg.vardiyaB=cfg.bitis;salaries=d.salaries||{};dayData=d.dayData||{};monthData=d.monthData||{};profile=Object.assign({name:'',workName:'',avatar:'',avatarType:'emoji'},d.profile||{});backupSettings=Object.assign({period:'weekly',customDay:1,lastBackup:null},d.backupSettings||{});}}catch(e){}}
 
 function updateUser(){
   if(!userInfo)return;
@@ -653,6 +779,9 @@ function applySettings(){
   if(vs)vs.value=cfg.vardiyaS||'15:00';if(vb)vb.value=cfg.vardiyaB||'23:00';if(cp)cp.value=cfg.carpan||1.5;if(as)as.value=cfg.aylikSaat||225;
   if(bm){bm._realVal=undefined;bm.removeAttribute('readonly');bm.value=cfg.brutMaas||0;}
   applyPrivacyUI();
+  renderThemeGrid();
+  applyProfileUI();
+  applyBackupUI();
 }
 function saveSettings(){
   const bm=$('stBrutMaas');
@@ -660,6 +789,125 @@ function saveSettings(){
   saveLocal();debouncePush();renderAll();
   if(bm&&privacyOn){bm._realVal=String(cfg.brutMaas);bm.value='';bm.placeholder='•••';bm.setAttribute('readonly','');}
   toast('Ayarlar kaydedildi ✓');
+}
+
+// ---- Tema ----
+function applyTheme(id){
+  const t=THEMES.find(x=>x.id===id)||THEMES[0];
+  document.documentElement.setAttribute('data-theme',t.id);
+  cfg.theme=t.id;saveLocal();debouncePush();
+  renderThemeGrid();
+}
+function renderThemeGrid(){
+  const el=$('themeGrid');if(!el)return;
+  const cur=cfg.theme||'default';
+  el.innerHTML=THEMES.map(t=>`<div onclick="applyTheme('${t.id}')" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;padding:4px 0">
+    <div style="width:46px;height:46px;border-radius:50%;background:${t.c0};border:2.5px solid ${cur===t.id?t.ac:'rgba(255,255,255,.12)'};display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.4)">
+      <div style="width:18px;height:18px;border-radius:50%;background:${t.ac}"></div>
+    </div>
+    <span style="font-size:9.5px;color:${cur===t.id?'var(--t1)':'var(--t3)'};font-weight:${cur===t.id?'700':'500'};text-align:center;line-height:1.2">${t.name}</span>
+  </div>`).join('');
+}
+// ---- Profil / Avatar ----
+function paintAvatar(imgId,emojiId,wrapId){
+  const img=$(imgId),emo=$(emojiId),wrap=$(wrapId);
+  const svg=wrap?wrap.querySelector('svg'):null;
+  if(profile.avatarType==='photo'&&profile.avatar){
+    if(img){img.src=profile.avatar;img.style.display='block';}
+    if(emo)emo.style.display='none';
+    if(svg)svg.style.display='none';
+  }else if(profile.avatarType==='emoji'&&profile.avatar){
+    if(img)img.style.display='none';
+    if(emo){emo.textContent=profile.avatar;emo.style.display='flex';}
+    if(svg)svg.style.display='none';
+  }else{
+    if(img)img.style.display='none';
+    if(emo)emo.style.display='none';
+    if(svg)svg.style.display='block';
+  }
+}
+function applyProfileUI(){
+  if($('uName'))$('uName').textContent=profile.name||'Kullanıcı';
+  if($('uEmail'))$('uEmail').textContent=profile.workName||'İşyeri belirtilmedi';
+  paintAvatar('avImg','avEmoji','avbtn');
+  paintAvatar('uImg','uhavEmoji','uhav');
+  paintAvatar('profAvImg','profAvEmoji','profAvWrap');
+}
+function openProfileEdit(){
+  if($('profName'))$('profName').value=profile.name||'';
+  if($('profWork'))$('profWork').value=profile.workName||'';
+  paintAvatar('profAvImg','profAvEmoji','profAvWrap');
+  openOv('profileOv');
+}
+function saveProfile(){
+  profile.name=($('profName').value||'').trim();
+  profile.workName=($('profWork').value||'').trim();
+  saveLocal();debouncePush();applyProfileUI();closeOv('profileOv');toast('Profil kaydedildi ✓');
+}
+function openAvatarPicker(){renderAvEmojiGrid();openOv('avatarOv');}
+function renderAvEmojiGrid(){
+  const el=$('avEmojiGrid');if(!el)return;
+  el.innerHTML=AV_EMOJIS.map(e=>`<div class="av-emoji" onclick="pickEmoji('${e}')">${e}</div>`).join('');
+}
+function pickEmoji(e){profile.avatar=e;profile.avatarType='emoji';saveLocal();debouncePush();applyProfileUI();closeOv('avatarOv');toast('Avatar güncellendi ✓');}
+function openCamera(){const el=$('avFileCamera');if(el)el.click();}
+function openGallery(){const el=$('avFileGallery');if(el)el.click();}
+function handleAvatarUpload(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    const img=new Image();
+    img.onload=function(){
+      const maxSz=240;let w=img.width,h=img.height;
+      if(w>h){if(w>maxSz){h=Math.round(h*maxSz/w);w=maxSz;}}else{if(h>maxSz){w=Math.round(w*maxSz/h);h=maxSz;}}
+      const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+      const ctx=cv.getContext('2d');ctx.drawImage(img,0,0,w,h);
+      profile.avatar=cv.toDataURL('image/jpeg',0.82);profile.avatarType='photo';
+      saveLocal();debouncePush();applyProfileUI();closeOv('avatarOv');toast('Fotoğraf güncellendi ✓');
+    };
+    img.src=ev.target.result;
+  };
+  reader.readAsDataURL(file);
+  input.value='';
+}
+function removeAvatar(){profile.avatar='';profile.avatarType='emoji';saveLocal();debouncePush();applyProfileUI();closeOv('avatarOv');toast('Avatar kaldırıldı');}
+// ---- Yedekleme ----
+function applyBackupUI(){
+  const p=$('stBackupPeriod'),cd=$('stBackupCustomDay'),row=$('customDayRow'),info=$('backupInfoTxt');
+  if(p)p.value=backupSettings.period||'weekly';
+  if(cd)cd.value=backupSettings.customDay||1;
+  if(row)row.style.display=(backupSettings.period==='custom')?'flex':'none';
+  if(info){
+    const lb=backupSettings.lastBackup?new Date(backupSettings.lastBackup).toLocaleDateString('tr-TR'):'henüz yok';
+    info.textContent='Son yedek: '+lb;
+  }
+}
+function saveBackupSettings(){
+  const p=$('stBackupPeriod'),cd=$('stBackupCustomDay');
+  backupSettings.period=p?p.value:'weekly';
+  backupSettings.customDay=cd?Math.min(28,Math.max(1,parseInt(cd.value)||1)):1;
+  saveLocal();debouncePush();applyBackupUI();checkBackupReminder();
+  toast('Yedekleme ayarı kaydedildi ✓');
+}
+function checkBackupReminder(){
+  const now=new Date();
+  let due=false;
+  if(!backupSettings.lastBackup){
+    due=true;
+  }else{
+    const last=new Date(backupSettings.lastBackup);
+    const diffDays=Math.floor((now-last)/86400000);
+    if(backupSettings.period==='daily')due=diffDays>=1;
+    else if(backupSettings.period==='weekly')due=diffDays>=7;
+    else if(backupSettings.period==='monthly')due=diffDays>=30;
+    else if(backupSettings.period==='custom')due=now.getDate()===Number(backupSettings.customDay)&&(last.getFullYear()!==now.getFullYear()||last.getMonth()!==now.getMonth()||last.getDate()!==now.getDate());
+  }
+  const b=$('backupBanner');if(b)b.style.display=due?'flex':'none';
+}
+function doAutoBackup(){
+  exportJSON();
+  backupSettings.lastBackup=new Date().toISOString();
+  saveLocal();debouncePush();applyBackupUI();checkBackupReminder();
 }
 
 let curScreen='';
@@ -796,7 +1044,7 @@ function buildDayDetailHTML(key,r,c){
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:11px;color:var(--t3)">${r.vardiyaS!=null?'Bu güne özel':'Öncekinden miras'}</span>
     <div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.05);border:1px solid var(--gb);border-radius:20px;padding:5px 10px;cursor:pointer" onclick="toggleKompMesai('${key}')">
-      <span style="font-size:10px;font-weight:700;color:${r.kompMesai?'var(--blue)':'var(--t3)'}">Komple Mesai</span>
+      <span style="font-size:10px;font-weight:700;color:${r.kompMesai?'var(--blue)':'var(--t3)'}">Bugün Komple Mesai</span>
       <div style="width:32px;height:18px;border-radius:9px;background:${r.kompMesai?'var(--blue)':'var(--gb)'};position:relative;transition:background .2s;flex-shrink:0">
         <div style="width:14px;height:14px;border-radius:50%;background:#fff;position:absolute;top:2px;left:${r.kompMesai?'16px':'2px'};transition:left .2s"></div>
       </div>
@@ -862,7 +1110,7 @@ function confirmSalary(){
 }
 
 function exportJSON(){
-  const data={cfg,salaries,dayData,monthData,ts:new Date().toISOString(),v:'2.5'};
+  const data={cfg,salaries,dayData,monthData,profile,backupSettings,ts:new Date().toISOString(),v:'2.6'};
   const b=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;
   a.download='mesai-yedek-'+new Date().toISOString().slice(0,10)+'.json';a.click();
@@ -881,9 +1129,12 @@ function handleImport(input){
       if(data.salaries)salaries=data.salaries;
       if(data.dayData)dayData=data.dayData;
       if(data.monthData)monthData=data.monthData;
+      if(data.profile)profile=Object.assign({name:'',workName:'',avatar:'',avatarType:'emoji'},data.profile);
+      if(data.backupSettings)backupSettings=Object.assign({period:'weekly',customDay:1,lastBackup:null},data.backupSettings);
       saveLocal();
       if(window._fbPush)window._fbPush();
-      applySettings();renderAll();
+      applyTheme(cfg.theme||'default');
+      applySettings();renderAll();checkBackupReminder();
       toast('Yedek yüklendi ✓ — '+Object.keys(dayData).length+' gün');
     }catch(err){toast('Dosya okunamadı: '+err.message);}
   };
