@@ -444,8 +444,12 @@ body{display:flex;flex-direction:column;position:relative}
     </div>
     <div class="sg">
       <div class="sg-lbl">Görünüm</div>
-      <div class="slist" style="padding:6px">
-        <div class="theme-grid" id="themeGrid"></div>
+      <div class="slist">
+        <div class="si">
+          <div class="si-ic blue" id="themeSwatch" style="padding:0;overflow:hidden"><div id="themeSwatchDot" style="width:16px;height:16px;border-radius:50%"></div></div>
+          <div class="si-t"><div class="n">Tema</div><div class="s" id="themeInfoTxt">Renk şemasını değiştir</div></div>
+          <select class="sel-inp" id="stTheme" onchange="applyTheme(this.value)"></select>
+        </div>
       </div>
     </div>
     <div class="sg">
@@ -629,7 +633,7 @@ body{display:flex;flex-direction:column;position:relative}
 </script>
 
 <script>
-const VERSION='v2.5';
+const VERSION='v2.6';
 const MONTHS=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
 const DAYS=['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
 const DAYS_S=['Paz','Pzt','Sal','Çar','Per','Cum','Cmt'];
@@ -799,14 +803,14 @@ function applyTheme(id){
   renderThemeGrid();
 }
 function renderThemeGrid(){
-  const el=$('themeGrid');if(!el)return;
+  const sel=$('stTheme');if(!sel)return;
   const cur=cfg.theme||'default';
-  el.innerHTML=THEMES.map(t=>`<div onclick="applyTheme('${t.id}')" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;padding:4px 0">
-    <div style="width:46px;height:46px;border-radius:50%;background:${t.c0};border:2.5px solid ${cur===t.id?t.ac:'rgba(255,255,255,.12)'};display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.4)">
-      <div style="width:18px;height:18px;border-radius:50%;background:${t.ac}"></div>
-    </div>
-    <span style="font-size:9.5px;color:${cur===t.id?'var(--t1)':'var(--t3)'};font-weight:${cur===t.id?'700':'500'};text-align:center;line-height:1.2">${t.name}</span>
-  </div>`).join('');
+  sel.innerHTML=THEMES.map(t=>`<option value="${t.id}" ${cur===t.id?'selected':''}>${t.name}</option>`).join('');
+  const dot=$('themeSwatchDot'),wrap=$('themeSwatch'),info=$('themeInfoTxt');
+  const t=THEMES.find(x=>x.id===cur)||THEMES[0];
+  if(dot)dot.style.background=t.ac;
+  if(wrap)wrap.style.background=t.c0;
+  if(info)info.textContent=t.name;
 }
 // ---- Profil / Avatar ----
 function paintAvatar(imgId,emojiId,wrapId){
