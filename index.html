@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mesai Takip">
+<meta name="theme-color" content="#080c18">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<title>Mesai Takip</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script>
+// Yerel mod — Firebase yok
+function debouncePush(){saveLocal();setSyncUI('ok','Kaydedildi ✓');}
+function syncNow(){saveLocal();renderAll();setSyncUI('ok','Yerel kayıt ✓');}
+function signOut(){
+  if(confirm('Tüm veriler silinecek. Emin misiniz?')){
+    localStorage.removeItem('mt_v4');
+    dayData={};salaries={};monthData={};
+    cfg={vardiyaS:'15:00',vardiyaB:'23:00',carpan:1.5,aylikSaat:225,brutMaas:0};
+    location.reload();
+  }
+}
+// Sayfa açılınca direkt uygulamaya gir
+document.addEventListener('DOMContentLoaded',()=>{
+  loadLocal();
+  document.documentElement.setAttribute('data-theme',cfg.theme||'default');
+  applySettings();
+  showScreen('homeScreen');renderHome();
+  setSyncUI('ok','Yerel mod');
+  checkBackupReminder();
+});
+</script>
+<style>
+@media(orientation:landscape) and (max-width:1024px){
+  #app-root{transform:rotate(-90deg);transform-origin:left top;width:100vh;height:100vw;position:fixed;top:100%;left:0;}
+}
+:root{
+  --c0:#080c18;
+  --g1:rgba(255,255,255,0.06);--g2:rgba(255,255,255,0.1);--g3:rgba(255,255,255,0.15);
+  --gb:rgba(255,255,255,0.09);
+  --t1:#eef2ff;--t2:#8892b0;--t3:#4a5278;
+  --blue:#5b9cf6;--bd:rgba(91,156,246,0.16);--bb:rgba(91,156,246,0.32);
+  --green:#3de8a0;--grd:rgba(61,232,160,0.13);--grb:rgba(61,232,160,0.28);
+  --red:#ff6b80;--rdd:rgba(255,107,128,0.14);
+  --gold:#ffd166;--gld:rgba(255,209,102,0.13);
+  --m1:rgba(50,85,210,0.38);--m2:rgba(95,38,185,0.3);--m3:rgba(18,125,115,0.24);
+  --r:14px;--r2:20px;
+  --st:env(safe-area-inset-top,0px);--sb:env(safe-area-inset-bottom,0px);
+}
+[data-theme="black"]{--c0:#000000;--blue:#ffffff;--bd:rgba(255,255,255,.08);--bb:rgba(255,255,255,.25);--gold:#cfcfcf;--gld:rgba(255,255,255,.08);--m1:rgba(255,255,255,.10);--m2:rgba(255,255,255,.06);--m3:rgba(255,255,255,.04)}
+[data-theme="midnight-green"]{--c0:#04120e;--blue:#22c3a6;--bd:rgba(34,195,166,.14);--bb:rgba(34,195,166,.32);--m1:rgba(20,120,95,.34);--m2:rgba(10,80,70,.28);--m3:rgba(30,140,110,.20)}
+[data-theme="deep-purple"]{--c0:#0d0620;--blue:#a78bfa;--bd:rgba(167,139,250,.15);--bb:rgba(167,139,250,.32);--m1:rgba(110,50,200,.36);--m2:rgba(80,20,160,.30);--m3:rgba(140,70,220,.20)}
+[data-theme="sunset"]{--c0:#1a0a12;--blue:#ff8a5c;--bd:rgba(255,138,92,.15);--bb:rgba(255,138,92,.34);--gold:#ffb86b;--m1:rgba(255,90,120,.34);--m2:rgba(255,150,60,.28);--m3:rgba(200,40,90,.22)}
+[data-theme="ocean"]{--c0:#020e18;--blue:#38bdf8;--bd:rgba(56,189,248,.15);--bb:rgba(56,189,248,.32);--m1:rgba(30,120,200,.34);--m2:rgba(10,80,140,.30);--m3:rgba(20,160,180,.22)}
+[data-theme="forest"]{--c0:#0a1408;--blue:#65c96a;--bd:rgba(101,201,106,.15);--bb:rgba(101,201,106,.32);--green:#7ee08a;--grd:rgba(126,224,138,.15);--m1:rgba(40,110,40,.32);--m2:rgba(20,70,25,.30);--m3:rgba(80,140,50,.20)}
+[data-theme="rose-gold"]{--c0:#180d10;--blue:#f6b8c1;--bd:rgba(246,184,193,.16);--bb:rgba(246,184,193,.32);--gold:#f0c987;--m1:rgba(230,150,160,.30);--m2:rgba(200,120,140,.26);--m3:rgba(240,190,150,.20)}
+[data-theme="amber"]{--c0:#160f02;--blue:#fbbf24;--bd:rgba(251,191,36,.16);--bb:rgba(251,191,36,.34);--gold:#ffcf5c;--m1:rgba(220,150,20,.32);--m2:rgba(180,110,10,.28);--m3:rgba(255,190,60,.18)}
+[data-theme="slate"]{--c0:#0b0f16;--blue:#94a3b8;--bd:rgba(148,163,184,.15);--bb:rgba(148,163,184,.30);--m1:rgba(80,100,130,.30);--m2:rgba(50,65,90,.28);--m3:rgba(110,130,160,.18)}
+[data-theme="crimson"]{--c0:#150507;--blue:#ff5468;--bd:rgba(255,84,104,.15);--bb:rgba(255,84,104,.34);--m1:rgba(200,20,40,.34);--m2:rgba(140,10,30,.30);--m3:rgba(230,60,70,.20)}
+[data-theme="ice"]{--c0:#050e14;--blue:#7fe3ff;--bd:rgba(127,227,255,.16);--bb:rgba(127,227,255,.34);--m1:rgba(90,200,230,.30);--m2:rgba(60,150,200,.26);--m3:rgba(150,230,255,.18)}
+[data-theme="graphite"]{--c0:#0e0e10;--blue:#c4c4cc;--bd:rgba(196,196,204,.13);--bb:rgba(196,196,204,.28);--m1:rgba(120,120,130,.26);--m2:rgba(70,70,80,.24);--m3:rgba(160,160,170,.16)}
+[data-theme="wine"]{--c0:#140508;--blue:#c2455f;--bd:rgba(194,69,95,.15);--bb:rgba(194,69,95,.32);--m1:rgba(120,20,45,.32);--m2:rgba(80,10,30,.28);--m3:rgba(160,40,60,.18)}
+[data-theme="teal"]{--c0:#031412;--blue:#2dd4bf;--bd:rgba(45,212,191,.15);--bb:rgba(45,212,191,.32);--m1:rgba(20,140,130,.32);--m2:rgba(10,90,85,.28);--m3:rgba(40,180,165,.18)}
+[data-theme="indigo"]{--c0:#080a1e;--blue:#6b7cff;--bd:rgba(107,124,255,.15);--bb:rgba(107,124,255,.32);--m1:rgba(60,70,200,.34);--m2:rgba(40,45,150,.28);--m3:rgba(90,100,230,.20)}
+[data-theme="copper"]{--c0:#160b04;--blue:#e08a52;--bd:rgba(224,138,82,.16);--bb:rgba(224,138,82,.34);--gold:#e6a45c;--m1:rgba(180,90,30,.32);--m2:rgba(130,60,15,.28);--m3:rgba(220,130,60,.18)}
+[data-theme="mono"]{--c0:#0c0c0c;--blue:#dddddd;--bd:rgba(255,255,255,.10);--bb:rgba(255,255,255,.24);--gold:#e5e5e5;--m1:rgba(255,255,255,.08);--m2:rgba(255,255,255,.05);--m3:rgba(255,255,255,.03)}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--c0);color:var(--t1);font-family:'Inter',sans-serif;width:100%;-webkit-font-smoothing:antialiased}
+body{display:flex;flex-direction:column;position:relative}
+.mesh{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.m1{position:absolute;width:72vw;height:72vw;border-radius:50%;background:radial-gradient(circle,var(--m1) 0%,transparent 68%);top:-18vw;left:-14vw;animation:m1a 18s ease-in-out infinite alternate}
+.m2{position:absolute;width:62vw;height:62vw;border-radius:50%;background:radial-gradient(circle,var(--m2) 0%,transparent 68%);bottom:-12vw;right:-12vw;animation:m2a 13s ease-in-out infinite alternate}
+.m3{position:absolute;width:52vw;height:52vw;border-radius:50%;background:radial-gradient(circle,var(--m3) 0%,transparent 68%);top:36%;left:16%;animation:m3a 22s ease-in-out infinite alternate}
+@keyframes m1a{to{transform:translate(8vw,7vw) scale(1.18)}}
+@keyframes m2a{to{transform:translate(-7vw,-9vw) scale(1.12)}}
+@keyframes m3a{to{transform:translate(5vw,-8vw) scale(0.86)}}
+.screen{position:fixed;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;transition:transform .3s cubic-bezier(.4,0,.2,1),opacity .3s;overflow:hidden;background:transparent}
+.screen.hidden{transform:translateX(100%);opacity:0;pointer-events:none}
+.scroll{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;position:relative;z-index:1}
+.scroll::-webkit-scrollbar{display:none}
+.login-hero h1{font-size:40px;font-weight:800;letter-spacing:-1.5px;background:linear-gradient(135deg,#fff 20%,#7eaaff 60%,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.login-hero p{font-size:14px;color:var(--t2);margin-top:10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.tbar{padding:calc(var(--st) + 14px) 18px 10px;display:flex;align-items:center;gap:12px;flex-shrink:0;position:relative;z-index:5}
+.tbar-title{font-size:17px;font-weight:700;flex:1;letter-spacing:-.3px}
+.ibtn{width:38px;height:38px;border-radius:50%;background:var(--g1);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--gb);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t2);flex-shrink:0}
+.ibtn:active{background:var(--g2)}
+.ibtn svg{width:18px;height:18px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.home-hero{padding:4px 18px 16px;position:relative;z-index:1}
+.hero-row{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px}
+.hero-greet{font-size:11px;font-weight:700;color:var(--t3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px}
+.hero-date{font-size:30px;font-weight:800;letter-spacing:-1px;line-height:1.1}
+.hero-date em{color:var(--blue);font-style:normal}
+.hero-day{font-size:13px;color:var(--t2);margin-top:4px}
+.sync-row{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--t3);margin-top:6px}
+.sdot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;transition:background .3s}
+.avbtn{width:44px;height:44px;border-radius:50%;border:2px solid var(--gb);background:var(--bd);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;overflow:hidden}
+.avbtn svg{width:22px;height:22px;stroke:var(--blue);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.avbtn img{width:100%;height:100%;object-fit:cover;display:none}
+.tc{background:var(--g1);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid var(--gb);border-radius:var(--r2);margin:0 14px 14px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.35)}
+.tc-top{padding:14px 18px 0;display:flex;align-items:center;justify-content:space-between}
+.tc-lbl{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3)}
+.tc-status{display:flex;align-items:center;gap:7px}
+.stdot{width:7px;height:7px;border-radius:50%;background:var(--t3);flex-shrink:0}
+.stdot.live{background:var(--green);box-shadow:0 0 0 3px rgba(61,232,160,.22);animation:breathe 2s infinite}
+.stdot.done{background:var(--blue)}
+@keyframes breathe{0%,100%{box-shadow:0 0 0 3px rgba(61,232,160,.22)}50%{box-shadow:0 0 0 7px rgba(61,232,160,.06)}}
+.stxt{font-size:13px;font-weight:600;color:var(--t2)}
+.tc-grid{display:grid;grid-template-columns:1fr 1fr 1fr;margin:14px 0 0;border-top:1px solid var(--gb)}
+.tc-cell{padding:14px 16px;border-right:1px solid var(--gb)}
+.tc-cell:last-child{border-right:none}
+.tc-cl{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--t3);margin-bottom:6px}
+.tc-cv{font-size:22px;font-weight:800;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+.tc-cv.dim{color:var(--t3);font-weight:400;font-size:20px}
+.tc-cell.tapme{cursor:pointer;position:relative}
+.tc-cell.tapme:active{background:rgba(255,255,255,.05)}
+.tc-cv.action{display:flex;align-items:center;justify-content:center;gap:5px;font-size:15px;font-weight:800;letter-spacing:-.2px}
+.tc-cv.action svg{width:15px;height:15px;stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.tc-cv.action.go{color:var(--blue)}
+.tc-cv.action.stop{color:var(--red)}
+.tc-bot{padding:12px 18px;border-top:1px solid var(--gb);display:flex;align-items:center;justify-content:space-between}
+.tc-det{font-size:12px;color:var(--t3)}
+.tc-earn{font-size:17px;font-weight:800;color:var(--green);letter-spacing:-.3px}
+.acts{padding:0 14px;margin-bottom:14px;display:flex;flex-direction:column;gap:10px;position:relative;z-index:1}
+.abig{width:100%;padding:18px 20px;border-radius:var(--r2);border:none;cursor:pointer;display:flex;align-items:center;gap:14px;font-family:'Inter',sans-serif;transition:transform .1s,opacity .1s}
+.abig:active{transform:scale(.98);opacity:.92}
+.abig.start{background:linear-gradient(135deg,#4a7cf5,#7b5cf5)}
+.abig.stop{background:linear-gradient(135deg,#f5414a,#f5834a)}
+.abig.neutral{background:var(--g1);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--gb)}
+.a-icon{width:46px;height:46px;border-radius:13px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.a-icon svg{width:22px;height:22px;stroke:#fff;stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.abig.neutral .a-icon{background:rgba(255,255,255,.08)}
+.abig.neutral .a-icon svg{stroke:var(--t2)}
+.a-txt{flex:1;text-align:left}
+.a-txt strong{display:block;font-size:16px;font-weight:800;color:#fff;letter-spacing:-.3px;margin-bottom:2px}
+.abig.neutral .a-txt strong{color:var(--t1)}
+.a-txt small{font-size:12px;color:rgba(255,255,255,.55);font-weight:400}
+.abig.neutral .a-txt small{color:var(--t3)}
+.a-arr{width:20px;height:20px;stroke:rgba(255,255,255,.5);stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.abig.neutral .a-arr{stroke:var(--t3)}
+.arow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.asec{padding:15px 14px;border-radius:var(--r2);background:var(--g1);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--gb);cursor:pointer;display:flex;flex-direction:column;align-items:flex-start;gap:9px;font-family:'Inter',sans-serif;transition:background .15s,transform .1s}
+.asec:active{transform:scale(.97);background:var(--g2)}
+.a-ico{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center}
+.a-ico svg{width:18px;height:18px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.a-ico.blue{background:var(--bd);color:var(--blue)}
+.a-ico.green{background:var(--grd);color:var(--green)}
+.a-ico.gold{background:var(--gld);color:var(--gold)}
+.asec strong{font-size:14px;font-weight:700;color:var(--t1);letter-spacing:-.2px;display:block}
+.asec small{font-size:11px;color:var(--t3)}
+.sec-head{padding:2px 18px 10px;font-size:11px;font-weight:700;color:var(--t3);letter-spacing:.07em;text-transform:uppercase;position:relative;z-index:1}
+.sec-lbl{padding:0 18px 8px;font-size:11px;font-weight:700;color:var(--t3);letter-spacing:.07em;text-transform:uppercase;position:relative;z-index:1;grid-column:span 2}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 14px 18px;position:relative;z-index:1}
+.scard{background:var(--g1);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--gb);border-radius:var(--r);padding:16px}
+.scard.wide{grid-column:span 2}
+.slbl{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px}
+.sval{font-size:24px;font-weight:800;letter-spacing:-.5px;line-height:1}
+.sval.blue{color:var(--blue)}
+.sval.green{color:var(--green)}
+.sval.gold{color:var(--gold)}
+.ssub{font-size:11px;color:var(--t3);margin-top:5px;font-weight:500}
+.nav{flex-shrink:0;background:rgba(6,9,20,0.9);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-top:1px solid var(--gb);padding:8px 0 calc(8px + var(--sb));display:flex;position:relative;z-index:5}
+.nbtn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;cursor:pointer;border:none;background:none;font-family:'Inter',sans-serif;color:var(--t3);transition:color .2s}
+.nbtn.on{color:var(--blue)}
+.nbtn svg{width:22px;height:22px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.nbtn span{font-size:10px;font-weight:600;letter-spacing:.03em}
+.cal-inner{flex:1;overflow:hidden;position:relative}
+.cal-sub{position:absolute;inset:0;display:flex;flex-direction:column;transition:transform .32s cubic-bezier(.4,0,.2,1);overflow:hidden}
+.cal-sub.left{transform:translateX(-100%)}
+.cal-sub.right{transform:translateX(100%)}
+.cal-sub.active{transform:translateX(0)}
+.year-scroll{flex:1;display:flex;flex-direction:column;padding:6px 8px 4px;overflow:hidden}
+.year-hdr-row{display:flex;align-items:center;justify-content:space-between;padding:2px 2px 6px;flex-shrink:0}
+.year-lbl{font-size:20px;font-weight:800;letter-spacing:-.5px;color:var(--t1)}
+.year-nav{display:flex;gap:8px}
+.ynbtn{width:30px;height:30px;border-radius:50%;background:var(--g1);border:1px solid var(--gb);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t2)}
+.ynbtn svg{width:14px;height:14px;stroke:currentColor;stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.month-grid-y{flex:1;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(4,1fr);gap:6px;min-height:0}
+.mmc{background:var(--g1);border:1px solid var(--gb);border-radius:16px;padding:5px 5px 4px;cursor:pointer;transition:background .15s;display:flex;flex-direction:column;overflow:hidden;min-height:0}
+.mmc:active{background:var(--g2)}
+.mmc-name{font-size:11px;font-weight:700;color:var(--t1);text-align:center;margin-bottom:2px;flex-shrink:0}
+.mmc-dowrow{display:grid;grid-template-columns:repeat(7,1fr);flex-shrink:0}
+.mmc-dow{font-size:6px;font-weight:700;color:var(--t3);text-align:center}
+.mmc-daygrid{flex:1;display:grid;grid-template-columns:repeat(7,1fr);grid-template-rows:repeat(6,1fr);gap:1px;min-height:0}
+.mmc-day{display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:3px;font-size:8px;font-weight:600;color:var(--t3);line-height:1}
+.mmc-day.today{background:var(--bd);color:var(--blue);font-weight:800}
+.mmc-day.wknd{opacity:.4}
+.mmc-day.has-pos{color:var(--green);font-weight:700}
+.mmc-day.has-neg{color:var(--red);font-weight:700}
+.mmc-dot{width:3px;height:3px;border-radius:50%;background:var(--green);margin-top:1px;flex-shrink:0}
+.mmc-dot.neg{background:var(--red)}
+.mmc.mmc-lg{padding:14px 10px 12px}
+.mmc.mmc-lg .mmc-name{font-size:15px;margin-bottom:10px}
+.mmc.mmc-lg .mmc-dow{font-size:10px}
+.mmc.mmc-lg .mmc-day{font-size:13px}
+.mmc.mmc-lg .mmc-daygrid{gap:3px}
+.mmc.mmc-lg .mmc-dot{width:4px;height:4px;margin-top:2px}
+.mdet-hdr{display:flex;align-items:center;gap:10px;padding:10px 12px 8px;border-bottom:1px solid var(--gb);flex-shrink:0}
+.back-btn{width:32px;height:32px;border-radius:50%;background:var(--g1);border:1px solid var(--gb);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t2);flex-shrink:0}
+.back-btn svg{width:16px;height:16px;stroke:currentColor;stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.mdet-title{font-size:16px;font-weight:800;letter-spacing:-.4px;flex:1}
+.mdet-total{font-size:12px;font-weight:700;color:var(--green);flex-shrink:0}
+.mdet-params{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;padding:6px 10px;border-bottom:1px solid var(--gb);flex-shrink:0}
+.mparam{background:rgba(255,255,255,.04);border:1px solid var(--gb);border-radius:10px;padding:6px 8px}
+.mparam-lbl{font-size:8px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
+.mparam input{width:100%;background:transparent;border:none;color:var(--t1);font-size:13px;font-weight:800;font-family:'Inter',sans-serif;outline:none;padding:0;letter-spacing:-.3px}
+.mparam input::-webkit-inner-spin-button{display:none}
+.mdet-body{flex:1;display:flex;flex-direction:column;padding:4px 8px 6px;min-height:0;overflow:hidden}
+.mdet-dowrow{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;flex-shrink:0;padding-bottom:3px}
+.det-dow{text-align:center;font-size:9px;font-weight:700;color:var(--t3)}
+.mdet-daygrid{flex:1;display:grid;grid-template-columns:repeat(7,1fr);grid-template-rows:repeat(6,1fr);gap:3px;min-height:0}
+.dgrid-empty{}
+.dgrid-day{border-radius:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:background .15s;overflow:hidden}
+.dgrid-day:active{background:rgba(255,255,255,.14)}
+.dgrid-day.today{border-color:var(--bb);background:var(--bd)}
+.dgrid-day.wknd{background:var(--rdd);border-color:rgba(255,107,128,.15)}
+.dgrid-day.has-pos{border-color:var(--grb);background:rgba(61,232,160,.08)}
+.dgrid-day.has-neg{border-color:rgba(255,107,128,.28);background:rgba(255,107,128,.07)}
+.dgrid-dn{font-size:clamp(11px,3vw,20px);font-weight:800;line-height:1;color:var(--t2)}
+.dgrid-day.today .dgrid-dn{color:var(--blue)}
+.dgrid-day.wknd .dgrid-dn{color:rgba(255,107,128,.5)}
+.dgrid-day.has-pos .dgrid-dn{color:var(--green)}
+.dgrid-day.has-neg .dgrid-dn{color:var(--red)}
+.dgrid-min{font-size:clamp(7px,1.8vw,12px);font-weight:700;line-height:1;margin-top:1px;text-align:center;color:var(--t3)}
+.dgrid-day.has-pos .dgrid-min{color:rgba(61,232,160,.8)}
+.dgrid-day.has-neg .dgrid-min{color:rgba(255,107,128,.8)}
+.mdet-footer{padding:5px 10px 6px;border-top:1px solid var(--gb);display:flex;flex-direction:column;align-items:stretch;gap:3px;flex-shrink:0}
+.mdet-fl{font-size:10px;color:var(--t3)}
+.mdet-fr{font-size:15px;font-weight:800;color:var(--green)}
+.uhero{margin:14px 14px 16px;padding:16px;background:var(--g1);backdrop-filter:blur(16px);border:1px solid var(--gb);border-radius:var(--r2);display:flex;align-items:center;gap:16px}
+.uhero-av{width:56px;height:56px;border-radius:50%;background:var(--bd);border:2px solid var(--bb);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
+.uhero-av svg{width:26px;height:26px;stroke:var(--blue);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.uhero-av img{width:100%;height:100%;object-fit:cover;display:none}
+.uname{font-size:16px;font-weight:800;letter-spacing:-.3px}
+.uemail{font-size:12px;color:var(--t3);margin-top:2px}
+.sg{margin:0 14px 16px}
+.sg-lbl{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;padding:0 4px}
+.slist{background:var(--g1);backdrop-filter:blur(16px);border:1px solid var(--gb);border-radius:var(--r2);overflow:hidden}
+.si{display:flex;align-items:center;padding:14px 16px;gap:14px;border-bottom:1px solid var(--gb)}
+.si:last-child{border-bottom:none}
+.si-ic{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.si-ic svg{width:18px;height:18px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.si-ic.blue{background:var(--bd);color:var(--blue)}
+.si-ic.green{background:var(--grd);color:var(--green)}
+.si-ic.gold{background:var(--gld);color:var(--gold)}
+.si-t{flex:1}
+.si-t .n{font-size:14px;font-weight:600}
+.si-t .s{font-size:12px;color:var(--t3);margin-top:1px}
+.si-inp{width:100px;padding:8px 12px;background:rgba(255,255,255,.08);border:1px solid var(--gb);border-radius:10px;color:var(--t1);font-size:15px;font-family:'Inter',sans-serif;outline:none;text-align:right;font-weight:700}
+.si-inp:focus{border-color:var(--blue)}
+.sact{width:100%;padding:15px 18px;background:var(--g1);backdrop-filter:blur(12px);border:1px solid var(--gb);border-radius:var(--r);color:var(--t1);font-size:14px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;gap:12px;margin-bottom:10px;letter-spacing:-.2px}
+.sact:active{background:var(--g2)}
+.sact svg{width:20px;height:20px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.sact.blue{color:var(--blue)}
+.sact.red{color:var(--red)}
+.theme-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px 6px;padding:6px 4px 2px}
+.sel-inp{padding:8px 10px;background:rgba(255,255,255,.08);border:1px solid var(--gb);border-radius:10px;color:var(--t1);font-size:13px;font-family:'Inter',sans-serif;outline:none}
+.banner{margin:0 14px 14px;padding:14px 16px;background:var(--gld);border:1px solid rgba(255,209,102,.35);border-radius:var(--r2);display:none;align-items:center;gap:12px;position:relative;z-index:1}
+.banner-txt{flex:1}
+.banner-t{font-size:13px;font-weight:700;color:var(--t1)}
+.banner-s{font-size:11px;color:var(--t3);margin-top:1px}
+.banner-btn{padding:9px 16px;background:var(--gold);color:#1a1400;border:none;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;font-family:'Inter',sans-serif;flex-shrink:0}
+.av-emoji-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:14px;max-height:180px;overflow-y:auto}
+.av-emoji{font-size:23px;text-align:center;padding:8px 0;border-radius:10px;background:rgba(255,255,255,.05);cursor:pointer}
+.av-emoji:active{background:rgba(255,255,255,.12)}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s;backdrop-filter:blur(6px)}
+.ov.show{opacity:1;pointer-events:all}
+.sh{background:rgba(8,12,24,0.97);backdrop-filter:blur(32px);-webkit-backdrop-filter:blur(32px);border-radius:24px 24px 0 0;border-top:1px solid var(--gb);padding:0 0 calc(24px + var(--sb));width:100%;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1)}
+.ov.show .sh{transform:translateY(0)}
+.sh-drag{width:36px;height:4px;background:rgba(255,255,255,.15);border-radius:2px;margin:12px auto 0}
+.sh-head{padding:18px 22px 10px}
+.sh-head h3{font-size:19px;font-weight:800;letter-spacing:-.4px;margin-bottom:3px}
+.sh-head p{font-size:13px;color:var(--t3)}
+.sh-body{padding:0 22px 16px}
+.sh-lbl{font-size:12px;font-weight:600;color:var(--t2);margin-bottom:8px}
+.sh-time{width:100%;padding:18px;background:rgba(255,255,255,.08);border:1px solid var(--gb);border-radius:var(--r);color:var(--t1);font-size:30px;font-weight:800;font-family:'Inter',sans-serif;outline:none;margin-bottom:14px;text-align:center;font-variant-numeric:tabular-nums}
+.sh-time:focus,.sh-num:focus{border-color:var(--blue);background:rgba(255,255,255,.11)}
+.sh-num{width:100%;padding:18px;background:rgba(255,255,255,.08);border:1px solid var(--gb);border-radius:var(--r);color:var(--t1);font-size:30px;font-weight:800;font-family:'Inter',sans-serif;outline:none;margin-bottom:16px;text-align:right;font-variant-numeric:tabular-nums}
+.sh-note{font-size:12px;color:var(--t2);background:rgba(255,255,255,.05);border:1px solid var(--gb);border-radius:10px;padding:10px 14px;margin-bottom:14px;line-height:1.55}
+.sh-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sh-ok{padding:16px;border-radius:var(--r);background:var(--blue);color:#fff;border:none;font-size:15px;font-weight:800;cursor:pointer;font-family:'Inter',sans-serif}
+.sh-ok:active{opacity:.85}
+.sh-cancel{padding:16px;border-radius:var(--r);background:rgba(255,255,255,.08);color:var(--t1);border:1px solid var(--gb);font-size:15px;cursor:pointer;font-family:'Inter',sans-serif;font-weight:600}
+.det-s{margin-bottom:16px}
+.det-lbl{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.frow3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.fi{display:flex;flex-direction:column;gap:5px}
+.fi label{font-size:12px;font-weight:600;color:var(--t2)}
+.fi input[type=time],.fi input[type=number],.fi input[type=text]{width:100%;padding:13px 14px;background:rgba(255,255,255,.07);border:1px solid var(--gb);border-radius:var(--r);color:var(--t1);font-size:15px;font-family:'Inter',sans-serif;outline:none;transition:border-color .2s}
+.fi input:focus{border-color:var(--blue);background:rgba(255,255,255,.1)}
+.mlist{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+.mrow{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:center;background:rgba(255,255,255,.06);border:1px solid var(--gb);border-radius:var(--r);padding:10px 12px}
+.mrow input[type=time]{width:100%;background:transparent;border:none;color:var(--t1);font-size:14px;font-variant-numeric:tabular-nums;outline:none;padding:0;font-family:'Inter',sans-serif}
+.mdel{width:30px;height:30px;border-radius:50%;background:var(--rdd);border:none;color:var(--red);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.mdel svg{width:14px;height:14px;stroke:currentColor;stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.addm{width:100%;padding:11px 14px;background:transparent;border:1.5px dashed rgba(255,255,255,.18);border-radius:var(--r);color:var(--t3);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;font-family:'Inter',sans-serif}
+.addm svg{width:16px;height:16px;stroke:currentColor;stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.dtbar{background:linear-gradient(135deg,var(--bd),var(--grd));border:1px solid var(--bb);border-radius:var(--r);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;margin-top:6px}
+.dtbar-l .dtl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--t2);margin-bottom:4px}
+.dtbar-l .dtd{font-size:12px;color:var(--t3);font-weight:500}
+.dtbar-r{font-size:24px;font-weight:900;color:var(--green);letter-spacing:-.5px}
+.toast{position:fixed;bottom:calc(88px + var(--sb));left:50%;transform:translateX(-50%) translateY(10px);background:rgba(12,16,30,0.97);backdrop-filter:blur(20px);border:1px solid var(--gb);border-radius:99px;padding:11px 22px;font-size:13px;font-weight:600;color:var(--t1);z-index:400;opacity:0;pointer-events:none;transition:all .25s;white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#app-root{width:100%;height:100%;transform-origin:top left;}
+</style>
+</head>
+<body>
+<div id="app-root">
+<div class="mesh"><div class="m1"></div><div class="m2"></div><div class="m3"></div></div>
+</div>
+
+<div class="screen hidden" id="homeScreen">
+  <div class="scroll">
+    <div class="home-hero" style="padding-top:calc(var(--st) + 14px)">
+      <div class="hero-row">
+        <div>
+          <div class="hero-greet">Hoş Geldin</div>
+          <div class="hero-date" id="hDate">—</div>
+          <div class="hero-day" id="hDay"></div>
+        </div>
+        <div class="avbtn" id="avbtn" onclick="goSettings()">
+          <span id="avEmoji" style="font-size:20px;display:none"></span>
+          <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <img id="avImg" alt="">
+        </div>
+      </div>
+      <div class="sync-row"><span class="sdot" id="sdot"></span><span id="stxt">Senkronize</span>
+        <span style="flex:1"></span>
+        <span style="font-size:11px;color:var(--t3);margin-right:6px">Kazanımları Gizle</span>
+        <div id="privToggle" onclick="togglePrivacy()" style="width:36px;height:20px;border-radius:10px;background:var(--gb);cursor:pointer;position:relative;transition:background .2s;flex-shrink:0">
+          <div id="privKnob" style="width:16px;height:16px;border-radius:50%;background:var(--t2);position:absolute;top:2px;left:2px;transition:transform .2s"></div>
+        </div>
+      </div>
+    </div>
+    <div class="banner" id="backupBanner">
+      <svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:var(--gold);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <div class="banner-txt"><div class="banner-t">Yedekleme zamanı geldi</div><div class="banner-s">Verilerini JSON olarak indir</div></div>
+      <button class="banner-btn" onclick="doAutoBackup()">Şimdi İndir</button>
+    </div>
+    <div class="tc" onclick="openEditToday()" style="cursor:pointer">
+      <div class="tc-top">
+        <span class="tc-lbl">Bugünün Mesaisi</span>
+        <div class="tc-status"><div class="stdot" id="stdot"></div><span class="stxt" id="sttxt">Mesai girilmedi</span></div>
+      </div>
+      <div class="tc-grid">
+        <div class="tc-cell" id="tcGCell"><div class="tc-cl">Giriş</div><div class="tc-cv dim" id="tcG">—</div></div>
+        <div class="tc-cell" id="tcCCell"><div class="tc-cl">Çıkış</div><div class="tc-cv dim" id="tcC">—</div></div>
+        <div class="tc-cell"><div class="tc-cl">Süre</div><div class="tc-cv dim" id="tcS">—</div></div>
+      </div>
+      <div class="tc-bot"><span class="tc-det" id="tcDet"></span><span class="tc-earn" id="tcEarn"></span></div>
+    </div>
+    <div class="acts" id="acts"></div>
+    <div class="sec-head" id="mhead"></div>
+    <div class="sgrid">
+      <div class="scard"><div class="slbl">Mesai Saati</div><div class="sval blue" id="ss1">0s</div><div class="ssub" id="ss1s">—</div></div>
+      <div class="scard"><div class="slbl">Yol + Yemek</div><div class="sval gold" id="ss2">0₺</div><div class="ssub">Ekstra ödemeler</div></div>
+      <div class="scard wide" onclick="goCalendar();setTimeout(()=>openMonthDetail(today.getFullYear(),today.getMonth()),350)" style="cursor:pointer;position:relative">
+        <div class="slbl">Bu Ay Toplam (Maaş Dahil)</div>
+        <div class="sval green" id="ss3">—</div>
+        <div class="ssub" id="ss3s">—</div>
+        <div style="position:absolute;top:12px;right:14px;font-size:10px;font-weight:700;color:var(--t3)">Detay →</div>
+      </div>
+      <div class="sec-lbl" style="margin-top:18px">Geçmiş Aylar</div>
+      <div id="prevMonths" style="grid-column:span 2"></div>
+    </div>
+  </div>
+  <nav class="nav">
+    <button class="nbtn on" onclick="goHome()"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Ana Ekran</span></button>
+    <button class="nbtn" onclick="goCalendar()"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>Takvim</span></button>
+    <button class="nbtn" onclick="goSettings()"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg><span>Ayarlar</span></button>
+  </nav>
+</div>
+
+<div class="screen hidden" id="calScreen">
+  <div class="tbar" style="border-bottom:1px solid rgba(255,255,255,.08)">
+    <div class="tbar-title" id="calTitle">Takvim</div>
+    <button class="ibtn" onclick="syncNow()"><svg viewBox="0 0 24 24"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg></button>
+  </div>
+  <div class="cal-inner">
+    <div class="cal-sub active" id="yearView">
+      <div class="year-scroll">
+        <div class="year-hdr-row">
+          <div class="year-lbl" id="yearLbl">2026</div>
+          <div class="year-nav">
+            <div class="ynbtn" onclick="changeYear(-1)"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></div>
+            <div class="ynbtn" onclick="changeYear(1)"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+          </div>
+        </div>
+        <div class="month-grid-y" id="yearGrid"></div>
+      </div>
+    </div>
+    <div class="cal-sub right" id="monthView">
+      <div class="mdet-hdr">
+        <div class="back-btn" onclick="calGoBack()"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></div>
+        <div class="mdet-title" id="mdetTitle">—</div>
+        <div class="mdet-total" id="mdetTotal"></div>
+      </div>
+      <div class="mdet-params">
+        <div class="mparam"><div class="mparam-lbl">Net Maaş</div><input type="number" id="mdetMaas" min="0" onchange="onMaasChange(this.value)"></div>
+        <div class="mparam"><div class="mparam-lbl">Devam Primi</div><input type="number" id="mdetDevam" min="0" onchange="onMdChange('devamPrimi',this.value)"></div>
+        <div class="mparam"><div class="mparam-lbl">Perf. Primi</div><input type="number" id="mdetPerf" min="0" onchange="onMdChange('performansPrimi',this.value)"></div>
+      </div>
+      <div class="mdet-body">
+        <div class="mdet-dowrow">
+          <div class="det-dow">Pzt</div><div class="det-dow">Sal</div><div class="det-dow">Çar</div>
+          <div class="det-dow">Per</div><div class="det-dow">Cum</div>
+          <div class="det-dow" style="color:rgba(255,107,128,.5)">Cmt</div>
+          <div class="det-dow" style="color:rgba(255,107,128,.5)">Paz</div>
+        </div>
+        <div class="mdet-daygrid" id="mdetGrid"></div>
+      </div>
+      <div class="mdet-footer">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div class="mdet-fl" id="mdetSub">—</div>
+          <div class="mdet-fr" id="mdetGrand">—</div>
+        </div>
+        <div class="mdet-fl" id="mdetHours"></div>
+      </div>
+    </div>
+  </div>
+  <nav class="nav">
+    <button class="nbtn" onclick="goHome()"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Ana Ekran</span></button>
+    <button class="nbtn on"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>Takvim</span></button>
+    <button class="nbtn" onclick="goSettings()"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg><span>Ayarlar</span></button>
+  </nav>
+</div>
+
+<div class="ov" id="dayOv" onclick="ovClick(event,'dayOv')">
+  <div class="sh" id="dayOvSh">
+    <div class="sh-drag"></div>
+    <div class="sh-head" id="dayOvHead"></div>
+    <div class="sh-body" id="dayOvBody" style="max-height:60vh;overflow-y:auto;padding-bottom:32px"></div>
+  </div>
+</div>
+
+<div class="screen hidden" id="settingsScreen">
+  <div class="tbar" style="border-bottom:1px solid rgba(255,255,255,.08)">
+    <button class="ibtn" onclick="goHome()"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <div class="tbar-title">Ayarlar</div>
+    <div style="width:38px"></div>
+  </div>
+  <div class="scroll">
+    <div class="uhero" id="uheroBtn" onclick="openProfileEdit()" style="cursor:pointer">
+      <div class="uhero-av" id="uhav">
+        <span id="uhavEmoji" style="font-size:24px;display:none"></span>
+        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <img id="uImg" alt="">
+      </div>
+      <div style="flex:1"><div class="uname" id="uName">Kullanıcı</div><div class="uemail" id="uEmail">İşyeri belirtilmedi</div><div id="uTenure" style="font-size:11.5px;color:var(--blue);font-weight:600;margin-top:3px"></div></div>
+      <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:var(--t3);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>
+    <div class="sg">
+      <div class="sg-lbl">Görünüm</div>
+      <div class="slist">
+        <div class="si">
+          <div class="si-ic blue" id="themeSwatch" style="padding:0;overflow:hidden"><div id="themeSwatchDot" style="width:16px;height:16px;border-radius:50%"></div></div>
+          <div class="si-t"><div class="n">Tema</div><div class="s" id="themeInfoTxt">Renk şemasını değiştir</div></div>
+          <select class="sel-inp" id="stTheme" onchange="applyTheme(this.value)"></select>
+        </div>
+      </div>
+    </div>
+    <div class="sg">
+      <div class="sg-lbl">Yedekleme</div>
+      <div class="slist">
+        <div class="si">
+          <div class="si-ic blue"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+          <div class="si-t"><div class="n">Yedekleme Sıklığı</div><div class="s" id="backupInfoTxt">—</div></div>
+          <select class="sel-inp" id="stBackupPeriod" onchange="saveBackupSettings()">
+            <option value="daily">Günlük</option>
+            <option value="weekly">Haftalık</option>
+            <option value="monthly">Aylık</option>
+            <option value="custom">Ayın Günü</option>
+          </select>
+        </div>
+        <div class="si" id="customDayRow" style="display:none">
+          <div class="si-ic gold"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+          <div class="si-t"><div class="n">Ayın Kaçıncı Günü</div><div class="s">1-28 arası seç</div></div>
+          <input class="si-inp" type="number" id="stBackupCustomDay" min="1" max="28" value="1" onchange="saveBackupSettings()">
+        </div>
+      </div>
+    </div>
+    <div class="sg">
+      <div class="sg-lbl">Mesai Ayarları</div>
+      <div class="slist">
+        <div class="si">
+          <div class="si-ic green"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
+          <div class="si-t"><div class="n">Maaş (₺)</div><div class="s">Mesai saatlik ücreti buradan hesaplanır, brüt yada net maaşınızı girin.</div></div>
+          <input class="si-inp" type="number" id="stBrutMaas" value="0" min="0" onchange="saveSettings()">
+        </div>
+        <div class="si">
+          <div class="si-ic blue"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+          <div class="si-t"><div class="n">Varsayılan Vardiya Başlangıcı</div><div class="s">Hiç vardiya girilmemişse kullanılır</div></div>
+          <input class="si-inp" type="time" id="stVardiyaS" value="15:00" onchange="saveSettings()">
+        </div>
+        <div class="si">
+          <div class="si-ic blue"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 8 14"/></svg></div>
+          <div class="si-t"><div class="n">Varsayılan Vardiya Bitişi</div><div class="s">Hiç vardiya girilmemişse kullanılır</div></div>
+          <input class="si-inp" type="time" id="stVardiyaB" value="23:00" onchange="saveSettings()">
+        </div>
+        <div class="si">
+          <div class="si-ic green"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
+          <div class="si-t"><div class="n">Aylık Çalışma Saati</div><div class="s">Saatlik ücret = Maaş ÷ Bu sayı</div></div>
+          <input class="si-inp" type="number" id="stAylikSaat" value="225" min="1" onchange="saveSettings()">
+        </div>
+        <div class="si">
+          <div class="si-ic gold"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+          <div class="si-t"><div class="n">Varsayılan Mesai Çarpanı</div><div class="s">Günlük override edilebilir</div></div>
+          <input class="si-inp" type="number" id="stCarpan" value="1.5" step="0.25" min="1" onchange="saveSettings()">
+        </div>
+      </div>
+    </div>
+    <div class="sg">
+      <div class="sg-lbl">Veri</div>
+      <button class="sact blue" onclick="syncNow()">
+        <svg viewBox="0 0 24 24"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+        Şimdi Senkronize Et
+      </button>
+      <button class="sact" onclick="exportJSON()">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        JSON Yedek Al
+      </button>
+      <button class="sact" onclick="importJSON()">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/><line x1="12" y1="3" x2="12" y2="15" transform="rotate(180 12 9)"/></svg>
+        JSON'dan Geri Yükle
+      </button>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="handleImport(this)">
+      <button class="sact red" onclick="signOut()">
+        <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+        Tüm Veriyi Sıfırla
+      </button>
+    </div>
+    <div style="text-align:center;padding:4px 0 28px;font-size:12px;color:var(--t3)">Mesai Takip <span id="vb2"></span></div>
+  </div>
+</div>
+
+<div class="ov" id="girisOv" onclick="ovClick(event,'girisOv')">
+  <div class="sh"><div class="sh-drag"></div>
+    <div class="sh-head"><h3 id="gTitle">Mesai Başlangıcı</h3><p id="gSub"></p></div>
+    <div class="sh-body">
+      <div class="sh-lbl">Başlama saati</div>
+      <input type="time" class="sh-time" id="gInp">
+      <div class="sh-btns">
+        <button class="sh-cancel" onclick="closeOv('girisOv')">Vazgeç</button>
+        <button class="sh-ok" onclick="confirmGiris()">Onayla →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="ov" id="cikisOv" onclick="ovClick(event,'cikisOv')">
+  <div class="sh"><div class="sh-drag"></div>
+    <div class="sh-head"><h3>Mesai Bitişi</h3><p id="cSub"></p></div>
+    <div class="sh-body">
+      <div class="sh-lbl">Bitiş saati</div>
+      <input type="time" class="sh-time" id="cInp">
+      <div class="sh-btns">
+        <button class="sh-cancel" onclick="closeOv('cikisOv');renderAll()">Sonra girerim</button>
+        <button class="sh-ok" onclick="confirmCikis()">Kaydet ✓</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="ov" id="salaryOv" onclick="ovClick(event,'salaryOv')">
+  <div class="sh"><div class="sh-drag"></div>
+    <div class="sh-head"><h3>Maaş Ayarı</h3><p id="salSub"></p></div>
+    <div class="sh-body">
+      <div class="sh-note" id="salNote"></div>
+      <div class="sh-lbl">Net maaş (₺)</div>
+      <input type="number" class="sh-num" id="salInp">
+      <div class="sh-btns">
+        <button class="sh-cancel" onclick="closeOv('salaryOv')">Vazgeç</button>
+        <button class="sh-ok" onclick="confirmSalary()">Kaydet ✓</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="ov" id="profileOv" onclick="ovClick(event,'profileOv')">
+  <div class="sh"><div class="sh-drag"></div>
+    <div class="sh-head"><h3>Profil</h3><p>Adın, işyerin ve fotoğrafın</p></div>
+    <div class="sh-body">
+      <div style="display:flex;justify-content:center;margin-bottom:18px">
+        <div id="profAvWrap" onclick="openAvatarPicker()" style="width:84px;height:84px;border-radius:50%;background:var(--bd);border:2.5px solid var(--bb);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden">
+          <span id="profAvEmoji" style="font-size:38px;display:none"></span>
+          <img id="profAvImg" alt="" style="width:100%;height:100%;object-fit:cover;display:none">
+          <svg viewBox="0 0 24 24" style="width:34px;height:34px;stroke:var(--blue);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.55);text-align:center;font-size:9px;font-weight:700;padding:3px 0">DEĞİŞTİR</div>
+        </div>
+      </div>
+      <div class="sh-lbl">İsim</div>
+      <input type="text" id="profName" placeholder="Adın" style="width:100%;padding:14px;background:rgba(255,255,255,.08);border:1px solid var(--gb);border-radius:var(--r);color:var(--t1);font-size:15px;font-family:'Inter',sans-serif;outline:none;margin-bottom:14px">
+      <div class="sh-lbl">İşyeri</div>
+      <input type="text" id="profWork" placeholder="İşyeri adı" style="width:100%;padding:14px;background:rgba(255,255,255,.08);border:1px solid var(--gb);border-radius:var(--r);color:var(--t1);font-size:15px;font-family:'Inter',sans-serif;outline:none;margin-bottom:16px">
+      <div class="sh-lbl">İşe Giriş Tarihi</div>
+      <input type="date" id="profStartDate" onchange="updateTenurePreview()" style="width:100%;padding:14px;background:rgba(255,255,255,.08);border:1px solid var(--gb);border-radius:var(--r);color:var(--t1);font-size:15px;font-family:'Inter',sans-serif;outline:none;margin-bottom:6px">
+      <div id="profTenurePreview" style="font-size:12px;color:var(--blue);font-weight:700;min-height:16px;margin-bottom:16px"></div>
+      <div class="sh-btns">
+        <button class="sh-cancel" onclick="closeOv('profileOv')">Vazgeç</button>
+        <button class="sh-ok" onclick="saveProfile()">Kaydet ✓</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="ov" id="avatarOv" style="z-index:260" onclick="ovClick(event,'avatarOv')">
+  <div class="sh"><div class="sh-drag"></div>
+    <div class="sh-head"><h3>Avatar Seç</h3><p>Emoji seç veya fotoğraf yükle</p></div>
+    <div class="sh-body">
+      <div class="sh-btns" style="margin-bottom:16px">
+        <button class="sh-cancel" onclick="openCamera()" style="display:flex;align-items:center;justify-content:center;gap:8px"><svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>Kamera</button>
+        <button class="sh-cancel" onclick="openGallery()" style="display:flex;align-items:center;justify-content:center;gap:8px"><svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>Galeri</button>
+      </div>
+      <input type="file" accept="image/*" capture="environment" id="avFileCamera" style="display:none" onchange="handleAvatarUpload(this)">
+      <input type="file" accept="image/*" id="avFileGallery" style="display:none" onchange="handleAvatarUpload(this)">
+      <div class="sh-lbl">veya emoji seç</div>
+      <div class="av-emoji-grid" id="avEmojiGrid"></div>
+      <button class="sh-cancel" onclick="removeAvatar()" style="width:100%;color:var(--red)">Avatarı Kaldır</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+</div>
+
+<script>
+(function(){
+  const BASE_W=390;
+  function scale(){
+    const root=document.getElementById('app-root');if(!root)return;
+    const vw=window.innerWidth,vh=window.innerHeight;
+    if(vw>=1024){root.style.transform='';root.style.width='';root.style.height='';return;}
+    if(vw>vh)return;
+    const ratio=vw/BASE_W;
+    if(Math.abs(ratio-1)<0.02){root.style.transform='';root.style.width='';root.style.height='';return;}
+    root.style.transform=`scale(${ratio})`;root.style.width=BASE_W+'px';
+    root.style.height=Math.round(vh/ratio)+'px';root.style.transformOrigin='top left';
+  }
+  window.addEventListener('resize',scale);
+  window.addEventListener('orientationchange',()=>setTimeout(scale,100));
+  document.addEventListener('DOMContentLoaded',scale);setTimeout(scale,0);
+})();
+</script>
+
+<script>
+const VERSION='v2.5';
+const MONTHS=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+const DAYS=['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
+const DAYS_S=['Paz','Pzt','Sal','Çar','Per','Cum','Cmt'];
+const today=new Date();
+const todayKey=dk(today.getFullYear(),today.getMonth(),today.getDate());
+let curY=today.getFullYear(),curM=today.getMonth();
+let openDays={},modalKey=null,syncTimer=null,isSyncing=false;
+let userInfo=null;
+let cfg={vardiyaS:'15:00',vardiyaB:'23:00',carpan:1.5,aylikSaat:225,brutMaas:0,theme:'default'};
+let salaries={},dayData={},monthData={};
+let profile={name:'',workName:'',avatar:'',avatarType:'emoji',startDate:''};
+let backupSettings={period:'weekly',customDay:1,lastBackup:null};
+const THEMES=[
+{id:'default',name:'Gece Mavisi',c0:'#080c18',ac:'#5b9cf6'},
+{id:'black',name:'Siyah',c0:'#000000',ac:'#ffffff'},
+{id:'midnight-green',name:'Gece Yeşili',c0:'#04120e',ac:'#22c3a6'},
+{id:'deep-purple',name:'Koyu Mor',c0:'#0d0620',ac:'#a78bfa'},
+{id:'sunset',name:'Gün Batımı',c0:'#1a0a12',ac:'#ff8a5c'},
+{id:'ocean',name:'Okyanus',c0:'#020e18',ac:'#38bdf8'},
+{id:'forest',name:'Orman',c0:'#0a1408',ac:'#65c96a'},
+{id:'rose-gold',name:'Rose Gold',c0:'#180d10',ac:'#f6b8c1'},
+{id:'amber',name:'Amber',c0:'#160f02',ac:'#fbbf24'},
+{id:'slate',name:'Slate',c0:'#0b0f16',ac:'#94a3b8'},
+{id:'crimson',name:'Crimson',c0:'#150507',ac:'#ff5468'},
+{id:'ice',name:'Buz',c0:'#050e14',ac:'#7fe3ff'},
+{id:'graphite',name:'Grafit',c0:'#0e0e10',ac:'#c4c4cc'},
+{id:'wine',name:'Bordo',c0:'#140508',ac:'#c2455f'},
+{id:'teal',name:'Teal',c0:'#031412',ac:'#2dd4bf'},
+{id:'indigo',name:'İndigo',c0:'#080a1e',ac:'#6b7cff'},
+{id:'copper',name:'Bakır',c0:'#160b04',ac:'#e08a52'},
+{id:'mono',name:'Mono',c0:'#0c0c0c',ac:'#dddddd'}
+];
+const AV_EMOJIS=['🧑‍🔧','👨‍🔧','👩‍🔧','🧑‍💼','👨‍💼','👩‍💼','🧑‍🏭','👨‍🏭','👩‍🏭','😀','😎','🤓','🧑','👨','👩','🦾','⚙️','🔧','🔩','🏭','⚡','🛠️','💪','🚀','🎯','🔥','⭐','🏆','☕','🎧'];
+
+function dk(y,m,d){return`${y}-${m}-${d}`;}
+function mk(y,m){return`${y}-${m}`;}
+function daysIn(y,m){return new Date(y,m+1,0).getDate();}
+function pt(s){if(!s)return null;const str=String(s).trim();if(!/^\d{1,2}:\d{2}$/.test(str))return null;const[h,i]=str.split(':').map(Number);if(isNaN(h)||isNaN(i))return null;return h*60+i;}
+function fmtD(m){const h=Math.floor(m/60),mn=m%60;return h&&mn?`${h}s ${mn}dk`:h?`${h}s`:`${mn}dk`;}
+function fmtTL(n){return Math.round(n).toLocaleString('tr-TR')+'₺';}
+function fmtT(mins){const h=Math.floor(mins/60)%24,m=mins%60;return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');}
+function $(id){return document.getElementById(id);}
+
+function getSalary(y,m){const k=mk(y,m);if(salaries[k]!=null)return salaries[k];for(let i=1;i<=24;i++){let pm=m-i,py=y;if(pm<0){pm+=12;py--;}if(salaries[mk(py,pm)]!=null)return salaries[mk(py,pm)];}return 30000;}
+function getBrutMaas(){return cfg.brutMaas&&cfg.brutMaas>0?cfg.brutMaas:getSalary(today.getFullYear(),today.getMonth());}
+function getDay(key){return dayData[key]||{};}
+function getMonthData(y,m){return monthData[mk(y,m)]||{devamPrimi:0,performansPrimi:0};}
+function setMonthData(y,m,field,val){const k=mk(y,m);if(!monthData[k])monthData[k]={devamPrimi:0,performansPrimi:0};monthData[k][field]=val;saveLocal();debouncePush();}
+
+function getYol(key){
+  // O günde explicit yol varsa onu kullan
+  const r=getDay(key);
+  if(r.yolTutar!=null&&r.yolTutar!=='')return parseFloat(r.yolTutar)||0;
+  // Geriye doğru tara
+  const[ys,ms,ds]=key.split('-').map(Number);
+  let dt=new Date(ys,ms,ds);
+  for(let i=1;i<=60;i++){
+    dt=new Date(dt.getTime()-86400000);
+    const k=dk(dt.getFullYear(),dt.getMonth(),dt.getDate());
+    const pr=getDay(k);
+    if(pr.yolTutar!=null&&pr.yolTutar!=='')return parseFloat(pr.yolTutar)||0;
+  }
+  return 0;
+}
+
+function getVardiya(key){
+  const r=getDay(key);
+  if(r.vardiyaS!=null&&r.vardiyaB!=null)return{s:pt(r.vardiyaS),b:pt(r.vardiyaB)};
+  const[ys,ms,ds]=key.split('-').map(Number);let dt=new Date(ys,ms,ds);
+  for(let i=1;i<=60;i++){dt=new Date(dt.getTime()-86400000);const k=dk(dt.getFullYear(),dt.getMonth(),dt.getDate());const pr=getDay(k);if(pr.vardiyaS!=null&&pr.vardiyaB!=null)return{s:pt(pr.vardiyaS),b:pt(pr.vardiyaB)};}
+  return{s:pt(cfg.vardiyaS)||15*60,b:pt(cfg.vardiyaB)||23*60};
+}
+
+function calcDay(key){
+  const[ys,ms,ds]=key.split('-').map(Number);
+  const r=getDay(key),brutMaas=getBrutMaas(),saatlik=brutMaas/(cfg.aylikSaat||225);
+  const carpan=r.carpanOverride!=null?r.carpanOverride:cfg.carpan;
+  const vrd=getVardiya(key);
+  const blocks=[];
+  if(r.mesailer&&r.mesailer.length){for(const b of r.mesailer)if(b.giris&&b.cikis)blocks.push(b);}
+  else if(r.giris&&r.cikis)blocks.push({giris:r.giris,cikis:r.cikis});
+  let totalWork=0;
+  for(const blk of blocks){const g=pt(blk.giris);let c2=pt(blk.cikis);if(c2===null||g===null)continue;if(c2<=g)c2+=24*60;totalWork+=c2-g;}
+  let netMin=0;
+  let hasMesai=blocks.length>0;
+  if(r.calisilmadi){
+    // Çalışılmadı modu: o günkü vardiya süresi tamamen eksi (mesaiden düşülür)
+    let vs=vrd.b-vrd.s;if(vs<=0)vs+=24*60;
+    netMin=-vs;
+    hasMesai=false;
+  } else if(blocks.length>0){
+    if(r.kompMesai){
+      // Komple mesai modu: tüm çalışma süresi mesai
+      netMin=totalWork;
+    } else {
+      let vs=vrd.b-vrd.s;if(vs<=0)vs+=24*60;netMin=totalWork-vs;
+    }
+  }
+  let mol=0;
+  if(r.molalar)for(const mo of r.molalar){const mb=pt(mo.bas),me=pt(mo.bit);if(mb!=null&&me!=null){let dur=me-mb;if(dur<0)dur+=24*60;if(dur>0)mol+=dur;}}
+  if(r.molaMin)mol+=parseInt(r.molaMin)||0;
+  netMin=netMin-mol;
+  const tm=netMin!==0?Math.round(saatlik*carpan*(netMin/60)):0;
+  const yol=hasMesai?getYol(key):0,yemek=hasMesai?(parseFloat(r.yemekTutar)||0):0;
+  return{netMin,tm,yol,yemek,top:tm+yol+yemek};
+}
+function getMesailer(r){if(r.mesailer&&r.mesailer.length)return r.mesailer;if(r.giris)return[{giris:r.giris,cikis:r.cikis||''}];return[];}
+function ensureMesailer(key){if(!dayData[key])dayData[key]={};const r=dayData[key];if(!r.mesailer){if(r.giris){r.mesailer=[{giris:r.giris,cikis:r.cikis||''}];delete r.giris;delete r.cikis;}else r.mesailer=[];}return r;}
+function calcMonth(y,m){let mn=0,tm=0,yl=0,yk=0;for(let d=1;d<=daysIn(y,m);d++){const c=calcDay(dk(y,m,d));mn+=c.netMin;tm+=c.tm;yl+=c.yol;yk+=c.yemek;}return{mn,tm,yl,yk};}
+
+function saveLocal(){try{localStorage.setItem('mt_v4',JSON.stringify({cfg,salaries,dayData,monthData,profile,backupSettings,ts:Date.now()}));}catch(e){}}
+function loadLocal(){try{const r=localStorage.getItem('mt_v4');if(r){const d=JSON.parse(r);cfg=Object.assign(cfg,d.cfg||{});if(cfg.bitis&&!cfg.vardiyaB)cfg.vardiyaB=cfg.bitis;salaries=d.salaries||{};dayData=d.dayData||{};monthData=d.monthData||{};profile=Object.assign({name:'',workName:'',avatar:'',avatarType:'emoji',startDate:''},d.profile||{});backupSettings=Object.assign({period:'weekly',customDay:1,lastBackup:null},d.backupSettings||{});}}catch(e){}}
+
+function updateUser(){
+  if(!userInfo)return;
+  const pic=userInfo.picture||'';
+  if(pic){['avImg','uImg'].forEach(id=>{const el=$(id);if(el){el.src=pic;el.style.display='block';}});const av=$('avbtn');if(av){const svg=av.querySelector('svg');if(svg)svg.style.display='none';}const uh=$('uhav');if(uh){const svg=uh.querySelector('svg');if(svg)svg.style.display='none';}}
+  if($('uName'))$('uName').textContent=userInfo.name||'';
+  if($('uEmail'))$('uEmail').textContent=userInfo.email||'';
+}
+function setSyncUI(state,txt){
+  const dot=$('sdot'),t=$('stxt');
+  if(dot)dot.style.background=state==='ok'?'var(--green)':state==='syncing'?'var(--gold)':'var(--red)';
+  if(t){if(state==='ok'){const now=new Date();const pad=n=>String(n).padStart(2,'0');t.textContent=txt+' '+pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());}else t.textContent=txt;}
+}
+
+function toggleKompMesai(key){
+  if(!dayData[key])dayData[key]={};
+  dayData[key].kompMesai=!dayData[key].kompMesai;
+  if(dayData[key].kompMesai)dayData[key].calisilmadi=false;
+  saveLocal();debouncePush();
+  // Overlay'i yeniden oluştur
+  const r=getDay(key),c=calcDay(key);
+  const head=$('dayOvHead'),body=$('dayOvBody');
+  if(head){const[ys,ms,ds]=key.split('-').map(Number),dt=new Date(ys,ms,ds),dow=dt.getDay();head.innerHTML=`<h3>${ds} ${MONTHS[ms]} ${ys} — ${DAYS[dow]}</h3><p>${c.netMin!==0?fmtD(Math.abs(c.netMin))+(c.netMin<0?' eksik':' mesai')+(c.tm?` · ${fmtTL(c.tm)}`:''):'Mesai girilmedi'}</p>`;}
+  if(body)body.innerHTML=buildDayDetailHTML(key,r,c);
+  refreshDayOv(key);
+}
+function toggleCalisilmadi(key){
+  if(!dayData[key])dayData[key]={};
+  dayData[key].calisilmadi=!dayData[key].calisilmadi;
+  if(dayData[key].calisilmadi)dayData[key].kompMesai=false;
+  saveLocal();debouncePush();
+  // Overlay'i yeniden oluştur
+  const r=getDay(key),c=calcDay(key);
+  const head=$('dayOvHead'),body=$('dayOvBody');
+  if(head){const[ys,ms,ds]=key.split('-').map(Number),dt=new Date(ys,ms,ds),dow=dt.getDay();head.innerHTML=`<h3>${ds} ${MONTHS[ms]} ${ys} — ${DAYS[dow]}</h3><p>${c.netMin!==0?fmtD(Math.abs(c.netMin))+(c.netMin<0?' eksik':' mesai')+(c.tm?` · ${fmtTL(c.tm)}`:''):'Mesai girilmedi'}</p>`;}
+  if(body)body.innerHTML=buildDayDetailHTML(key,r,c);
+  refreshDayOv(key);
+}
+function clearCarpan(key){if(!dayData[key])dayData[key]={};dayData[key].carpanOverride=null;saveLocal();debouncePush();refreshDayOv(key);}
+function setField(key,field,val){if(!dayData[key])dayData[key]={};dayData[key][field]=val;saveLocal();debouncePush();}
+function setVardiya(key,field,val){
+  if(!dayData[key])dayData[key]={};dayData[key][field]=val;
+  const r=dayData[key];
+  if(!r.vardiyaS||!r.vardiyaB){const inh=getVardiya(key);if(!r.vardiyaS)r.vardiyaS=fmtT(inh.s);if(!r.vardiyaB)r.vardiyaB=fmtT(inh.b);}
+  saveLocal();debouncePush();refreshDayOv(key);
+}
+function addMola(key){if(!dayData[key])dayData[key]={};if(!dayData[key].molalar)dayData[key].molalar=[];dayData[key].molalar.push({bas:'',bit:''});saveLocal();debouncePush();const el=$('ml-ov-'+key);if(el)el.innerHTML=buildMolaHTML(key,dayData[key]);}
+function removeMola(key,idx){if(!dayData[key]||!dayData[key].molalar)return;dayData[key].molalar.splice(idx,1);saveLocal();debouncePush();const el=$('ml-ov-'+key);if(el)el.innerHTML=buildMolaHTML(key,dayData[key]);refreshDayOv(key);}
+function updateMola(key,idx,f,val){if(!dayData[key]||!dayData[key].molalar)return;dayData[key].molalar[idx][f]=val;saveLocal();debouncePush();refreshDayOv(key);}
+
+function applySettings(){
+  const vs=$('stVardiyaS'),vb=$('stVardiyaB'),cp=$('stCarpan'),as=$('stAylikSaat'),bm=$('stBrutMaas');
+  if(vs)vs.value=cfg.vardiyaS||'15:00';if(vb)vb.value=cfg.vardiyaB||'23:00';if(cp)cp.value=cfg.carpan||1.5;if(as)as.value=cfg.aylikSaat||225;
+  if(bm){bm._realVal=undefined;bm.removeAttribute('readonly');bm.value=cfg.brutMaas||0;}
+  applyPrivacyUI();
+  renderThemeGrid();
+  applyProfileUI();
+  applyBackupUI();
+}
+function saveSettings(){
+  const bm=$('stBrutMaas');
+  cfg.vardiyaS=$('stVardiyaS').value||'15:00';cfg.vardiyaB=$('stVardiyaB').value||'23:00';cfg.carpan=parseFloat($('stCarpan').value)||1.5;cfg.aylikSaat=parseFloat($('stAylikSaat').value)||225;cfg.brutMaas=parseFloat(bm?.value)||0;
+  saveLocal();debouncePush();renderAll();
+  if(bm&&privacyOn){bm._realVal=String(cfg.brutMaas);bm.value='';bm.placeholder='•••';bm.setAttribute('readonly','');}
+  toast('Ayarlar kaydedildi ✓');
+}
+
+// ---- Tema ----
+function applyTheme(id){
+  const t=THEMES.find(x=>x.id===id)||THEMES[0];
+  document.documentElement.setAttribute('data-theme',t.id);
+  cfg.theme=t.id;saveLocal();debouncePush();
+  renderThemeGrid();
+}
+function renderThemeGrid(){
+  const sel=$('stTheme');if(!sel)return;
+  const cur=cfg.theme||'default';
+  sel.innerHTML=THEMES.map(t=>`<option value="${t.id}" ${cur===t.id?'selected':''}>${t.name}</option>`).join('');
+  const dot=$('themeSwatchDot'),wrap=$('themeSwatch'),info=$('themeInfoTxt');
+  const t=THEMES.find(x=>x.id===cur)||THEMES[0];
+  if(dot)dot.style.background=t.ac;
+  if(wrap)wrap.style.background=t.c0;
+  if(info)info.textContent=t.name;
+}
+// ---- Profil / Avatar ----
+function paintAvatar(imgId,emojiId,wrapId){
+  const img=$(imgId),emo=$(emojiId),wrap=$(wrapId);
+  const svg=wrap?wrap.querySelector('svg'):null;
+  if(profile.avatarType==='photo'&&profile.avatar){
+    if(img){img.src=profile.avatar;img.style.display='block';}
+    if(emo)emo.style.display='none';
+    if(svg)svg.style.display='none';
+  }else if(profile.avatarType==='emoji'&&profile.avatar){
+    if(img)img.style.display='none';
+    if(emo){emo.textContent=profile.avatar;emo.style.display='flex';}
+    if(svg)svg.style.display='none';
+  }else{
+    if(img)img.style.display='none';
+    if(emo)emo.style.display='none';
+    if(svg)svg.style.display='block';
+  }
+}
+function calcTenure(startDate){
+  if(!startDate)return null;
+  const start=new Date(startDate+'T00:00:00');
+  const now=new Date();
+  if(isNaN(start.getTime())||start>now)return null;
+  let y=now.getFullYear()-start.getFullYear();
+  let m=now.getMonth()-start.getMonth();
+  let d=now.getDate()-start.getDate();
+  if(d<0){m--;const prevMonth=new Date(now.getFullYear(),now.getMonth(),0);d+=prevMonth.getDate();}
+  if(m<0){y--;m+=12;}
+  return{y,m,d};
+}
+function fmtTenure(t){
+  if(!t)return'';
+  const parts=[];
+  if(t.y>0)parts.push(t.y+' yıl');
+  if(t.m>0)parts.push(t.m+' ay');
+  if(t.d>0||parts.length===0)parts.push(t.d+' gün');
+  return parts.join(' ');
+}
+function updateTenurePreview(){
+  const inp=$('profStartDate'),el=$('profTenurePreview');if(!inp||!el)return;
+  const t=calcTenure(inp.value);
+  el.textContent=t?fmtTenure(t)+' önce başladı':'';
+}
+function applyProfileUI(){
+  if($('uName'))$('uName').textContent=profile.name||'Kullanıcı';
+  if($('uEmail'))$('uEmail').textContent=profile.workName||'İşyeri belirtilmedi';
+  const t=calcTenure(profile.startDate);
+  if($('uTenure'))$('uTenure').textContent=t?'İşe başlayalı '+fmtTenure(t):'';
+  paintAvatar('avImg','avEmoji','avbtn');
+  paintAvatar('uImg','uhavEmoji','uhav');
+  paintAvatar('profAvImg','profAvEmoji','profAvWrap');
+}
+function openProfileEdit(){
+  if($('profName'))$('profName').value=profile.name||'';
+  if($('profWork'))$('profWork').value=profile.workName||'';
+  if($('profStartDate'))$('profStartDate').value=profile.startDate||'';
+  updateTenurePreview();
+  paintAvatar('profAvImg','profAvEmoji','profAvWrap');
+  openOv('profileOv');
+}
+function saveProfile(){
+  profile.name=($('profName').value||'').trim();
+  profile.workName=($('profWork').value||'').trim();
+  profile.startDate=$('profStartDate')?$('profStartDate').value||'':'';
+  saveLocal();debouncePush();applyProfileUI();closeOv('profileOv');toast('Profil kaydedildi ✓');
+}
+function openAvatarPicker(){renderAvEmojiGrid();openOv('avatarOv');}
+function renderAvEmojiGrid(){
+  const el=$('avEmojiGrid');if(!el)return;
+  el.innerHTML=AV_EMOJIS.map(e=>`<div class="av-emoji" onclick="pickEmoji('${e}')">${e}</div>`).join('');
+}
+function pickEmoji(e){profile.avatar=e;profile.avatarType='emoji';saveLocal();debouncePush();applyProfileUI();closeOv('avatarOv');toast('Avatar güncellendi ✓');}
+function openCamera(){const el=$('avFileCamera');if(el)el.click();}
+function openGallery(){const el=$('avFileGallery');if(el)el.click();}
+function handleAvatarUpload(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    const img=new Image();
+    img.onload=function(){
+      const maxSz=240;let w=img.width,h=img.height;
+      if(w>h){if(w>maxSz){h=Math.round(h*maxSz/w);w=maxSz;}}else{if(h>maxSz){w=Math.round(w*maxSz/h);h=maxSz;}}
+      const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+      const ctx=cv.getContext('2d');ctx.drawImage(img,0,0,w,h);
+      profile.avatar=cv.toDataURL('image/jpeg',0.82);profile.avatarType='photo';
+      saveLocal();debouncePush();applyProfileUI();closeOv('avatarOv');toast('Fotoğraf güncellendi ✓');
+    };
+    img.src=ev.target.result;
+  };
+  reader.readAsDataURL(file);
+  input.value='';
+}
+function removeAvatar(){profile.avatar='';profile.avatarType='emoji';saveLocal();debouncePush();applyProfileUI();closeOv('avatarOv');toast('Avatar kaldırıldı');}
+// ---- Yedekleme ----
+function applyBackupUI(){
+  const p=$('stBackupPeriod'),cd=$('stBackupCustomDay'),row=$('customDayRow'),info=$('backupInfoTxt');
+  if(p)p.value=backupSettings.period||'weekly';
+  if(cd)cd.value=backupSettings.customDay||1;
+  if(row)row.style.display=(backupSettings.period==='custom')?'flex':'none';
+  if(info){
+    const lb=backupSettings.lastBackup?new Date(backupSettings.lastBackup).toLocaleDateString('tr-TR'):'henüz yok';
+    info.textContent='Son yedek: '+lb;
+  }
+}
+function saveBackupSettings(){
+  const p=$('stBackupPeriod'),cd=$('stBackupCustomDay');
+  backupSettings.period=p?p.value:'weekly';
+  backupSettings.customDay=cd?Math.min(28,Math.max(1,parseInt(cd.value)||1)):1;
+  saveLocal();debouncePush();applyBackupUI();checkBackupReminder();
+  toast('Yedekleme ayarı kaydedildi ✓');
+}
+function checkBackupReminder(){
+  const now=new Date();
+  let due=false;
+  if(!backupSettings.lastBackup){
+    due=true;
+  }else{
+    const last=new Date(backupSettings.lastBackup);
+    const diffDays=Math.floor((now-last)/86400000);
+    if(backupSettings.period==='daily')due=diffDays>=1;
+    else if(backupSettings.period==='weekly')due=diffDays>=7;
+    else if(backupSettings.period==='monthly')due=diffDays>=30;
+    else if(backupSettings.period==='custom')due=now.getDate()===Number(backupSettings.customDay)&&(last.getFullYear()!==now.getFullYear()||last.getMonth()!==now.getMonth()||last.getDate()!==now.getDate());
+  }
+  const b=$('backupBanner');if(b)b.style.display=due?'flex':'none';
+}
+function doAutoBackup(){
+  exportJSON();
+  backupSettings.lastBackup=new Date().toISOString();
+  saveLocal();debouncePush();applyBackupUI();checkBackupReminder();
+}
+
+let curScreen='';
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));$(id).classList.remove('hidden');curScreen=id;}
+function goHome(){showScreen('homeScreen');renderHome();}
+function goCalendar(){
+  showScreen('calScreen');
+  if($('yearView'))$('yearView').className='cal-sub active';
+  if($('monthView'))$('monthView').className='cal-sub right';
+  if($('calTitle'))$('calTitle').textContent='Takvim';
+  calYear=today.getFullYear();if($('yearLbl'))$('yearLbl').textContent=calYear;
+  renderYearGrid();
+}
+function goSettings(){showScreen('settingsScreen');}
+function renderAll(){if(curScreen==='homeScreen')renderHome();else if(curScreen==='calScreen')renderCal();}
+
+function renderHome(){
+  const hd=$('hDate'),hday=$('hDay');
+  if(hd)hd.innerHTML=`${today.getDate()} <em>${MONTHS[today.getMonth()]}</em> ${today.getFullYear()}`;
+  if(hday)hday.textContent=DAYS[today.getDay()];
+  const r=getDay(todayKey),c=calcDay(todayKey);
+  const dot=$('stdot'),st=$('sttxt');
+  const todayBlks=getMesailer(r);const lastBlk=todayBlks[todayBlks.length-1];
+  const hasAny=todayBlks.length>0&&todayBlks[0].giris;const allDone=hasAny&&todayBlks.every(b=>b.giris&&b.cikis);
+  if(dot&&st){if(allDone){dot.className='stdot done';st.textContent=todayBlks.length>1?todayBlks.length+' mesai tamamlandı':'Tamamlandı';}else if(hasAny){dot.className='stdot live';st.textContent='Devam ediyor…';}else{dot.className='stdot';st.textContent='Mesai girilmedi';}}
+  const setC=(id,val)=>{const el=$(id);if(!el)return;el.textContent=val||'—';el.className='tc-cv'+(val?'':' dim');};
+  const dispGiris=todayBlks.length>1?todayBlks.length+' blok':lastBlk?.giris||'';
+  const dispCikis=todayBlks.length>1?'':lastBlk?.cikis||'';
+  const gCell=$('tcGCell'),cCell=$('tcCCell'),gEl=$('tcG'),cEl=$('tcC');
+  if(!hasAny){
+    if(gEl){gEl.className='tc-cv action go';gEl.innerHTML=`<svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>Mesaiye Başla`;}
+    if(gCell){gCell.classList.add('tapme');gCell.onclick=(e)=>{e.stopPropagation();openGirisSheet();};}
+    if(cCell){cCell.classList.remove('tapme');cCell.onclick=null;}
+    setC('tcC','');
+  }else if(hasAny&&!allDone){
+    setC('tcG',dispGiris);
+    if(gCell){gCell.classList.remove('tapme');gCell.onclick=null;}
+    if(cEl){cEl.className='tc-cv action stop';cEl.innerHTML=`<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>Mesaiyi Bitir`;}
+    if(cCell){cCell.classList.add('tapme');cCell.onclick=(e)=>{e.stopPropagation();openCikisSheet(todayKey);};}
+  }else{
+    setC('tcG',dispGiris);setC('tcC',dispCikis);
+    if(gCell){gCell.classList.remove('tapme');gCell.onclick=null;}
+    if(cCell){cCell.classList.remove('tapme');cCell.onclick=null;}
+  }
+  const sureVal=c.netMin>0?fmtD(c.netMin):c.netMin<0?fmtD(Math.abs(c.netMin))+' eksik':'';
+  setC('tcS',sureVal);
+  const parts=[];if(c.yol>0)parts.push('Yol '+fmtTL(c.yol));if(c.yemek>0)parts.push('Yemek '+fmtTL(c.yemek));
+  if($('tcDet'))$('tcDet').textContent=parts.join(' · ');if($('tcEarn'))$('tcEarn').textContent=c.top>0?fmtTL(c.top):'';
+  const acts=$('acts');if(!acts)return;acts.innerHTML='';
+  const miniCalHTML=buildMiniMonthHTML(today.getFullYear(),today.getMonth(),{style:'min-height:250px',big:true,onclick:`goCalendar();setTimeout(()=>openMonthDetail(${today.getFullYear()},${today.getMonth()}),350)`});
+  acts.innerHTML=miniCalHTML;
+  if($('mhead'))$('mhead').textContent=MONTHS[today.getMonth()]+' Özeti';
+  const mc=calcMonth(today.getFullYear(),today.getMonth()),netMaas=getSalary(today.getFullYear(),today.getMonth());
+  const md=getMonthData(today.getFullYear(),today.getMonth());const primTop=(md.devamPrimi||0)+(md.performansPrimi||0);
+  if($('ss1'))$('ss1').textContent=fmtD(Math.abs(mc.mn));if($('ss1s'))$('ss1s').textContent=maskTL(fmtTL(mc.tm))+' mesai ücreti';
+  if($('ss2'))$('ss2').textContent=maskTL(fmtTL(mc.yl+mc.yk+primTop));
+  if($('ss3'))$('ss3').textContent=maskTL(fmtTL(netMaas+mc.tm+mc.yl+mc.yk+primTop));
+  const subParts=[maskTL(fmtTL(netMaas))+' net maaş'];if(mc.tm!==0)subParts.push(maskTL(fmtTL(mc.tm))+' mesai');if(primTop>0)subParts.push(maskTL(fmtTL(primTop))+' prim');
+  if($('ss3s'))$('ss3s').textContent=subParts.join(' + ');
+  if($('tcEarn'))$('tcEarn').textContent=c.top>0?maskTL(fmtTL(c.top)):'';
+  applyPrivacyUI();
+  const prevEl=$('prevMonths');
+  if(prevEl){let html='';for(let i=1;i<=11;i++){let pm=today.getMonth()-i,py=today.getFullYear();if(pm<0){pm+=12;py--;}const pmc=calcMonth(py,pm),pNet=getSalary(py,pm),pmd=getMonthData(py,pm);const pPrim=(pmd.devamPrimi||0)+(pmd.performansPrimi||0);const pGrand=pNet+pmc.tm+pmc.yl+pmc.yk+pPrim;if(pGrand===0&&pmc.mn===0&&!salaries[mk(py,pm)])continue;html+=`<div class="scard wide" onclick="goCalendar();setTimeout(()=>openMonthDetail(${py},${pm}),350)" style="cursor:pointer;position:relative;margin-bottom:10px"><div class="slbl">${MONTHS[pm]} ${py}</div><div class="sval" style="font-size:20px;color:var(--t1)">${maskTL(fmtTL(pGrand))}</div><div class="ssub">${maskTL(fmtTL(pNet))} net + ${maskTL(fmtTL(pmc.tm))} mesai${pPrim>0?' + '+maskTL(fmtTL(pPrim))+' prim':''}</div>${pmc.mn!==0?`<div class="ssub" style="margin-top:2px">${fmtD(Math.abs(pmc.mn))} mesai saati</div>`:''}<div style="position:absolute;top:12px;right:14px;font-size:10px;font-weight:700;color:var(--t3)">Detay →</div></div>`;}prevEl.innerHTML=html||'<div style="font-size:13px;color:var(--t3);padding:8px 0">Geçmiş ay verisi yok</div>';}
+}
+function openEditToday(){goCalendar();setTimeout(()=>openDayDetail(todayKey),350);}
+
+let calYear=today.getFullYear();let detailY=null,detailM=null;
+function changeYear(d){calYear+=d;if($('yearLbl'))$('yearLbl').textContent=calYear;renderYearGrid();}
+function renderCal(){if($('yearLbl'))$('yearLbl').textContent=calYear;renderYearGrid();if(detailY!==null&&$('monthView')&&$('monthView').classList.contains('active')){renderMonthDetailGrid(detailY,detailM);updateMonthDetailFooter(detailY,detailM);}}
+function buildMiniMonthHTML(y,m,opts){
+  opts=opts||{};
+  const firstDow=new Date(y,m,1).getDay();const offset=(firstDow+6)%7;const daysCount=daysIn(y,m);
+  let dayHTML='';for(let i=0;i<offset;i++)dayHTML+='<div class="mmc-day"></div>';
+  for(let d=1;d<=daysCount;d++){const key=dk(y,m,d),dt=new Date(y,m,d),dow=dt.getDay();const isWE=dow===0||dow===6,isToday=key===todayKey;const r=getDay(key),c=calcDay(key);const hasEntry=getMesailer(r).some(b=>b.giris);let cls='mmc-day';if(isToday)cls+=' today';else if(isWE)cls+=' wknd';if(hasEntry&&c.netMin>0)cls+=' has-pos';else if(hasEntry&&c.netMin<0)cls+=' has-neg';const dot=hasEntry?`<div class="mmc-dot${c.netMin<0?' neg':''}"></div>`:'';dayHTML+=`<div class="${cls}">${d}${dot}</div>`;}
+  const click=opts.onclick||`openMonthDetail(${y},${m})`;
+  const style=opts.style?` style="${opts.style}"`:'';
+  const cls=opts.big?'mmc mmc-lg':'mmc';
+  return `<div class="${cls}"${style} onclick="${click}"><div class="mmc-name">${MONTHS[m]}</div><div class="mmc-dowrow">${['P','S','Ç','P','C','C','P'].map(l=>`<div class="mmc-dow">${l}</div>`).join('')}</div><div class="mmc-daygrid">${dayHTML}</div></div>`;
+}
+function renderYearGrid(){
+  const grid=$('yearGrid');if(!grid)return;
+  let html='';
+  for(let m=0;m<12;m++)html+=buildMiniMonthHTML(calYear,m);
+  grid.innerHTML=html;
+}
+function openMonthDetail(y,m){
+  detailY=y;detailM=m;
+  if($('mdetTitle'))$('mdetTitle').textContent=MONTHS[m]+' '+y;if($('calTitle'))$('calTitle').textContent=MONTHS[m]+' '+y;
+  const maas=getSalary(y,m),md=getMonthData(y,m);
+  const maasInp=$('mdetMaas'),devamInp=$('mdetDevam'),perfInp=$('mdetPerf');
+  if(maasInp){maasInp._realVal=undefined;maasInp.removeAttribute('readonly');maasInp.value=maas||'';}
+  if(devamInp){devamInp._realVal=undefined;devamInp.removeAttribute('readonly');devamInp.value=md.devamPrimi||0;}
+  if(perfInp){perfInp._realVal=undefined;perfInp.removeAttribute('readonly');perfInp.value=md.performansPrimi||0;}
+  renderMonthDetailGrid(y,m);updateMonthDetailFooter(y,m);
+  applyPrivacyUI();
+  $('yearView').className='cal-sub left';$('monthView').className='cal-sub active';
+}
+function calGoBack(){if($('calTitle'))$('calTitle').textContent='Takvim';$('yearView').className='cal-sub active';$('monthView').className='cal-sub right';detailY=null;detailM=null;}
+function renderMonthDetailGrid(y,m){
+  const grid=$('mdetGrid');if(!grid)return;
+  const firstDow=new Date(y,m,1).getDay();const offset=(firstDow+6)%7;const daysCount=daysIn(y,m);
+  let html='';for(let i=0;i<offset;i++)html+='<div class="dgrid-empty"></div>';
+  for(let d=1;d<=daysCount;d++){const key=dk(y,m,d),dt=new Date(y,m,d),dow=dt.getDay();const isWE=dow===0||dow===6,isToday=key===todayKey;const r=getDay(key),c=calcDay(key);const hasEntry=getMesailer(r).some(b=>b.giris);let cls='dgrid-day';if(isToday)cls+=' today';else if(isWE)cls+=' wknd';if(hasEntry&&c.netMin>0)cls+=' has-pos';else if(hasEntry&&c.netMin<0)cls+=' has-neg';const minTxt=hasEntry&&c.netMin!==0?fmtD(Math.abs(c.netMin))+(c.netMin<0?'-':''):'';html+=`<div class="${cls}" id="dgd-${key}" onclick="openDayDetail('${key}')"><div class="dgrid-dn">${d}</div>${minTxt?`<div class="dgrid-min">${minTxt}</div>`:''}</div>`;}
+  grid.innerHTML=html;
+}
+function updateMonthDetailFooter(y,m){
+  const mc=calcMonth(y,m),netMaas=getSalary(y,m),md=getMonthData(y,m);const primTop=(md.devamPrimi||0)+(md.performansPrimi||0);const grand=netMaas+mc.tm+mc.yl+mc.yk+primTop;
+  const grandStr=fmtTL(grand);
+  const parts=[fmtTL(netMaas)+' net'];if(mc.mn!==0)parts.push(fmtTL(mc.tm)+(mc.mn<0?' eksik':' mesai'));if(primTop>0)parts.push(fmtTL(primTop)+' prim');
+  const subStr=parts.join(' + ');
+  const totalStr=grand>0?fmtTL(grand):'';
+  // Raw değerleri sakla
+  const grandEl=$('mdetGrand'),subEl=$('mdetSub'),totalEl=$('mdetTotal');
+  if(grandEl){grandEl._raw=grandStr;grandEl.textContent=privacyOn?'•••₺':grandStr;}
+  if(subEl){subEl._raw=subStr;subEl.textContent=privacyOn?'•••':subStr;}
+  if(totalEl){totalEl._raw=totalStr;totalEl.textContent=privacyOn?'•••₺':totalStr;}
+  if($('mdetHours'))$('mdetHours').textContent=mc.mn!==0?fmtD(Math.abs(mc.mn))+(mc.mn<0?' eksik':' toplam mesai saati'):'';
+}
+function onMaasChange(val){
+  if(detailY===null)return;
+  const realVal=parseFloat(val)||0;
+  salaries[mk(detailY,detailM)]=realVal;saveLocal();debouncePush();updateMonthDetailFooter(detailY,detailM);if(curScreen==='homeScreen')renderHome();
+  const inp=$('mdetMaas');if(inp&&privacyOn){inp._realVal=String(realVal);inp.value='';inp.placeholder='•••';inp.setAttribute('readonly','');}
+}
+function onMdChange(field,val){
+  if(detailY===null)return;
+  const realVal=parseFloat(val)||0;
+  setMonthData(detailY,detailM,field,realVal);updateMonthDetailFooter(detailY,detailM);if(curScreen==='homeScreen')renderHome();
+  const id=field==='devamPrimi'?'mdetDevam':'mdetPerf';
+  const inp=$(id);if(inp&&privacyOn){inp._realVal=String(realVal);inp.value='';inp.placeholder='•••';inp.setAttribute('readonly','');}
+}
+function refreshMonthCard(){if(detailY===null)return;renderMonthDetailGrid(detailY,detailM);updateMonthDetailFooter(detailY,detailM);renderYearGrid();if(curScreen==='homeScreen')renderHome();}
+
+function openDayDetail(key){
+  modalKey=key;const[ys,ms,ds]=key.split('-').map(Number),dt=new Date(ys,ms,ds),dow=dt.getDay();
+  const r=getDay(key),c=calcDay(key);const head=$('dayOvHead'),body=$('dayOvBody');if(!head||!body)return;
+  head.innerHTML=`<h3>${ds} ${MONTHS[ms]} ${ys} — ${DAYS[dow]}</h3><p>${c.netMin!==0?fmtD(Math.abs(c.netMin))+(c.netMin<0?' eksik':' mesai')+(c.tm?` · ${fmtTL(c.tm)}`:''):'Mesai girilmedi'}</p>`;
+  body.innerHTML=buildDayDetailHTML(key,r,c);openOv('dayOv');
+}
+function buildDayDetailHTML(key,r,c){
+  const cp=r.carpanOverride!=null?r.carpanOverride:cfg.carpan;
+  const toggle=(active,color)=>`<div style="width:30px;height:17px;border-radius:9px;background:${active?color:'var(--gb)'};position:relative;transition:background .2s;flex-shrink:0"><div style="width:13px;height:13px;border-radius:50%;background:#fff;position:absolute;top:2px;left:${active?'15px':'2px'};transition:left .2s"></div></div>`;
+  return`<div class="det-s"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+  <div class="det-lbl" style="margin-bottom:0">Vardiya</div>
+  <span style="font-size:10.5px;color:var(--t3)">${r.vardiyaS!=null?'Bu güne özel':'Öncekinden miras'}</span>
+</div>
+<div style="display:flex;gap:8px;margin-bottom:12px">
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;${r.calisilmadi?'opacity:.35;pointer-events:none':''}background:rgba(255,255,255,.05);border:1px solid var(--gb);border-radius:14px;padding:9px 6px;cursor:pointer" onclick="toggleKompMesai('${key}')">
+    <span style="font-size:10.5px;font-weight:700;color:${r.kompMesai?'var(--blue)':'var(--t2)'};white-space:nowrap">Komple Mesai</span>
+    ${toggle(r.kompMesai,'var(--blue)')}
+  </div>
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;background:rgba(255,255,255,.05);border:1px solid var(--gb);border-radius:14px;padding:9px 6px;cursor:pointer" onclick="toggleCalisilmadi('${key}')">
+    <span style="font-size:10.5px;font-weight:700;color:${r.calisilmadi?'var(--red)':'var(--t2)'};white-space:nowrap">Çalışılmadı</span>
+    ${toggle(r.calisilmadi,'var(--red)')}
+  </div>
+</div>
+<div class="frow" style="${r.kompMesai?'opacity:.35;pointer-events:none':''}"><div class="fi"><label>Başlangıç</label><input type="time" value="${r.vardiyaS!=null?r.vardiyaS:fmtT(getVardiya(key).s)}" onchange="setVardiya('${key}','vardiyaS',this.value)"></div><div class="fi"><label>Bitiş</label><input type="time" value="${r.vardiyaB!=null?r.vardiyaB:fmtT(getVardiya(key).b)}" onchange="setVardiya('${key}','vardiyaB',this.value)"></div></div>
+<div style="margin-top:8px;font-size:11px;color:var(--t3)">${r.calisilmadi?'Bu gün çalışılmadı sayılıyor, vardiya süresi mesaiden düşülüyor.':r.kompMesai?'Tüm çalışma süresi mesai sayılıyor.':'Sonraki günler bu vardiyayı otomatik alır.'}</div></div>
+  <div class="det-s"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;${r.calisilmadi?'opacity:.35;pointer-events:none':''}"><div class="det-lbl" style="margin-bottom:0">Mesai Blokları</div><button onclick="addMesaiBlokOv('${key}')" style="display:flex;align-items:center;gap:5px;padding:6px 12px;background:var(--bd);border:1px solid var(--bb);border-radius:8px;color:var(--blue);font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif"><svg style="width:14px;height:14px;stroke:currentColor;stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Ekle</button></div><div id="mbloks-ov-${key}" style="${r.calisilmadi?'opacity:.35;pointer-events:none':''}">${buildMesaiBloksHTML(key,r)}</div>
+  <div class="frow3" style="margin-top:10px"><div class="fi"><label>Çarpan <span onclick="clearCarpan('${key}')" style="color:var(--t3);font-size:9px;cursor:pointer;margin-left:2px">[vars.]</span></label><input type="number" step="0.25" min="1" value="${cp}" oninput="setField('${key}','carpanOverride',parseFloat(this.value));refreshDayOv('${key}')"></div><div class="fi"><label>Yol (₺)</label><input type="number" min="0" placeholder="${getYol(key)||0}" value="${r.yolTutar||''}" onchange="setField('${key}','yolTutar',this.value);refreshDayOv('${key}')"></div><div class="fi"><label>Yemek (₺)</label><input type="number" min="0" placeholder="0" value="${r.yemekTutar||''}" onchange="setField('${key}','yemekTutar',this.value);refreshDayOv('${key}')"></div></div>
+  ${r.yolTutar==null||r.yolTutar===''?`<div style="margin-top:4px;font-size:10px;color:var(--t3)">Yol için miras: ${getYol(key)}₺</div>`:''}
+  </div>
+  <div class="det-s"><div class="det-lbl">Mola / Eksik Süre</div><div class="mlist" id="ml-ov-${key}">${buildMolaHTML(key,r)}</div><div class="frow"><button class="addm" onclick="addMola('${key}')"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Saat aralığı ekle</button><div class="fi"><label>Sabit dk</label><input type="number" min="0" placeholder="0" value="${r.molaMin||''}" onchange="setField('${key}','molaMin',this.value);refreshDayOv('${key}')"></div></div></div>
+
+  <div class="det-s"><div class="det-lbl">Not</div><input type="text" value="${r.aciklama||''}" placeholder="not..." onchange="setField('${key}','aciklama',this.value)" style="width:100%;padding:13px 14px;background:rgba(255,255,255,.07);border:1px solid var(--gb);border-radius:var(--r);color:var(--t1);font-size:15px;font-family:'Inter',sans-serif;outline:none"></div>
+  ${c.netMin!==0||c.yol>0||c.yemek>0?`<div class="dtbar"><div class="dtbar-l"><div class="dtl">Gün Toplamı</div><div class="dtd">${[c.netMin!==0?fmtD(Math.abs(c.netMin))+(c.netMin<0?' eksik':''):'',c.yol>0?fmtTL(c.yol)+' yol':'',c.yemek>0?fmtTL(c.yemek)+' yemek':''].filter(Boolean).join(' · ')}</div></div><div class="dtbar-r" style="${c.netMin<0?'color:var(--red)':''}">${fmtTL(c.top)}</div></div>`:''}`;
+}
+function refreshDayOv(key){
+  const r=getDay(key),c=calcDay(key);
+  const head=$('dayOvHead');if(head){const[ys,ms,ds]=key.split('-').map(Number),dt=new Date(ys,ms,ds),dow=dt.getDay();head.innerHTML=`<h3>${ds} ${MONTHS[ms]} ${ys} — ${DAYS[dow]}</h3><p>${c.netMin!==0?fmtD(Math.abs(c.netMin))+(c.netMin<0?' eksik':' mesai')+(c.tm?` · ${fmtTL(c.tm)}`:''):'Mesai girilmedi'}</p>`;}
+  const tile=$('dgd-'+key);
+  if(tile){const[ys,ms,ds]=key.split('-').map(Number),dt=new Date(ys,ms,ds),dow=dt.getDay();const isWE=dow===0||dow===6,isToday=key===todayKey,hasEntry=getMesailer(r).some(b=>b.giris);let cls='dgrid-day';if(isToday)cls+=' today';else if(isWE)cls+=' wknd';if(hasEntry&&c.netMin>0)cls+=' has-pos';else if(hasEntry&&c.netMin<0)cls+=' has-neg';const minTxt=hasEntry&&c.netMin!==0?fmtD(Math.abs(c.netMin))+(c.netMin<0?' eksik':''):'';tile.className=cls;tile.innerHTML=`<div class="dgrid-dn">${ds}</div>${minTxt?`<div class="dgrid-min">${minTxt}</div>`:''}`;}
+  refreshMonthCard();
+}
+function addMesaiBlokOv(key){ensureMesailer(key);dayData[key].mesailer.push({giris:'',cikis:''});saveLocal();debouncePush();const el=$('mbloks-ov-'+key);if(el)el.innerHTML=buildMesaiBloksHTML(key,dayData[key]);}
+function removeMesaiBlok(key,idx){const r=ensureMesailer(key);r.mesailer.splice(idx,1);saveLocal();debouncePush();const el=$('mbloks-ov-'+key);if(el)el.innerHTML=buildMesaiBloksHTML(key,dayData[key]);refreshDayOv(key);}
+function updateMesaiBlok(key,idx,field,val){const r=ensureMesailer(key);if(!r.mesailer[idx])return;r.mesailer[idx][field]=val;saveLocal();debouncePush();refreshDayOv(key);}
+function buildMesaiBloksHTML(key,r){
+  const blocks=getMesailer(r);
+  if(!blocks.length)return`<div style="text-align:center;padding:16px;color:var(--t3);font-size:13px">Henüz mesai yok. Ekle butonuna bas.</div>`;
+  return blocks.map((b,i)=>`<div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;margin-bottom:8px;background:rgba(255,255,255,.05);border:1px solid var(--gb);border-radius:var(--r);padding:10px 12px"><div class="fi"><label>Giriş ${blocks.length>1?i+1:''}</label><input type="time" value="${b.giris||''}" onchange="updateMesaiBlok('${key}',${i},'giris',this.value)"></div><div class="fi"><label>Çıkış ${blocks.length>1?i+1:''}</label><input type="time" value="${b.cikis||''}" onchange="updateMesaiBlok('${key}',${i},'cikis',this.value)"></div><button onclick="removeMesaiBlok('${key}',${i})" style="width:34px;height:34px;border-radius:50%;background:var(--rdd);border:none;color:var(--red);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-bottom:2px"><svg style="width:14px;height:14px;stroke:currentColor;stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>`).join('');
+}
+function buildMolaHTML(key,r){if(!r.molalar||!r.molalar.length)return'';return r.molalar.map((mo,i)=>`<div class="mrow"><input type="time" value="${mo.bas||''}" onchange="updateMola('${key}',${i},'bas',this.value)"><input type="time" value="${mo.bit||''}" onchange="updateMola('${key}',${i},'bit',this.value)"><button class="mdel" onclick="removeMola('${key}',${i})"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>`).join('');}
+
+function openOv(id){$(id).classList.add('show');}
+function closeOv(id){$(id).classList.remove('show');}
+function ovClick(e,id){if(e.target===$(id))closeOv(id);}
+function openGirisSheet(key){
+  modalKey=key||todayKey;const[ys,ms,ds]=modalKey.split('-').map(Number),dt=new Date(ys,ms,ds);
+  if($('gTitle'))$('gTitle').textContent=DAYS[dt.getDay()]+', '+ds+' '+MONTHS[ms];if($('gSub'))$('gSub').textContent='Mesaiye başlama saatini gir';
+  const nowH=String(new Date().getHours()).padStart(2,'0'),nowM=String(new Date().getMinutes()).padStart(2,'0');
+  if($('gInp'))$('gInp').value=nowH+':'+nowM;openOv('girisOv');
+}
+function confirmGiris(){
+  const val=$('gInp').value;if(!val){closeOv('girisOv');return;}
+  const r=ensureMesailer(modalKey);r.mesailer.push({giris:val,cikis:''});saveLocal();debouncePush();
+  closeOv('girisOv');renderAll();
+}
+function openCikisSheet(key){
+  modalKey=key;const r=getDay(key);const blocks=getMesailer(r);const last=blocks[blocks.length-1];const girisVal=last?last.giris:'';
+  const now=new Date();const nowStr=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  if($('cInp'))$('cInp').value=nowStr;if($('cSub'))$('cSub').textContent=girisVal?'Giriş: '+girisVal:'';openOv('cikisOv');
+}
+function confirmCikis(){
+  const val=$('cInp').value;if(val&&modalKey){const r=ensureMesailer(modalKey);const last=r.mesailer[r.mesailer.length-1];if(last&&!last.cikis)last.cikis=val;saveLocal();debouncePush();}
+  closeOv('cikisOv');renderAll();
+}
+function openSalarySheet(){
+  const k=mk(curY,curM),ex=salaries[k],inh=getSalary(curY,curM);
+  if($('salSub'))$('salSub').textContent=MONTHS[curM]+' '+curY;if($('salNote'))$('salNote').textContent=ex==null?'Kayıtlı maaş yok. Önceki aydan: '+fmtTL(inh):'Kayıtlı maaş: '+fmtTL(ex);
+  if($('salInp'))$('salInp').value=ex!=null?ex:inh;openOv('salaryOv');
+}
+function confirmSalary(){
+  const val=parseFloat($('salInp').value);if(!isNaN(val)&&val>0){salaries[mk(curY,curM)]=val;saveLocal();debouncePush();toast(MONTHS[curM]+' maaşı güncellendi ✓');refreshMonthCard();if(curScreen==='homeScreen')renderHome();}
+  closeOv('salaryOv');
+}
+
+function exportJSON(){
+  const data={cfg,salaries,dayData,monthData,profile,backupSettings,ts:new Date().toISOString(),v:'2.6'};
+  const b=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;
+  a.download='mesai-yedek-'+new Date().toISOString().slice(0,10)+'.json';a.click();
+  setTimeout(()=>URL.revokeObjectURL(u),2000);toast('Yedek indirildi ✓');
+}
+function importJSON(){$('importFile').click();}
+function handleImport(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const data=JSON.parse(e.target.result);
+      if(!data.dayData&&!data.salaries){toast('Geçersiz yedek dosyası');return;}
+      if(!confirm('Mevcut veriler silinecek ve yedekten yüklenecek. Emin misiniz?'))return;
+      if(data.cfg)cfg=Object.assign(cfg,data.cfg);
+      if(data.salaries)salaries=data.salaries;
+      if(data.dayData)dayData=data.dayData;
+      if(data.monthData)monthData=data.monthData;
+      if(data.profile)profile=Object.assign({name:'',workName:'',avatar:'',avatarType:'emoji',startDate:''},data.profile);
+      if(data.backupSettings)backupSettings=Object.assign({period:'weekly',customDay:1,lastBackup:null},data.backupSettings);
+      saveLocal();
+      if(window._fbPush)window._fbPush();
+      applyTheme(cfg.theme||'default');
+      applySettings();renderAll();checkBackupReminder();
+      toast('Yedek yüklendi ✓ — '+Object.keys(dayData).length+' gün');
+    }catch(err){toast('Dosya okunamadı: '+err.message);}
+  };
+  reader.readAsText(file);
+  input.value='';
+}
+
+let privacyOn=true;
+function togglePrivacy(){
+  privacyOn=!privacyOn;
+  localStorage.setItem('mt_privacy',privacyOn?'1':'0');
+  applyPrivacyUI();renderHome();
+}
+function applyPrivacyUI(){
+  const tog=$('privToggle'),knob=$('privKnob');
+  if(!tog)return;
+  tog.style.background=privacyOn?'var(--blue)':'var(--gb)';
+  knob.style.transform=privacyOn?'translateX(16px)':'translateX(0)';
+  knob.style.background=privacyOn?'#fff':'var(--t2)';
+  // Input'ları gizle/göster
+  ['mdetMaas','mdetDevam','mdetPerf','stBrutMaas'].forEach(id=>{
+    const inp=$(id);if(!inp)return;
+    if(privacyOn){
+      if(inp._realVal===undefined)inp._realVal=inp.value;
+      inp.value='';inp.placeholder='•••';inp.setAttribute('readonly','');
+    } else {
+      if(inp._realVal!==undefined){inp.value=inp._realVal;delete inp._realVal;}
+      inp.placeholder='0';inp.removeAttribute('readonly');
+    }
+  });
+  // Ay detay footer tutarları
+  const grandEl=$('mdetGrand'),subEl=$('mdetSub'),totalEl=$('mdetTotal');
+  if(grandEl&&grandEl._raw)grandEl.textContent=privacyOn?'•••₺':grandEl._raw;
+  if(subEl&&subEl._raw)subEl.textContent=privacyOn?'•••':subEl._raw;
+  if(totalEl&&totalEl._raw)totalEl.textContent=privacyOn?'•••₺':totalEl._raw;
+}
+function mask(val){return privacyOn?'••••':val;}
+function maskTL(val){return privacyOn?'•••₺':val;}
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2500);}
+
+window.onerror=function(msg,src,line){toast('Hata: '+msg+' ('+line+')');return false;};
+['vb1','vb2'].forEach(id=>{const el=$(id);if(el)el.textContent=VERSION;});
+loadLocal();
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
