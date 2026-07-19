@@ -277,6 +277,7 @@ body{display:flex;flex-direction:column;position:relative}
 .det-s{margin-bottom:16px}
 .det-lbl{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
 .frow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.frow3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
 .fi{display:flex;flex-direction:column;gap:5px}
 .fi label{font-size:12px;font-weight:600;color:var(--t2)}
 .fi input[type=time],.fi input[type=number],.fi input[type=text]{width:100%;padding:13px 14px;background:rgba(255,255,255,.07);border:1px solid var(--gb);border-radius:var(--r);color:var(--t1);font-size:15px;font-family:'Inter',sans-serif;outline:none;transition:border-color .2s}
@@ -346,7 +347,7 @@ body{display:flex;flex-direction:column;position:relative}
     <div class="sec-head" id="mhead"></div>
     <div class="sgrid">
       <div class="scard"><div class="slbl">Mesai Saati</div><div class="sval blue" id="ss1">0s</div><div class="ssub" id="ss1s">—</div></div>
-      <div class="scard"><div class="slbl">Yol + Yemek + Prim</div><div class="sval gold" id="ss2">0₺</div><div class="ssub">Ekstra ödemeler</div></div>
+      <div class="scard"><div class="slbl">Yol + Yemek</div><div class="sval gold" id="ss2">0₺</div><div class="ssub">Ekstra ödemeler</div></div>
       <div class="scard wide" onclick="goCalendar();setTimeout(()=>openMonthDetail(today.getFullYear(),today.getMonth()),350)" style="cursor:pointer;position:relative">
         <div class="slbl">Bu Ay Toplam (Maaş Dahil)</div>
         <div class="sval green" id="ss3">—</div>
@@ -439,7 +440,7 @@ body{display:flex;flex-direction:column;position:relative}
         <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         <img id="uImg" alt="">
       </div>
-      <div style="flex:1"><div class="uname" id="uName">Kullanıcı</div><div class="uemail" id="uEmail">İşyeri belirtilmedi</div></div>
+      <div style="flex:1"><div class="uname" id="uName">Kullanıcı</div><div class="uemail" id="uEmail">İşyeri belirtilmedi</div><div id="uTenure" style="font-size:11.5px;color:var(--blue);font-weight:600;margin-top:3px"></div></div>
       <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:var(--t3);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>
     </div>
     <div class="sg">
@@ -585,6 +586,9 @@ body{display:flex;flex-direction:column;position:relative}
       <input type="text" id="profName" placeholder="Adın" style="width:100%;padding:14px;background:rgba(255,255,255,.08);border:1px solid var(--gb);border-radius:var(--r);color:var(--t1);font-size:15px;font-family:'Inter',sans-serif;outline:none;margin-bottom:14px">
       <div class="sh-lbl">İşyeri</div>
       <input type="text" id="profWork" placeholder="İşyeri adı" style="width:100%;padding:14px;background:rgba(255,255,255,.08);border:1px solid var(--gb);border-radius:var(--r);color:var(--t1);font-size:15px;font-family:'Inter',sans-serif;outline:none;margin-bottom:16px">
+      <div class="sh-lbl">İşe Giriş Tarihi</div>
+      <input type="date" id="profStartDate" onchange="updateTenurePreview()" style="width:100%;padding:14px;background:rgba(255,255,255,.08);border:1px solid var(--gb);border-radius:var(--r);color:var(--t1);font-size:15px;font-family:'Inter',sans-serif;outline:none;margin-bottom:6px">
+      <div id="profTenurePreview" style="font-size:12px;color:var(--blue);font-weight:700;min-height:16px;margin-bottom:16px"></div>
       <div class="sh-btns">
         <button class="sh-cancel" onclick="closeOv('profileOv')">Vazgeç</button>
         <button class="sh-ok" onclick="saveProfile()">Kaydet ✓</button>
@@ -644,7 +648,7 @@ let openDays={},modalKey=null,syncTimer=null,isSyncing=false;
 let userInfo=null;
 let cfg={vardiyaS:'15:00',vardiyaB:'23:00',carpan:1.5,aylikSaat:225,brutMaas:0,theme:'default'};
 let salaries={},dayData={},monthData={};
-let profile={name:'',workName:'',avatar:'',avatarType:'emoji'};
+let profile={name:'',workName:'',avatar:'',avatarType:'emoji',startDate:''};
 let backupSettings={period:'weekly',customDay:1,lastBackup:null};
 const THEMES=[
 {id:'default',name:'Gece Mavisi',c0:'#080c18',ac:'#5b9cf6'},
@@ -718,7 +722,13 @@ function calcDay(key){
   let totalWork=0;
   for(const blk of blocks){const g=pt(blk.giris);let c2=pt(blk.cikis);if(c2===null||g===null)continue;if(c2<=g)c2+=24*60;totalWork+=c2-g;}
   let netMin=0;
-  if(blocks.length>0){
+  let hasMesai=blocks.length>0;
+  if(r.calisilmadi){
+    // Çalışılmadı modu: o günkü vardiya süresi tamamen eksi (mesaiden düşülür)
+    let vs=vrd.b-vrd.s;if(vs<=0)vs+=24*60;
+    netMin=-vs;
+    hasMesai=false;
+  } else if(blocks.length>0){
     if(r.kompMesai){
       // Komple mesai modu: tüm çalışma süresi mesai
       netMin=totalWork;
@@ -731,7 +741,6 @@ function calcDay(key){
   if(r.molaMin)mol+=parseInt(r.molaMin)||0;
   netMin=netMin-mol;
   const tm=netMin!==0?Math.round(saatlik*carpan*(netMin/60)):0;
-  const hasMesai=blocks.length>0;
   const yol=hasMesai?getYol(key):0,yemek=hasMesai?(parseFloat(r.yemekTutar)||0):0;
   return{netMin,tm,yol,yemek,top:tm+yol+yemek};
 }
@@ -740,7 +749,7 @@ function ensureMesailer(key){if(!dayData[key])dayData[key]={};const r=dayData[ke
 function calcMonth(y,m){let mn=0,tm=0,yl=0,yk=0;for(let d=1;d<=daysIn(y,m);d++){const c=calcDay(dk(y,m,d));mn+=c.netMin;tm+=c.tm;yl+=c.yol;yk+=c.yemek;}return{mn,tm,yl,yk};}
 
 function saveLocal(){try{localStorage.setItem('mt_v4',JSON.stringify({cfg,salaries,dayData,monthData,profile,backupSettings,ts:Date.now()}));}catch(e){}}
-function loadLocal(){try{const r=localStorage.getItem('mt_v4');if(r){const d=JSON.parse(r);cfg=Object.assign(cfg,d.cfg||{});if(cfg.bitis&&!cfg.vardiyaB)cfg.vardiyaB=cfg.bitis;salaries=d.salaries||{};dayData=d.dayData||{};monthData=d.monthData||{};profile=Object.assign({name:'',workName:'',avatar:'',avatarType:'emoji'},d.profile||{});backupSettings=Object.assign({period:'weekly',customDay:1,lastBackup:null},d.backupSettings||{});}}catch(e){}}
+function loadLocal(){try{const r=localStorage.getItem('mt_v4');if(r){const d=JSON.parse(r);cfg=Object.assign(cfg,d.cfg||{});if(cfg.bitis&&!cfg.vardiyaB)cfg.vardiyaB=cfg.bitis;salaries=d.salaries||{};dayData=d.dayData||{};monthData=d.monthData||{};profile=Object.assign({name:'',workName:'',avatar:'',avatarType:'emoji',startDate:''},d.profile||{});backupSettings=Object.assign({period:'weekly',customDay:1,lastBackup:null},d.backupSettings||{});}}catch(e){}}
 
 function updateUser(){
   if(!userInfo)return;
@@ -758,6 +767,19 @@ function setSyncUI(state,txt){
 function toggleKompMesai(key){
   if(!dayData[key])dayData[key]={};
   dayData[key].kompMesai=!dayData[key].kompMesai;
+  if(dayData[key].kompMesai)dayData[key].calisilmadi=false;
+  saveLocal();debouncePush();
+  // Overlay'i yeniden oluştur
+  const r=getDay(key),c=calcDay(key);
+  const head=$('dayOvHead'),body=$('dayOvBody');
+  if(head){const[ys,ms,ds]=key.split('-').map(Number),dt=new Date(ys,ms,ds),dow=dt.getDay();head.innerHTML=`<h3>${ds} ${MONTHS[ms]} ${ys} — ${DAYS[dow]}</h3><p>${c.netMin!==0?fmtD(Math.abs(c.netMin))+(c.netMin<0?' eksik':' mesai')+(c.tm?` · ${fmtTL(c.tm)}`:''):'Mesai girilmedi'}</p>`;}
+  if(body)body.innerHTML=buildDayDetailHTML(key,r,c);
+  refreshDayOv(key);
+}
+function toggleCalisilmadi(key){
+  if(!dayData[key])dayData[key]={};
+  dayData[key].calisilmadi=!dayData[key].calisilmadi;
+  if(dayData[key].calisilmadi)dayData[key].kompMesai=false;
   saveLocal();debouncePush();
   // Overlay'i yeniden oluştur
   const r=getDay(key),c=calcDay(key);
@@ -830,9 +852,36 @@ function paintAvatar(imgId,emojiId,wrapId){
     if(svg)svg.style.display='block';
   }
 }
+function calcTenure(startDate){
+  if(!startDate)return null;
+  const start=new Date(startDate+'T00:00:00');
+  const now=new Date();
+  if(isNaN(start.getTime())||start>now)return null;
+  let y=now.getFullYear()-start.getFullYear();
+  let m=now.getMonth()-start.getMonth();
+  let d=now.getDate()-start.getDate();
+  if(d<0){m--;const prevMonth=new Date(now.getFullYear(),now.getMonth(),0);d+=prevMonth.getDate();}
+  if(m<0){y--;m+=12;}
+  return{y,m,d};
+}
+function fmtTenure(t){
+  if(!t)return'';
+  const parts=[];
+  if(t.y>0)parts.push(t.y+' yıl');
+  if(t.m>0)parts.push(t.m+' ay');
+  if(t.d>0||parts.length===0)parts.push(t.d+' gün');
+  return parts.join(' ');
+}
+function updateTenurePreview(){
+  const inp=$('profStartDate'),el=$('profTenurePreview');if(!inp||!el)return;
+  const t=calcTenure(inp.value);
+  el.textContent=t?fmtTenure(t)+' önce başladı':'';
+}
 function applyProfileUI(){
   if($('uName'))$('uName').textContent=profile.name||'Kullanıcı';
   if($('uEmail'))$('uEmail').textContent=profile.workName||'İşyeri belirtilmedi';
+  const t=calcTenure(profile.startDate);
+  if($('uTenure'))$('uTenure').textContent=t?'İşe başlayalı '+fmtTenure(t):'';
   paintAvatar('avImg','avEmoji','avbtn');
   paintAvatar('uImg','uhavEmoji','uhav');
   paintAvatar('profAvImg','profAvEmoji','profAvWrap');
@@ -840,12 +889,15 @@ function applyProfileUI(){
 function openProfileEdit(){
   if($('profName'))$('profName').value=profile.name||'';
   if($('profWork'))$('profWork').value=profile.workName||'';
+  if($('profStartDate'))$('profStartDate').value=profile.startDate||'';
+  updateTenurePreview();
   paintAvatar('profAvImg','profAvEmoji','profAvWrap');
   openOv('profileOv');
 }
 function saveProfile(){
   profile.name=($('profName').value||'').trim();
   profile.workName=($('profWork').value||'').trim();
+  profile.startDate=$('profStartDate')?$('profStartDate').value||'':'';
   saveLocal();debouncePush();applyProfileUI();closeOv('profileOv');toast('Profil kaydedildi ✓');
 }
 function openAvatarPicker(){renderAvEmojiGrid();openOv('avatarOv');}
@@ -1047,24 +1099,29 @@ function openDayDetail(key){
 }
 function buildDayDetailHTML(key,r,c){
   const cp=r.carpanOverride!=null?r.carpanOverride:cfg.carpan;
+  const toggle=(active,color)=>`<div style="width:30px;height:17px;border-radius:9px;background:${active?color:'var(--gb)'};position:relative;transition:background .2s;flex-shrink:0"><div style="width:13px;height:13px;border-radius:50%;background:#fff;position:absolute;top:2px;left:${active?'15px':'2px'};transition:left .2s"></div></div>`;
   return`<div class="det-s"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
   <div class="det-lbl" style="margin-bottom:0">Vardiya</div>
-  <div style="display:flex;align-items:center;gap:8px">
-    <span style="font-size:11px;color:var(--t3)">${r.vardiyaS!=null?'Bu güne özel':'Öncekinden miras'}</span>
-    <div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.05);border:1px solid var(--gb);border-radius:20px;padding:5px 10px;cursor:pointer" onclick="toggleKompMesai('${key}')">
-      <span style="font-size:10px;font-weight:700;color:${r.kompMesai?'var(--blue)':'var(--t3)'}">Bugün Komple Mesai</span>
-      <div style="width:32px;height:18px;border-radius:9px;background:${r.kompMesai?'var(--blue)':'var(--gb)'};position:relative;transition:background .2s;flex-shrink:0">
-        <div style="width:14px;height:14px;border-radius:50%;background:#fff;position:absolute;top:2px;left:${r.kompMesai?'16px':'2px'};transition:left .2s"></div>
-      </div>
-    </div>
+  <span style="font-size:10.5px;color:var(--t3)">${r.vardiyaS!=null?'Bu güne özel':'Öncekinden miras'}</span>
+</div>
+<div style="display:flex;gap:8px;margin-bottom:12px">
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;${r.calisilmadi?'opacity:.35;pointer-events:none':''}background:rgba(255,255,255,.05);border:1px solid var(--gb);border-radius:14px;padding:9px 6px;cursor:pointer" onclick="toggleKompMesai('${key}')">
+    <span style="font-size:10.5px;font-weight:700;color:${r.kompMesai?'var(--blue)':'var(--t2)'};white-space:nowrap">Komple Mesai</span>
+    ${toggle(r.kompMesai,'var(--blue)')}
+  </div>
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;background:rgba(255,255,255,.05);border:1px solid var(--gb);border-radius:14px;padding:9px 6px;cursor:pointer" onclick="toggleCalisilmadi('${key}')">
+    <span style="font-size:10.5px;font-weight:700;color:${r.calisilmadi?'var(--red)':'var(--t2)'};white-space:nowrap">Çalışılmadı</span>
+    ${toggle(r.calisilmadi,'var(--red)')}
   </div>
 </div>
-<div class="frow" style="${r.kompMesai?'opacity:.35;pointer-events:none':''}"><div class="fi"><label>Başlangıç</label><input type="time" value="${r.vardiyaS!=null?r.vardiyaS:fmtT(getVardiya(key).s)}" onchange="setVardiya('${key}','vardiyaS',this.value)"></div><div class="fi"><label>Bitiş</label><input type="time" value="${r.vardiyaB!=null?r.vardiyaB:fmtT(getVardiya(key).b)}" onchange="setVardiya('${key}','vardiyaB',this.value)"></div></div>
-<div style="margin-top:6px;font-size:11px;color:var(--t3)">${r.kompMesai?'Tüm çalışma süresi mesai sayılıyor.':'Sonraki günler bu vardiyayı otomatik alır.'}</div></div>
-  <div class="det-s"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><div class="det-lbl" style="margin-bottom:0">Mesai Blokları</div><button onclick="addMesaiBlokOv('${key}')" style="display:flex;align-items:center;gap:5px;padding:6px 12px;background:var(--bd);border:1px solid var(--bb);border-radius:8px;color:var(--blue);font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif"><svg style="width:14px;height:14px;stroke:currentColor;stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Ekle</button></div><div id="mbloks-ov-${key}">${buildMesaiBloksHTML(key,r)}</div></div>
-  <div class="det-s"><div class="det-lbl">Mola / Eksik Süre</div><div class="mlist" id="ml-ov-${key}">${buildMolaHTML(key,r)}</div><div class="frow"><button class="addm" onclick="addMola('${key}')"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Saat aralığı ekle</button><div class="fi"><label>Sabit dk</label><input type="number" min="0" placeholder="0" value="${r.molaMin||''}" onchange="setField('${key}','molaMin',this.value);refreshDayOv('${key}')"></div></div></div>
-  <div class="det-s"><div class="det-lbl">Yol & Yemek</div><div class="frow"><div class="fi"><label>Yol (₺) <span style="color:var(--t3);font-size:10px">${r.yolTutar==null||r.yolTutar===''?'miras: '+getYol(key)+'₺':''}</span></label><input type="number" min="0" placeholder="${getYol(key)||0}" value="${r.yolTutar||''}" onchange="setField('${key}','yolTutar',this.value);refreshDayOv('${key}')"></div><div class="fi"><label>Yemek (₺)</label><input type="number" min="0" placeholder="0" value="${r.yemekTutar||''}" onchange="setField('${key}','yemekTutar',this.value);refreshDayOv('${key}')"></div></div></div>
-  <div class="det-s"><div class="det-lbl">Bu Güne Özel</div><div class="frow"><div class="fi"><label>Mesai Çarpanı <span onclick="clearCarpan('${key}')" style="color:var(--t3);font-size:10px;cursor:pointer;margin-left:4px">[varsayılan]</span></label><input type="number" step="0.25" min="1" value="${cp}" oninput="setField('${key}','carpanOverride',parseFloat(this.value));refreshDayOv('${key}')"></div><div class="fi"><label>Not</label><input type="text" value="${r.aciklama||''}" placeholder="not..." onchange="setField('${key}','aciklama',this.value)"></div></div></div>
+<div class="frow"><div class="fi"><label>Vardiya Başlangıcı</label><input type="time" value="${r.vardiyaS!=null?r.vardiyaS:fmtT(getVardiya(key).s)}" onchange="setVardiya('${key}','vardiyaS',this.value)"></div><div class="fi"><label>Vardiya Bitişi</label><input type="time" value="${r.vardiyaB!=null?r.vardiyaB:fmtT(getVardiya(key).b)}" onchange="setVardiya('${key}','vardiyaB',this.value)"></div></div>
+<div style="margin-top:8px;font-size:11px;color:var(--t3)">${r.calisilmadi?'Bu gün çalışılmadı sayılıyor, vardiya süresi mesaiden düşülüyor.':r.kompMesai?'Tüm çalışma süresi mesai sayılıyor.':'Sonraki günler bu vardiyayı otomatik alır.'}</div></div>
+  <div class="det-s" style="${r.calisilmadi?'opacity:.35;pointer-events:none':''}"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><div class="det-lbl" style="margin-bottom:0">Mesai Blokları</div><button onclick="addMesaiBlokOv('${key}')" style="display:flex;align-items:center;gap:5px;padding:6px 12px;background:var(--bd);border:1px solid var(--bb);border-radius:8px;color:var(--blue);font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif"><svg style="width:14px;height:14px;stroke:currentColor;stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Ekle</button></div><div id="mbloks-ov-${key}">${buildMesaiBloksHTML(key,r)}</div>
+  <div class="frow3" style="margin-top:10px"><div class="fi"><label>Çarpan <span onclick="clearCarpan('${key}')" style="color:var(--t3);font-size:9px;cursor:pointer;margin-left:2px">[vars.]</span></label><input type="number" step="0.25" min="1" value="${cp}" oninput="setField('${key}','carpanOverride',parseFloat(this.value));refreshDayOv('${key}')"></div><div class="fi"><label>Yol (₺)</label><input type="number" min="0" placeholder="${getYol(key)||0}" value="${r.yolTutar||''}" onchange="setField('${key}','yolTutar',this.value);refreshDayOv('${key}')"></div><div class="fi"><label>Yemek (₺)</label><input type="number" min="0" placeholder="0" value="${r.yemekTutar||''}" onchange="setField('${key}','yemekTutar',this.value);refreshDayOv('${key}')"></div></div>
+  ${r.yolTutar==null||r.yolTutar===''?`<div style="margin-top:4px;font-size:10px;color:var(--t3)">Yol için miras: ${getYol(key)}₺</div>`:''}
+  </div>
+  <div class="det-s"><div class="det-lbl">Mola / Eksik Süre</div><div class="mlist" id="ml-ov-${key}">${buildMolaHTML(key,r)}</div><div class="frow"><button class="addm" onclick="addMola('${key}')"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Saat aralığı ekle</button><div class="fi"><label>Eksik Süre Sabit dk</label><input type="number" min="0" placeholder="0" value="${r.molaMin||''}" onchange="setField('${key}','molaMin',this.value);refreshDayOv('${key}')"></div></div></div>
+  <div class="det-s"><div class="det-lbl">Not</div><input type="text" value="${r.aciklama||''}" placeholder="not..." onchange="setField('${key}','aciklama',this.value)" style="width:100%;padding:13px 14px;background:rgba(255,255,255,.07);border:1px solid var(--gb);border-radius:var(--r);color:var(--t1);font-size:15px;font-family:'Inter',sans-serif;outline:none"></div>
   ${c.netMin!==0||c.yol>0||c.yemek>0?`<div class="dtbar"><div class="dtbar-l"><div class="dtl">Gün Toplamı</div><div class="dtd">${[c.netMin!==0?fmtD(Math.abs(c.netMin))+(c.netMin<0?' eksik':''):'',c.yol>0?fmtTL(c.yol)+' yol':'',c.yemek>0?fmtTL(c.yemek)+' yemek':''].filter(Boolean).join(' · ')}</div></div><div class="dtbar-r" style="${c.netMin<0?'color:var(--red)':''}">${fmtTL(c.top)}</div></div>`:''}`;
 }
 function refreshDayOv(key){
@@ -1137,7 +1194,7 @@ function handleImport(input){
       if(data.salaries)salaries=data.salaries;
       if(data.dayData)dayData=data.dayData;
       if(data.monthData)monthData=data.monthData;
-      if(data.profile)profile=Object.assign({name:'',workName:'',avatar:'',avatarType:'emoji'},data.profile);
+      if(data.profile)profile=Object.assign({name:'',workName:'',avatar:'',avatarType:'emoji',startDate:''},data.profile);
       if(data.backupSettings)backupSettings=Object.assign({period:'weekly',customDay:1,lastBackup:null},data.backupSettings);
       saveLocal();
       if(window._fbPush)window._fbPush();
