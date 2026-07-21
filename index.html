@@ -14,11 +14,23 @@
 <title>Mesai Takip</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script>
-// Başlatma mantığı aşağıdaki Firebase modül script'inde (onAuthStateChanged içinde) —
-// giriş yapılana kadar loginScreen gösterilir, giriş sonrası homeScreen'e geçilir.
+// Başlatma mantığı aşağıdaki Firebase modül script'inde (onAuthStateChanged içinde):
+// - Google oturumu varsa -> bulutla senkronize homeScreen
+// - Yok ama "yerel mod" seçilmişse -> continueLocal() ile direkt homeScreen
+// - İkisi de yoksa -> loginScreen (kullanıcı seçim yapar)
+function continueLocal(){
+  localStorage.setItem('mt_local_mode','1');
+  loadLocal();
+  document.documentElement.setAttribute('data-theme',cfg.theme||'default');
+  applySettings();
+  showScreen('homeScreen');renderHome();
+  setSyncUI('ok','Yerel mod');
+  checkBackupReminder();
+}
 function resetAllData(){
   if(confirm('Tüm veriler (bulut dahil) silinecek. Emin misiniz?')){
     localStorage.removeItem('mt_v4');
+    localStorage.removeItem('mt_local_mode');
     dayData={};salaries={};monthData={};
     cfg={vardiyaS:'15:00',vardiyaB:'23:00',carpan:1.5,aylikSaat:225,brutMaas:0,theme:'default'};
     if(window._fbSignOut)window._fbSignOut();
@@ -316,6 +328,10 @@ body{display:flex;flex-direction:column;position:relative}
       <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#4285F4" d="M45.12 24.5c0-1.56-.14-3.06-.4-4.5H24v8.51h11.84c-.51 2.75-2.06 5.08-4.39 6.64v5.52h7.11c4.16-3.83 6.56-9.47 6.56-16.17z"/><path fill="#34A853" d="M24 46c5.94 0 10.92-1.97 14.56-5.33l-7.11-5.52c-1.97 1.32-4.49 2.1-7.45 2.1-5.73 0-10.58-3.87-12.31-9.07H4.34v5.7C7.96 41.07 15.4 46 24 46z"/><path fill="#FBBC05" d="M11.69 28.18C11.25 26.86 11 25.45 11 24s.25-2.86.69-4.18v-5.7H4.34C2.85 17.09 2 20.45 2 24s.85 6.91 2.34 9.88l7.35-5.7z"/><path fill="#EA4335" d="M24 10.75c3.23 0 6.13 1.11 8.41 3.29l6.31-6.31C34.91 4.18 29.93 2 24 2 15.4 2 7.96 6.93 4.34 14.12l7.35 5.7c1.73-5.2 6.58-9.07 12.31-9.07z"/></svg>
       Google ile Giriş Yap
     </button>
+    <button onclick="continueLocal()" style="margin-top:14px;padding:13px 26px;background:transparent;color:var(--t2);border:1px solid var(--gb);border-radius:14px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">
+      Yerel Modda Devam Et
+    </button>
+    <p style="margin-top:14px;font-size:11.5px;color:var(--t3);max-width:280px;line-height:1.5">Yerel modda veriler sadece bu cihazda tutulur, cihazlar arası senkronize olmaz. İstediğin zaman Ayarlar'dan Google hesabına geçebilirsin.</p>
   </div>
 </div>
 
@@ -1341,7 +1357,10 @@ function startRealtimeSync(){
 function debouncePush(){
   clearTimeout(syncTimer);syncTimer=setTimeout(()=>window._fbPush&&window._fbPush(),1500);
 }
-async function syncNow(){await fbPull();renderAll();}
+async function syncNow(){
+  if(!fbUid){saveLocal();renderAll();setSyncUI('ok','Yerel kayıt ✓');return;}
+  await fbPull();renderAll();
+}
 
 async function signIn(){
   try{
@@ -1353,7 +1372,8 @@ async function signIn(){
 
 function signOut(){
   if(dbListener){off(ref(fbDb,`users/${fbUid}/${fbYear}`));dbListener=null;}
-  fbSignOut(fbAuth);
+  try{fbSignOut(fbAuth);}catch(e){}
+  localStorage.removeItem('mt_local_mode');
   fbUid=null;userInfo=null;
   dayData={};salaries={};monthData={};
   showScreen('loginScreen');
@@ -1362,6 +1382,7 @@ function signOut(){
 setPersistence(fbAuth,browserLocalPersistence).then(()=>{
   onAuthStateChanged(fbAuth,async(user)=>{
     if(user){
+      localStorage.removeItem('mt_local_mode');
       fbUid=user.uid;
       fbYear=new Date().getFullYear();
       userInfo={name:user.displayName,email:user.email,picture:user.photoURL};
@@ -1373,6 +1394,8 @@ setPersistence(fbAuth,browserLocalPersistence).then(()=>{
       renderAll();
       checkBackupReminder();
       startRealtimeSync();
+    } else if(localStorage.getItem('mt_local_mode')==='1'){
+      continueLocal();
     } else {
       showScreen('loginScreen');
     }
