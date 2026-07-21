@@ -20,6 +20,7 @@
 // - İkisi de yoksa -> loginScreen (kullanıcı seçim yapar)
 function continueLocal(){
   localStorage.setItem('mt_local_mode','1');
+  storageKey='mt_local_v1';
   loadLocal();
   document.documentElement.setAttribute('data-theme',cfg.theme||'default');
   applySettings();
@@ -29,7 +30,9 @@ function continueLocal(){
 }
 function resetAllData(){
   if(confirm('Tüm veriler (bulut dahil) silinecek. Emin misiniz?')){
-    localStorage.removeItem('mt_v4');
+    localStorage.removeItem(storageKey);
+    localStorage.removeItem('mt_local_v1');
+    localStorage.removeItem('mt_v4'); // eski (tek anahtarlı) sürümden kalan varsa
     localStorage.removeItem('mt_local_mode');
     dayData={};salaries={};monthData={};
     cfg={vardiyaS:'15:00',vardiyaB:'23:00',carpan:1.5,aylikSaat:225,brutMaas:0,theme:'default'};
@@ -681,6 +684,7 @@ const today=new Date();
 const todayKey=dk(today.getFullYear(),today.getMonth(),today.getDate());
 let curY=today.getFullYear(),curM=today.getMonth();
 let openDays={},modalKey=null,syncTimer=null,isSyncing=false;
+let storageKey='mt_local_v1'; // yerel mod ve bulut modu ayrı anahtarlarda tutulur, birbirine karışmaz
 let userInfo=null;
 let cfg={vardiyaS:'15:00',vardiyaB:'23:00',carpan:1.5,aylikSaat:225,brutMaas:0,theme:'default'};
 let salaries={},dayData={},monthData={};
@@ -784,8 +788,8 @@ function getMesailer(r){if(r.mesailer&&r.mesailer.length)return r.mesailer;if(r.
 function ensureMesailer(key){if(!dayData[key])dayData[key]={};const r=dayData[key];if(!r.mesailer){if(r.giris){r.mesailer=[{giris:r.giris,cikis:r.cikis||''}];delete r.giris;delete r.cikis;}else r.mesailer=[];}return r;}
 function calcMonth(y,m){let mn=0,tm=0,yl=0,yk=0;for(let d=1;d<=daysIn(y,m);d++){const c=calcDay(dk(y,m,d));mn+=c.netMin;tm+=c.tm;yl+=c.yol;yk+=c.yemek;}return{mn,tm,yl,yk};}
 
-function saveLocal(){try{localStorage.setItem('mt_v4',JSON.stringify({cfg,salaries,dayData,monthData,profile,backupSettings,ts:Date.now()}));}catch(e){}}
-function loadLocal(){try{const r=localStorage.getItem('mt_v4');if(r){const d=JSON.parse(r);cfg=Object.assign(cfg,d.cfg||{});if(cfg.bitis&&!cfg.vardiyaB)cfg.vardiyaB=cfg.bitis;salaries=d.salaries||{};dayData=d.dayData||{};monthData=d.monthData||{};profile=Object.assign({name:'',workName:'',avatar:'',avatarType:'emoji',startDate:''},d.profile||{});backupSettings=Object.assign({period:'weekly',customDay:1,lastBackup:null},d.backupSettings||{});}}catch(e){}}
+function saveLocal(){try{localStorage.setItem(storageKey,JSON.stringify({cfg,salaries,dayData,monthData,profile,backupSettings,ts:Date.now()}));}catch(e){}}
+function loadLocal(){try{const r=localStorage.getItem(storageKey);if(r){const d=JSON.parse(r);cfg=Object.assign(cfg,d.cfg||{});if(cfg.bitis&&!cfg.vardiyaB)cfg.vardiyaB=cfg.bitis;salaries=d.salaries||{};dayData=d.dayData||{};monthData=d.monthData||{};profile=Object.assign({name:'',workName:'',avatar:'',avatarType:'emoji',startDate:''},d.profile||{});backupSettings=Object.assign({period:'weekly',customDay:1,lastBackup:null},d.backupSettings||{});}else{salaries={};dayData={};monthData={};profile={name:'',workName:'',avatar:'',avatarType:'emoji',startDate:''};backupSettings={period:'weekly',customDay:1,lastBackup:null};}}catch(e){}}
 
 function updateUser(){
   if(!userInfo)return;
@@ -1375,6 +1379,7 @@ function signOut(){
   try{fbSignOut(fbAuth);}catch(e){}
   localStorage.removeItem('mt_local_mode');
   fbUid=null;userInfo=null;
+  storageKey='mt_local_v1';
   dayData={};salaries={};monthData={};
   showScreen('loginScreen');
 }
@@ -1385,6 +1390,7 @@ setPersistence(fbAuth,browserLocalPersistence).then(()=>{
       localStorage.removeItem('mt_local_mode');
       fbUid=user.uid;
       fbYear=new Date().getFullYear();
+      storageKey='mt_cloud_'+fbUid;
       userInfo={name:user.displayName,email:user.email,picture:user.photoURL};
       loadLocal();
       document.documentElement.setAttribute('data-theme',cfg.theme||'default');
