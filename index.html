@@ -24,7 +24,7 @@ function continueLocal(){
   loadLocal();
   document.documentElement.setAttribute('data-theme',cfg.theme||'default');
   applySettings();
-  showScreen('homeScreen');renderHome();
+  revealApp();
   setSyncUI('ok','Yerel mod');
   checkBackupReminder();
 }
@@ -321,6 +321,16 @@ body{display:flex;flex-direction:column;position:relative}
 <div class="mesh"><div class="m1"></div><div class="m2"></div><div class="m3"></div></div>
 </div>
 
+<div class="screen hidden" id="lockScreen">
+  <div class="scroll" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;min-height:100%">
+    <div style="width:88px;height:88px;border-radius:50%;background:var(--bd);border:2px solid var(--bb);display:flex;align-items:center;justify-content:center;margin-bottom:22px">
+      <svg viewBox="0 0 24 24" style="width:38px;height:38px;stroke:var(--blue);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round"><path d="M4 7V5a1 1 0 011-1h2"/><path d="M20 7V5a1 1 0 00-1-1h-2"/><path d="M4 17v2a1 1 0 001 1h2"/><path d="M20 17v2a1 1 0 01-1 1h-2"/><circle cx="12" cy="11" r="2.5"/><path d="M8.5 16c.7-1.4 2-2.2 3.5-2.2s2.8.8 3.5 2.2"/></svg>
+    </div>
+    <div class="login-hero"><h1 style="font-size:26px">Kilitli</h1><p>Devam etmek için Face ID / parmak izi ile doğrula</p></div>
+    <button onclick="attemptUnlock()" style="margin-top:26px;padding:15px 30px;background:var(--blue);color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif">Kilidi Aç</button>
+  </div>
+</div>
+
 <div class="screen hidden" id="loginScreen">
   <div class="scroll" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;min-height:100%">
     <div class="login-hero">
@@ -477,6 +487,18 @@ body{display:flex;flex-direction:column;position:relative}
       </div>
       <div style="flex:1"><div class="uname" id="uName">Kullanıcı</div><div class="uemail" id="uEmail">İşyeri belirtilmedi</div><div id="uTenure" style="font-size:11.5px;color:var(--blue);font-weight:600;margin-top:3px"></div></div>
       <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:var(--t3);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>
+    <div class="sg">
+      <div class="sg-lbl">Güvenlik</div>
+      <div class="slist">
+        <div class="si">
+          <div class="si-ic blue"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
+          <div class="si-t"><div class="n">Face ID / Parmak İzi ile Kilitle</div><div class="s" id="lockInfoTxt">Kapalı</div></div>
+          <div id="lockToggle" onclick="toggleFaceLock()" style="width:44px;height:26px;border-radius:13px;background:var(--gb);cursor:pointer;position:relative;flex-shrink:0;transition:background .2s">
+            <div id="lockKnob" style="width:22px;height:22px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.3)"></div>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="sg">
       <div class="sg-lbl">Görünüm</div>
@@ -848,6 +870,7 @@ function applySettings(){
   renderThemeGrid();
   applyProfileUI();
   applyBackupUI();
+  applyLockUI();
 }
 function saveSettings(){
   const bm=$('stBrutMaas');
@@ -967,6 +990,70 @@ function handleAvatarUpload(input){
   input.value='';
 }
 function removeAvatar(){profile.avatar='';profile.avatarType='emoji';saveLocal();debouncePush();applyProfileUI();closeOv('avatarOv');toast('Avatar kaldırıldı');}
+// ---- Face ID / Parmak İzi Kilidi (WebAuthn) ----
+let appUnlocked=false;
+function isLockEnabled(){return localStorage.getItem('mt_lock_enabled')==='1';}
+function applyLockUI(){
+  const enabled=isLockEnabled();
+  const tog=$('lockToggle'),knob=$('lockKnob'),info=$('lockInfoTxt');
+  if(tog)tog.style.background=enabled?'var(--blue)':'var(--gb)';
+  if(knob)knob.style.left=enabled?'20px':'2px';
+  if(info)info.textContent=enabled?'Açık':'Kapalı';
+}
+async function enableFaceLock(){
+  if(!window.PublicKeyCredential){toast('Bu tarayıcı biyometrik kilidi desteklemiyor');return false;}
+  const supported=await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().catch(()=>false);
+  if(!supported){toast('Bu cihazda Face ID / parmak izi bulunamadı');return false;}
+  try{
+    const challenge=crypto.getRandomValues(new Uint8Array(32));
+    const userId=crypto.getRandomValues(new Uint8Array(16));
+    const cred=await navigator.credentials.create({publicKey:{
+      challenge,rp:{name:'Mesai Takip'},
+      user:{id:userId,name:'mesai-takip',displayName:'Mesai Takip'},
+      pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
+      authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required'},
+      timeout:60000
+    }});
+    if(cred){
+      const credId=btoa(String.fromCharCode(...new Uint8Array(cred.rawId)));
+      localStorage.setItem('mt_lock_cred',credId);
+      localStorage.setItem('mt_lock_enabled','1');
+      toast('Kilit etkinleştirildi ✓');
+      return true;
+    }
+  }catch(e){toast('Kilit kurulamadı: '+(e.message||'iptal edildi'));}
+  return false;
+}
+async function toggleFaceLock(){
+  if(isLockEnabled()){
+    localStorage.removeItem('mt_lock_enabled');
+    localStorage.removeItem('mt_lock_cred');
+    applyLockUI();
+    toast('Kilit kapatıldı');
+  }else{
+    await enableFaceLock();
+    applyLockUI();
+  }
+}
+function revealApp(){
+  if(isLockEnabled()&&!appUnlocked){showScreen('lockScreen');}
+  else{showScreen('homeScreen');renderHome();}
+}
+async function attemptUnlock(){
+  const credIdStr=localStorage.getItem('mt_lock_cred');
+  if(!credIdStr){appUnlocked=true;showScreen('homeScreen');renderHome();return;}
+  try{
+    const raw=Uint8Array.from(atob(credIdStr),c=>c.charCodeAt(0));
+    const challenge=crypto.getRandomValues(new Uint8Array(32));
+    const assertion=await navigator.credentials.get({publicKey:{
+      challenge,allowCredentials:[{id:raw,type:'public-key'}],
+      userVerification:'required',timeout:60000
+    }});
+    if(assertion){appUnlocked=true;showScreen('homeScreen');renderHome();}
+  }catch(e){/* iptal edildi veya doğrulanamadı, kilit ekranında kal */}
+}
+window.toggleFaceLock=toggleFaceLock;
+window.attemptUnlock=attemptUnlock;
 // ---- Yedekleme ----
 function applyBackupUI(){
   const p=$('stBackupPeriod'),cd=$('stBackupCustomDay'),row=$('customDayRow'),info=$('backupInfoTxt');
@@ -1395,7 +1482,7 @@ setPersistence(fbAuth,browserLocalPersistence).then(()=>{
       loadLocal();
       document.documentElement.setAttribute('data-theme',cfg.theme||'default');
       applySettings();
-      showScreen('homeScreen');renderHome();
+      revealApp();
       await fbPull();
       renderAll();
       checkBackupReminder();
