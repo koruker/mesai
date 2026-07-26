@@ -5,29 +5,41 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mesai Takip">
+<meta name="theme-color" content="#080c18">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <title>Mesai Takip</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script>
-// Yerel mod — Firebase yok
-function debouncePush(){saveLocal();setSyncUI('ok','Kaydedildi ✓');}
-function syncNow(){saveLocal();renderAll();setSyncUI('ok','Yerel kayıt ✓');}
-function signOut(){
-  if(confirm('Tüm veriler silinecek. Emin misiniz?')){
-    localStorage.removeItem('mt_v4');
-    dayData={};salaries={};monthData={};
-    cfg={vardiyaS:'15:00',vardiyaB:'23:00',carpan:1.5,aylikSaat:225,brutMaas:0};
-    location.reload();
-  }
-}
-// Sayfa açılınca direkt uygulamaya gir
-document.addEventListener('DOMContentLoaded',()=>{
+// Başlatma mantığı aşağıdaki Firebase modül script'inde (onAuthStateChanged içinde):
+// - Google oturumu varsa -> bulutla senkronize homeScreen
+// - Yok ama "yerel mod" seçilmişse -> continueLocal() ile direkt homeScreen
+// - İkisi de yoksa -> loginScreen (kullanıcı seçim yapar)
+function continueLocal(){
+  localStorage.setItem('mt_local_mode','1');
+  storageKey='mt_local_v1';
   loadLocal();
   document.documentElement.setAttribute('data-theme',cfg.theme||'default');
   applySettings();
   showScreen('homeScreen');renderHome();
   setSyncUI('ok','Yerel mod');
   checkBackupReminder();
-});
+}
+function resetAllData(){
+  if(confirm('Tüm veriler (bulut dahil) silinecek. Emin misiniz?')){
+    localStorage.removeItem(storageKey);
+    localStorage.removeItem('mt_local_v1');
+    localStorage.removeItem('mt_v4'); // eski (tek anahtarlı) sürümden kalan varsa
+    localStorage.removeItem('mt_local_mode');
+    dayData={};salaries={};monthData={};
+    cfg={vardiyaS:'15:00',vardiyaB:'23:00',carpan:1.5,aylikSaat:225,brutMaas:0,theme:'default'};
+    if(window._fbSignOut)window._fbSignOut();
+    location.reload();
+  }
+}
 </script>
 <style>
 @media(orientation:landscape) and (max-width:1024px){
@@ -111,6 +123,17 @@ body{display:flex;flex-direction:column;position:relative}
 .tc-cl{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--t3);margin-bottom:6px}
 .tc-cv{font-size:22px;font-weight:800;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
 .tc-cv.dim{color:var(--t3);font-weight:400;font-size:20px}
+.tc-cell.tapme{cursor:pointer;position:relative;isolation:isolate;border-radius:12px;overflow:hidden}
+.tc-cell.tapme:active{background:rgba(255,255,255,.05)}
+.tc-cell.tapme::before{content:'';position:absolute;inset:-60%;z-index:-2;background:conic-gradient(from 0deg,transparent 0deg,currentColor 16deg,transparent 50deg,transparent 310deg,currentColor 344deg,transparent 360deg);animation:tcSpin 2.1s linear infinite}
+.tc-cell.tapme::after{content:'';position:absolute;inset:2px;z-index:-1;border-radius:9px;background:#0b0f1c}
+.tc-cell.tapme.go{color:var(--green)}
+.tc-cell.tapme.stop{color:var(--red)}
+@keyframes tcSpin{to{transform:rotate(360deg)}}
+.tc-cv.action{display:flex;align-items:center;justify-content:center;gap:5px;font-size:15px;font-weight:800;letter-spacing:-.2px}
+.tc-cv.action svg{width:15px;height:15px;stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.tc-cv.action.go{color:var(--green)}
+.tc-cv.action.stop{color:var(--red)}
 .tc-bot{padding:12px 18px;border-top:1px solid var(--gb);display:flex;align-items:center;justify-content:space-between}
 .tc-det{font-size:12px;color:var(--t3)}
 .tc-earn{font-size:17px;font-weight:800;color:var(--green);letter-spacing:-.3px}
@@ -176,7 +199,9 @@ body{display:flex;flex-direction:column;position:relative}
 .mmc-dow{font-size:6px;font-weight:700;color:var(--t3);text-align:center}
 .mmc-daygrid{flex:1;display:grid;grid-template-columns:repeat(7,1fr);grid-template-rows:repeat(6,1fr);gap:1px;min-height:0}
 .mmc-day{display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:3px;font-size:8px;font-weight:600;color:var(--t3);line-height:1}
-.mmc-day.today{background:var(--bd);color:var(--blue);font-weight:800}
+.mmc-day.today{position:relative;isolation:isolate;overflow:hidden;background:transparent;color:var(--blue);font-weight:800}
+.mmc-day.today::before{content:'';position:absolute;inset:-60%;z-index:-2;background:conic-gradient(from 0deg,transparent 0deg,var(--blue) 16deg,transparent 50deg,transparent 310deg,var(--blue) 344deg,transparent 360deg);animation:tcSpin 2.4s linear infinite}
+.mmc-day.today::after{content:'';position:absolute;inset:1px;z-index:-1;border-radius:2px;background:var(--bd)}
 .mmc-day.wknd{opacity:.4}
 .mmc-day.has-pos{color:var(--green);font-weight:700}
 .mmc-day.has-neg{color:var(--red);font-weight:700}
@@ -185,7 +210,8 @@ body{display:flex;flex-direction:column;position:relative}
 .mmc.mmc-lg{padding:14px 10px 12px}
 .mmc.mmc-lg .mmc-name{font-size:15px;margin-bottom:10px}
 .mmc.mmc-lg .mmc-dow{font-size:10px}
-.mmc.mmc-lg .mmc-day{font-size:13px}
+.mmc.mmc-lg .mmc-day{font-size:13px;border-radius:7px}
+.mmc.mmc-lg .mmc-day.today::after{border-radius:5px}
 .mmc.mmc-lg .mmc-daygrid{gap:3px}
 .mmc.mmc-lg .mmc-dot{width:4px;height:4px;margin-top:2px}
 .mdet-hdr{display:flex;align-items:center;gap:10px;padding:10px 12px 8px;border-bottom:1px solid var(--gb);flex-shrink:0}
@@ -303,6 +329,24 @@ body{display:flex;flex-direction:column;position:relative}
 <div class="mesh"><div class="m1"></div><div class="m2"></div><div class="m3"></div></div>
 </div>
 
+<div class="screen hidden" id="loginScreen">
+
+  <div class="scroll" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;min-height:100%">
+    <div class="login-hero">
+      <h1>Mesai Takip</h1>
+      <p>Vardiyanı, mesaini ve kazancını tek yerden takip et.<br>Verilerin cihazlar arası senkronize olur.</p>
+    </div>
+    <button onclick="signIn()" style="margin-top:32px;display:flex;align-items:center;gap:10px;padding:15px 26px;background:#fff;color:#1a1a1a;border:none;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif">
+      <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#4285F4" d="M45.12 24.5c0-1.56-.14-3.06-.4-4.5H24v8.51h11.84c-.51 2.75-2.06 5.08-4.39 6.64v5.52h7.11c4.16-3.83 6.56-9.47 6.56-16.17z"/><path fill="#34A853" d="M24 46c5.94 0 10.92-1.97 14.56-5.33l-7.11-5.52c-1.97 1.32-4.49 2.1-7.45 2.1-5.73 0-10.58-3.87-12.31-9.07H4.34v5.7C7.96 41.07 15.4 46 24 46z"/><path fill="#FBBC05" d="M11.69 28.18C11.25 26.86 11 25.45 11 24s.25-2.86.69-4.18v-5.7H4.34C2.85 17.09 2 20.45 2 24s.85 6.91 2.34 9.88l7.35-5.7z"/><path fill="#EA4335" d="M24 10.75c3.23 0 6.13 1.11 8.41 3.29l6.31-6.31C34.91 4.18 29.93 2 24 2 15.4 2 7.96 6.93 4.34 14.12l7.35 5.7c1.73-5.2 6.58-9.07 12.31-9.07z"/></svg>
+      Google ile Giriş Yap
+    </button>
+    <button onclick="continueLocal()" style="margin-top:14px;padding:13px 26px;background:transparent;color:var(--t2);border:1px solid var(--gb);border-radius:14px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">
+      Yerel Modda Devam Et
+    </button>
+    <p style="margin-top:14px;font-size:11.5px;color:var(--t3);max-width:280px;line-height:1.5">Yerel modda veriler sadece bu cihazda tutulur, cihazlar arası senkronize olmaz. İstediğin zaman Ayarlar'dan Google hesabına geçebilirsin.</p>
+  </div>
+</div>
+
 <div class="screen hidden" id="homeScreen">
   <div class="scroll">
     <div class="home-hero" style="padding-top:calc(var(--st) + 14px)">
@@ -337,8 +381,8 @@ body{display:flex;flex-direction:column;position:relative}
         <div class="tc-status"><div class="stdot" id="stdot"></div><span class="stxt" id="sttxt">Mesai girilmedi</span></div>
       </div>
       <div class="tc-grid">
-        <div class="tc-cell"><div class="tc-cl">Giriş</div><div class="tc-cv dim" id="tcG">—</div></div>
-        <div class="tc-cell"><div class="tc-cl">Çıkış</div><div class="tc-cv dim" id="tcC">—</div></div>
+        <div class="tc-cell" id="tcGCell"><div class="tc-cl">Giriş</div><div class="tc-cv dim" id="tcG">—</div></div>
+        <div class="tc-cell" id="tcCCell"><div class="tc-cl">Çıkış</div><div class="tc-cv dim" id="tcC">—</div></div>
         <div class="tc-cell"><div class="tc-cl">Süre</div><div class="tc-cv dim" id="tcS">—</div></div>
       </div>
       <div class="tc-bot"><span class="tc-det" id="tcDet"></span><span class="tc-earn" id="tcEarn"></span></div>
@@ -518,7 +562,11 @@ body{display:flex;flex-direction:column;position:relative}
         JSON'dan Geri Yükle
       </button>
       <input type="file" id="importFile" accept=".json" style="display:none" onchange="handleImport(this)">
-      <button class="sact red" onclick="signOut()">
+      <button class="sact" onclick="signOut()">
+        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Çıkış Yap
+      </button>
+      <button class="sact red" onclick="resetAllData()">
         <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
         Tüm Veriyi Sıfırla
       </button>
@@ -645,6 +693,7 @@ const today=new Date();
 const todayKey=dk(today.getFullYear(),today.getMonth(),today.getDate());
 let curY=today.getFullYear(),curM=today.getMonth();
 let openDays={},modalKey=null,syncTimer=null,isSyncing=false;
+let storageKey='mt_local_v1'; // yerel mod ve bulut modu ayrı anahtarlarda tutulur, birbirine karışmaz
 let userInfo=null;
 let cfg={vardiyaS:'15:00',vardiyaB:'23:00',carpan:1.5,aylikSaat:225,brutMaas:0,theme:'default'};
 let salaries={},dayData={},monthData={};
@@ -748,8 +797,8 @@ function getMesailer(r){if(r.mesailer&&r.mesailer.length)return r.mesailer;if(r.
 function ensureMesailer(key){if(!dayData[key])dayData[key]={};const r=dayData[key];if(!r.mesailer){if(r.giris){r.mesailer=[{giris:r.giris,cikis:r.cikis||''}];delete r.giris;delete r.cikis;}else r.mesailer=[];}return r;}
 function calcMonth(y,m){let mn=0,tm=0,yl=0,yk=0;for(let d=1;d<=daysIn(y,m);d++){const c=calcDay(dk(y,m,d));mn+=c.netMin;tm+=c.tm;yl+=c.yol;yk+=c.yemek;}return{mn,tm,yl,yk};}
 
-function saveLocal(){try{localStorage.setItem('mt_v4',JSON.stringify({cfg,salaries,dayData,monthData,profile,backupSettings,ts:Date.now()}));}catch(e){}}
-function loadLocal(){try{const r=localStorage.getItem('mt_v4');if(r){const d=JSON.parse(r);cfg=Object.assign(cfg,d.cfg||{});if(cfg.bitis&&!cfg.vardiyaB)cfg.vardiyaB=cfg.bitis;salaries=d.salaries||{};dayData=d.dayData||{};monthData=d.monthData||{};profile=Object.assign({name:'',workName:'',avatar:'',avatarType:'emoji',startDate:''},d.profile||{});backupSettings=Object.assign({period:'weekly',customDay:1,lastBackup:null},d.backupSettings||{});}}catch(e){}}
+function saveLocal(){try{localStorage.setItem(storageKey,JSON.stringify({cfg,salaries,dayData,monthData,profile,backupSettings,ts:Date.now()}));}catch(e){}}
+function loadLocal(){try{const r=localStorage.getItem(storageKey);if(r){const d=JSON.parse(r);cfg=Object.assign(cfg,d.cfg||{});if(cfg.bitis&&!cfg.vardiyaB)cfg.vardiyaB=cfg.bitis;salaries=d.salaries||{};dayData=d.dayData||{};monthData=d.monthData||{};profile=Object.assign({name:'',workName:'',avatar:'',avatarType:'emoji',startDate:''},d.profile||{});backupSettings=Object.assign({period:'weekly',customDay:1,lastBackup:null},d.backupSettings||{});}else{salaries={};dayData={};monthData={};profile={name:'',workName:'',avatar:'',avatarType:'emoji',startDate:''};backupSettings={period:'weekly',customDay:1,lastBackup:null};}}catch(e){}}
 
 function updateUser(){
   if(!userInfo)return;
@@ -992,23 +1041,29 @@ function renderHome(){
   const setC=(id,val)=>{const el=$(id);if(!el)return;el.textContent=val||'—';el.className='tc-cv'+(val?'':' dim');};
   const dispGiris=todayBlks.length>1?todayBlks.length+' blok':lastBlk?.giris||'';
   const dispCikis=todayBlks.length>1?'':lastBlk?.cikis||'';
-  setC('tcG',dispGiris);setC('tcC',dispCikis);
+  const gCell=$('tcGCell'),cCell=$('tcCCell'),gEl=$('tcG'),cEl=$('tcC');
+  if(!hasAny){
+    if(gEl){gEl.className='tc-cv action go';gEl.innerHTML=`<svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>Başla`;}
+    if(gCell){gCell.classList.add('tapme','go');gCell.classList.remove('stop');gCell.onclick=(e)=>{e.stopPropagation();openGirisSheet();};}
+    if(cCell){cCell.classList.remove('tapme','go','stop');cCell.onclick=null;}
+    setC('tcC','');
+  }else if(hasAny&&!allDone){
+    setC('tcG',dispGiris);
+    if(gCell){gCell.classList.remove('tapme','go','stop');gCell.onclick=null;}
+    if(cEl){cEl.className='tc-cv action stop';cEl.innerHTML=`<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>Bitir`;}
+    if(cCell){cCell.classList.add('tapme','stop');cCell.classList.remove('go');cCell.onclick=(e)=>{e.stopPropagation();openCikisSheet(todayKey);};}
+  }else{
+    setC('tcG',dispGiris);setC('tcC',dispCikis);
+    if(gCell){gCell.classList.remove('tapme','go','stop');gCell.onclick=null;}
+    if(cCell){cCell.classList.remove('tapme','go','stop');cCell.onclick=null;}
+  }
   const sureVal=c.netMin>0?fmtD(c.netMin):c.netMin<0?fmtD(Math.abs(c.netMin))+' eksik':'';
   setC('tcS',sureVal);
   const parts=[];if(c.yol>0)parts.push('Yol '+fmtTL(c.yol));if(c.yemek>0)parts.push('Yemek '+fmtTL(c.yemek));
   if($('tcDet'))$('tcDet').textContent=parts.join(' · ');if($('tcEarn'))$('tcEarn').textContent=c.top>0?fmtTL(c.top):'';
   const acts=$('acts');if(!acts)return;acts.innerHTML='';
-  const arrSVG=`<svg class="a-arr" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>`;
   const miniCalHTML=buildMiniMonthHTML(today.getFullYear(),today.getMonth(),{style:'min-height:250px',big:true,onclick:`goCalendar();setTimeout(()=>openMonthDetail(${today.getFullYear()},${today.getMonth()}),350)`});
-  if(!hasAny){
-    acts.innerHTML=`<button class="abig start" onclick="openGirisSheet()"><div class="a-icon"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div><div class="a-txt"><strong>Mesaiye Başla</strong><small>Giriş saatini kaydet</small></div>${arrSVG}</button>
-    ${miniCalHTML}`;
-  }else if(hasAny&&!allDone){
-    acts.innerHTML=`<button class="abig stop" onclick="openCikisSheet('${todayKey}')"><div class="a-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div><div class="a-txt"><strong>Mesaiden Çık</strong><small>Çıkış saatini kaydet</small></div>${arrSVG}</button>
-    ${miniCalHTML}`;
-  }else{
-    acts.innerHTML=miniCalHTML;
-  }
+  acts.innerHTML=miniCalHTML;
   if($('mhead'))$('mhead').textContent=MONTHS[today.getMonth()]+' Özeti';
   const mc=calcMonth(today.getFullYear(),today.getMonth()),netMaas=getSalary(today.getFullYear(),today.getMonth());
   const md=getMonthData(today.getFullYear(),today.getMonth());const primTop=(md.devamPrimi||0)+(md.performansPrimi||0);
@@ -1114,7 +1169,7 @@ function buildDayDetailHTML(key,r,c){
     ${toggle(r.calisilmadi,'var(--red)')}
   </div>
 </div>
-<div class="frow" style="${r.kompMesai?'opacity:.35;pointer-events:none':''}"><div class="fi"><label>Vardiya Başlangıcı</label><input type="time" value="${r.vardiyaS!=null?r.vardiyaS:fmtT(getVardiya(key).s)}" onchange="setVardiya('${key}','vardiyaS',this.value)"></div><div class="fi"><label>Vardiya Bitişi</label><input type="time" value="${r.vardiyaB!=null?r.vardiyaB:fmtT(getVardiya(key).b)}" onchange="setVardiya('${key}','vardiyaB',this.value)"></div></div>
+<div class="frow" style="${r.kompMesai?'opacity:.35;pointer-events:none':''}"><div class="fi"><label>Başlangıç</label><input type="time" value="${r.vardiyaS!=null?r.vardiyaS:fmtT(getVardiya(key).s)}" onchange="setVardiya('${key}','vardiyaS',this.value)"></div><div class="fi"><label>Bitiş</label><input type="time" value="${r.vardiyaB!=null?r.vardiyaB:fmtT(getVardiya(key).b)}" onchange="setVardiya('${key}','vardiyaB',this.value)"></div></div>
 <div style="margin-top:8px;font-size:11px;color:var(--t3)">${r.calisilmadi?'Bu gün çalışılmadı sayılıyor, vardiya süresi mesaiden düşülüyor.':r.kompMesai?'Tüm çalışma süresi mesai sayılıyor.':'Sonraki günler bu vardiyayı otomatik alır.'}</div></div>
   <div class="det-s"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;${r.calisilmadi?'opacity:.35;pointer-events:none':''}"><div class="det-lbl" style="margin-bottom:0">Mesai Blokları</div><button onclick="addMesaiBlokOv('${key}')" style="display:flex;align-items:center;gap:5px;padding:6px 12px;background:var(--bd);border:1px solid var(--bb);border-radius:8px;color:var(--blue);font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif"><svg style="width:14px;height:14px;stroke:currentColor;stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Ekle</button></div><div id="mbloks-ov-${key}" style="${r.calisilmadi?'opacity:.35;pointer-events:none':''}">${buildMesaiBloksHTML(key,r)}</div>
   <div class="frow3" style="margin-top:10px"><div class="fi"><label>Çarpan <span onclick="clearCarpan('${key}')" style="color:var(--t3);font-size:9px;cursor:pointer;margin-left:2px">[vars.]</span></label><input type="number" step="0.25" min="1" value="${cp}" oninput="setField('${key}','carpanOverride',parseFloat(this.value));refreshDayOv('${key}')"></div><div class="fi"><label>Yol (₺)</label><input type="number" min="0" placeholder="${getYol(key)||0}" value="${r.yolTutar||''}" onchange="setField('${key}','yolTutar',this.value);refreshDayOv('${key}')"></div><div class="fi"><label>Yemek (₺)</label><input type="number" min="0" placeholder="0" value="${r.yemekTutar||''}" onchange="setField('${key}','yemekTutar',this.value);refreshDayOv('${key}')"></div></div>
@@ -1154,7 +1209,7 @@ function openGirisSheet(key){
 function confirmGiris(){
   const val=$('gInp').value;if(!val){closeOv('girisOv');return;}
   const r=ensureMesailer(modalKey);r.mesailer.push({giris:val,cikis:''});saveLocal();debouncePush();
-  const key=modalKey;closeOv('girisOv');setTimeout(()=>openCikisSheet(key),350);renderAll();
+  closeOv('girisOv');renderAll();
 }
 function openCikisSheet(key){
   modalKey=key;const r=getDay(key);const blocks=getMesailer(r);const last=blocks[blocks.length-1];const girisVal=last?last.giris:'';
@@ -1244,6 +1299,130 @@ function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show')
 window.onerror=function(msg,src,line){toast('Hata: '+msg+' ('+line+')');return false;};
 ['vb1','vb2'].forEach(id=>{const el=$(id);if(el)el.textContent=VERSION;});
 loadLocal();
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+</script>
+
+<script type="module">
+import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import{getAuth,GoogleAuthProvider,signInWithPopup,signOut as fbSignOut,onAuthStateChanged,setPersistence,browserLocalPersistence}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import{getDatabase,ref,get,update,onValue,off}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+const FB={apiKey:'AIzaSyDPJQV3IC0y9w5cHOCm9Cf-fWmCCyc7-hQ',authDomain:'koruker-mesai-takip.firebaseapp.com',databaseURL:'https://koruker-mesai-takip-default-rtdb.europe-west1.firebasedatabase.app',projectId:'koruker-mesai-takip',storageBucket:'koruker-mesai-takip.firebasestorage.app',messagingSenderId:'558071273909',appId:'1:558071273909:web:19d90aeb57d3e07d7c61fc'};
+const fbApp=initializeApp(FB);
+const fbAuth=getAuth(fbApp);
+const fbDb=getDatabase(fbApp);
+let fbUid=null,fbYear=null,dbListener=null;
+
+async function fbPush(){
+  if(!fbUid||isSyncing)return;
+  isSyncing=true;setSyncUI('syncing','Kaydediliyor…');
+  try{
+    const updates={};
+    updates[`users/${fbUid}/${fbYear}/cfg`]=cfg;
+    updates[`users/${fbUid}/${fbYear}/salaries`]=salaries;
+    updates[`users/${fbUid}/${fbYear}/monthData`]=monthData;
+    updates[`users/${fbUid}/${fbYear}/profile`]=profile;
+    updates[`users/${fbUid}/${fbYear}/backupSettings`]=backupSettings;
+    for(const[k,v]of Object.entries(dayData)) updates[`users/${fbUid}/${fbYear}/days/${k}`]=v;
+    await update(ref(fbDb),updates);
+    setSyncUI('ok','Kaydedildi ✓');
+  }catch(e){setSyncUI('err','Hata ✗');toast('Firebase: '+e.message);}
+  finally{isSyncing=false;}
+}
+
+async function fbPull(){
+  if(!fbUid)return;
+  setSyncUI('syncing','Çekiliyor…');
+  try{
+    const snap=await get(ref(fbDb,`users/${fbUid}/${fbYear}`));
+    if(snap.exists()){
+      const d=snap.val();
+      if(d.cfg)cfg=Object.assign(cfg,d.cfg);
+      if(d.salaries)salaries=d.salaries;
+      if(d.monthData)monthData=d.monthData;
+      if(d.days)dayData=d.days;
+      if(d.profile)profile=Object.assign(profile,d.profile);
+      if(d.backupSettings)backupSettings=Object.assign(backupSettings,d.backupSettings);
+    }
+    saveLocal();applySettings();setSyncUI('ok','Senkronize ✓');
+  }catch(e){setSyncUI('err','Hata ✗');toast('Çekme: '+e.message);}
+}
+
+function startRealtimeSync(){
+  if(dbListener){off(ref(fbDb,`users/${fbUid}/${fbYear}`));dbListener=null;}
+  dbListener=onValue(ref(fbDb,`users/${fbUid}/${fbYear}`),(snap)=>{
+    if(!snap.exists())return;
+    const d=snap.val();
+    if(d.cfg)cfg=Object.assign(cfg,d.cfg);
+    if(d.salaries)salaries=d.salaries;
+    if(d.monthData)monthData=d.monthData;
+    if(d.days)dayData=d.days;
+    if(d.profile)profile=Object.assign(profile,d.profile);
+    if(d.backupSettings)backupSettings=Object.assign(backupSettings,d.backupSettings);
+    saveLocal();applySettings();renderAll();setSyncUI('ok','Senkronize ✓');
+  });
+}
+
+function debouncePush(){
+  clearTimeout(syncTimer);syncTimer=setTimeout(()=>window._fbPush&&window._fbPush(),1500);
+}
+async function syncNow(){
+  if(!fbUid){saveLocal();renderAll();setSyncUI('ok','Yerel kayıt ✓');return;}
+  await fbPull();renderAll();
+}
+
+async function signIn(){
+  try{
+    const provider=new GoogleAuthProvider();
+    await setPersistence(fbAuth,browserLocalPersistence);
+    await signInWithPopup(fbAuth,provider);
+  }catch(e){toast('Giriş hatası: '+e.message);}
+}
+
+function signOut(){
+  if(dbListener){off(ref(fbDb,`users/${fbUid}/${fbYear}`));dbListener=null;}
+  try{fbSignOut(fbAuth);}catch(e){}
+  localStorage.removeItem('mt_local_mode');
+  fbUid=null;userInfo=null;
+  storageKey='mt_local_v1';
+  dayData={};salaries={};monthData={};
+  showScreen('loginScreen');
+}
+
+setPersistence(fbAuth,browserLocalPersistence).then(()=>{
+  onAuthStateChanged(fbAuth,async(user)=>{
+    if(user){
+      localStorage.removeItem('mt_local_mode');
+      fbUid=user.uid;
+      fbYear=new Date().getFullYear();
+      storageKey='mt_cloud_'+fbUid;
+      userInfo={name:user.displayName,email:user.email,picture:user.photoURL};
+      loadLocal();
+      document.documentElement.setAttribute('data-theme',cfg.theme||'default');
+      applySettings();
+      showScreen('homeScreen');renderHome();
+      await fbPull();
+      renderAll();
+      checkBackupReminder();
+      startRealtimeSync();
+    } else if(localStorage.getItem('mt_local_mode')==='1'){
+      continueLocal();
+    } else {
+      showScreen('loginScreen');
+    }
+  });
+});
+
+window.signIn=signIn;
+window.signOut=signOut;
+window.syncNow=syncNow;
+window._fbPush=fbPush;
+window._fbSignOut=()=>{try{fbSignOut(fbAuth);}catch(e){}};
+window.debouncePush=debouncePush;
 </script>
 </body>
 </html>
