@@ -375,6 +375,11 @@ body{display:flex;flex-direction:column;position:relative}
       <div class="banner-txt"><div class="banner-t">Yedekleme zamanı geldi</div><div class="banner-s">Verilerini JSON olarak indir</div></div>
       <button class="banner-btn" onclick="doAutoBackup()">Şimdi İndir</button>
     </div>
+    <div class="banner" id="offlineBanner">
+      <svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:var(--gold);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0119 12.55"/><path d="M5 12.55a10.94 10.94 0 015.17-2.39"/><path d="M10.71 5.05A16 16 0 0122.58 9"/><path d="M1.42 9a15.91 15.91 0 014.7-2.88"/><path d="M8.53 16.11a6 6 0 016.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+      <div class="banner-txt"><div class="banner-t">Buluta yedeklenemedi</div><div class="banner-s" id="offlineBannerSub">Veriler cihazda kayıtlı, internet gelince tekrar denenecek</div></div>
+      <button class="banner-btn" onclick="retryCloudSync()">Şimdi Dene</button>
+    </div>
     <div class="tc" onclick="openEditToday()" style="cursor:pointer">
       <div class="tc-top">
         <span class="tc-lbl">Bugünün Mesaisi</span>
@@ -809,7 +814,7 @@ function updateUser(){
 }
 function setSyncUI(state,txt){
   const dot=$('sdot'),t=$('stxt');
-  if(dot)dot.style.background=state==='ok'?'var(--green)':state==='syncing'?'var(--gold)':'var(--red)';
+  if(dot)dot.style.background=state==='ok'?'var(--green)':state==='syncing'?'var(--gold)':state==='offline'?'var(--gold)':'var(--red)';
   if(t){if(state==='ok'){const now=new Date();const pad=n=>String(n).padStart(2,'0');t.textContent=txt+' '+pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());}else t.textContent=txt;}
 }
 
@@ -994,6 +999,23 @@ function saveBackupSettings(){
   saveLocal();debouncePush();applyBackupUI();checkBackupReminder();
   toast('Yedekleme ayarı kaydedildi ✓');
 }
+// ---- Çevrimdışı senkronizasyon durumu ----
+function isCloudMode(){return typeof storageKey==='string'&&storageKey.indexOf('mt_cloud_')===0;}
+function pendingSyncKey(){return storageKey+'_pending';}
+function markPendingSync(){localStorage.setItem(pendingSyncKey(),'1');updateOfflineBanner();}
+function clearPendingSync(){localStorage.removeItem(pendingSyncKey());updateOfflineBanner();}
+function hasPendingSync(){return localStorage.getItem(pendingSyncKey())==='1';}
+function updateOfflineBanner(){
+  const b=$('offlineBanner');if(!b)return;
+  b.style.display=(isCloudMode()&&hasPendingSync())?'flex':'none';
+}
+function retryCloudSync(){if(window._fbPush)window._fbPush();}
+window.addEventListener('online',()=>{
+  if(isCloudMode()&&hasPendingSync()&&window._fbPush)window._fbPush();
+});
+window.addEventListener('offline',()=>{
+  if(isCloudMode())setSyncUI('offline','Yerel olarak kaydedildi (çevrimdışı)');
+});
 function checkBackupReminder(){
   const now=new Date();
   let due=false;
@@ -1319,6 +1341,11 @@ let fbUid=null,fbYear=null,dbListener=null;
 
 async function fbPush(){
   if(!fbUid||isSyncing)return;
+  if(!navigator.onLine){
+    markPendingSync();
+    setSyncUI('offline','Yerel olarak kaydedildi (çevrimdışı)');
+    return;
+  }
   isSyncing=true;setSyncUI('syncing','Kaydediliyor…');
   try{
     const updates={};
@@ -1329,8 +1356,12 @@ async function fbPush(){
     updates[`users/${fbUid}/${fbYear}/backupSettings`]=backupSettings;
     for(const[k,v]of Object.entries(dayData)) updates[`users/${fbUid}/${fbYear}/days/${k}`]=v;
     await update(ref(fbDb),updates);
+    clearPendingSync();
     setSyncUI('ok','Kaydedildi ✓');
-  }catch(e){setSyncUI('err','Hata ✗');toast('Firebase: '+e.message);}
+  }catch(e){
+    markPendingSync();
+    setSyncUI('offline','Yerel olarak kaydedildi (bağlantı hatası)');
+  }
   finally{isSyncing=false;}
 }
 
@@ -1405,9 +1436,11 @@ setPersistence(fbAuth,browserLocalPersistence).then(()=>{
       document.documentElement.setAttribute('data-theme',cfg.theme||'default');
       applySettings();
       showScreen('homeScreen');renderHome();
+      if(hasPendingSync())await fbPush(); // çevrimdışıyken kaydedilmiş bekleyen değişiklik varsa önce onu gönder
       await fbPull();
       renderAll();
       checkBackupReminder();
+      updateOfflineBanner();
       startRealtimeSync();
     } else if(localStorage.getItem('mt_local_mode')==='1'){
       continueLocal();
