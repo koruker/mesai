@@ -34,6 +34,7 @@ function resetAllData(){
     localStorage.removeItem('mt_local_v1');
     localStorage.removeItem('mt_v4'); // eski (tek anahtarlı) sürümden kalan varsa
     localStorage.removeItem('mt_local_mode');
+    localStorage.removeItem('mt_last_uid');
     dayData={};salaries={};monthData={};
     cfg={vardiyaS:'15:00',vardiyaB:'23:00',carpan:1.5,aylikSaat:225,brutMaas:0,theme:'default'};
     if(window._fbSignOut)window._fbSignOut();
@@ -1320,7 +1321,29 @@ function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show')
 
 window.onerror=function(msg,src,line){toast('Hata: '+msg+' ('+line+')');return false;};
 ['vb1','vb2'].forEach(id=>{const el=$(id);if(el)el.textContent=VERSION;});
-loadLocal();
+
+// ---- Anında açılış ----
+// Firebase modülü (CDN'den import edilen) internet yoksa dakikalarca takılabiliyor.
+// O yüzden ekranı gösterme kararı burada, senkron ve ağdan tamamen bağımsız veriliyor.
+// Firebase modülü yüklendiğinde (varsa) bulut senkronizasyonunu arkaplanda üstlenir,
+// gerekirse gerçek oturum durumuna göre ekranı günceller.
+(function instantReveal(){
+  const lastUid=localStorage.getItem('mt_last_uid');
+  if(lastUid){
+    storageKey='mt_cloud_'+lastUid;
+    loadLocal();
+    document.documentElement.setAttribute('data-theme',cfg.theme||'default');
+    applySettings();
+    showScreen('homeScreen');renderHome();
+    checkBackupReminder();
+    updateOfflineBanner();
+  }else if(localStorage.getItem('mt_local_mode')==='1'){
+    continueLocal();
+  }else{
+    showScreen('loginScreen');
+  }
+})();
+
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
     navigator.serviceWorker.register('sw.js').catch(()=>{});
@@ -1355,7 +1378,8 @@ async function fbPush(){
     updates[`users/${fbUid}/${fbYear}/profile`]=profile;
     updates[`users/${fbUid}/${fbYear}/backupSettings`]=backupSettings;
     for(const[k,v]of Object.entries(dayData)) updates[`users/${fbUid}/${fbYear}/days/${k}`]=v;
-    await update(ref(fbDb),updates);
+    const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error('zaman aşımı')),8000));
+    await Promise.race([update(ref(fbDb),updates),timeout]);
     clearPendingSync();
     setSyncUI('ok','Kaydedildi ✓');
   }catch(e){
@@ -1367,9 +1391,14 @@ async function fbPush(){
 
 async function fbPull(){
   if(!fbUid)return;
+  if(!navigator.onLine){
+    setSyncUI('offline','Yerel veri gösteriliyor (çevrimdışı)');
+    return;
+  }
   setSyncUI('syncing','Çekiliyor…');
   try{
-    const snap=await get(ref(fbDb,`users/${fbUid}/${fbYear}`));
+    const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error('zaman aşımı')),8000));
+    const snap=await Promise.race([get(ref(fbDb,`users/${fbUid}/${fbYear}`)),timeout]);
     if(snap.exists()){
       const d=snap.val();
       if(d.cfg)cfg=Object.assign(cfg,d.cfg);
@@ -1380,7 +1409,7 @@ async function fbPull(){
       if(d.backupSettings)backupSettings=Object.assign(backupSettings,d.backupSettings);
     }
     saveLocal();applySettings();setSyncUI('ok','Senkronize ✓');
-  }catch(e){setSyncUI('err','Hata ✗');toast('Çekme: '+e.message);}
+  }catch(e){setSyncUI('offline','Yerel veri gösteriliyor (bağlantı yok)');}
 }
 
 function startRealtimeSync(){
@@ -1418,6 +1447,7 @@ function signOut(){
   if(dbListener){off(ref(fbDb,`users/${fbUid}/${fbYear}`));dbListener=null;}
   try{fbSignOut(fbAuth);}catch(e){}
   localStorage.removeItem('mt_local_mode');
+  localStorage.removeItem('mt_last_uid');
   fbUid=null;userInfo=null;
   storageKey='mt_local_v1';
   dayData={};salaries={};monthData={};
@@ -1428,6 +1458,7 @@ setPersistence(fbAuth,browserLocalPersistence).then(()=>{
   onAuthStateChanged(fbAuth,async(user)=>{
     if(user){
       localStorage.removeItem('mt_local_mode');
+      localStorage.setItem('mt_last_uid',user.uid);
       fbUid=user.uid;
       fbYear=new Date().getFullYear();
       storageKey='mt_cloud_'+fbUid;
@@ -1443,8 +1474,10 @@ setPersistence(fbAuth,browserLocalPersistence).then(()=>{
       updateOfflineBanner();
       startRealtimeSync();
     } else if(localStorage.getItem('mt_local_mode')==='1'){
+      localStorage.removeItem('mt_last_uid');
       continueLocal();
     } else {
+      localStorage.removeItem('mt_last_uid');
       showScreen('loginScreen');
     }
   });
