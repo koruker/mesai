@@ -1391,6 +1391,13 @@ async function fbPush(){
 
 async function fbPull(){
   if(!fbUid)return;
+  if(hasPendingSync()){
+    // Henüz buluta gönderilemeyen yerel değişiklik var - onu ezmemek için çekmeyi atla.
+    // (Bu değişikliği göndermek için önce fbPush çağrılmış olmalı; hâlâ pending ise
+    // muhtemelen hâlâ bağlantı sorunu var.)
+    setSyncUI('offline','Yerel değişiklik bekleniyor (gönderilemedi)');
+    return;
+  }
   if(!navigator.onLine){
     setSyncUI('offline','Yerel veri gösteriliyor (çevrimdışı)');
     return;
@@ -1415,6 +1422,7 @@ async function fbPull(){
 function startRealtimeSync(){
   if(dbListener){off(ref(fbDb,`users/${fbUid}/${fbYear}`));dbListener=null;}
   dbListener=onValue(ref(fbDb,`users/${fbUid}/${fbYear}`),(snap)=>{
+    if(isSyncing||hasPendingSync())return; // henüz buluta gönderilmemiş yerel değişiklik var - üzerine yazma
     if(!snap.exists())return;
     const d=snap.val();
     if(d.cfg)cfg=Object.assign(cfg,d.cfg);
@@ -1428,6 +1436,7 @@ function startRealtimeSync(){
 }
 
 function debouncePush(){
+  markPendingSync(); // bu değişiklik henüz buluta gönderilmedi - anında işaretle
   clearTimeout(syncTimer);syncTimer=setTimeout(()=>window._fbPush&&window._fbPush(),1500);
 }
 async function syncNow(){
