@@ -175,7 +175,7 @@ body{display:flex;flex-direction:column;position:relative}
 .sval.blue{color:var(--blue)}
 .sval.green{color:var(--green)}
 .sval.gold{color:var(--gold)}
-.ssub{font-size:11px;color:var(--t3);margin-top:5px;font-weight:500}
+.ssub{font-size:11px;color:var(--t3);margin-top:5px;font-weight:500;line-height:1.55}
 .nav{flex-shrink:0;background:rgba(6,9,20,0.9);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-top:1px solid var(--gb);padding:8px 0 calc(8px + var(--sb));display:flex;position:relative;z-index:5}
 .nbtn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;cursor:pointer;border:none;background:none;font-family:'Inter',sans-serif;color:var(--t3);transition:color .2s}
 .nbtn.on{color:var(--blue)}
@@ -230,7 +230,12 @@ body{display:flex;flex-direction:column;position:relative}
 .det-dow{text-align:center;font-size:9px;font-weight:700;color:var(--t3)}
 .mdet-daygrid{flex:1;display:grid;grid-template-columns:repeat(7,1fr);grid-template-rows:repeat(6,1fr);gap:3px;min-height:0}
 .dgrid-empty{}
-.dgrid-day{border-radius:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:background .15s;overflow:hidden}
+.dgrid-day{position:relative;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:background .15s;overflow:hidden}
+.dgrid-tm{position:absolute;top:2px;left:50%;transform:translateX(-50%);font-size:clamp(5.5px,1.5vw,8.5px);font-weight:800;color:var(--gold);white-space:nowrap;line-height:1;max-width:94%;overflow:hidden;text-overflow:ellipsis}
+.dgrid-yol,.dgrid-yemek{position:absolute;bottom:2px;font-size:clamp(5px,1.2vw,7px);font-weight:700;color:var(--t3);line-height:1.2;max-width:46%;overflow:hidden}
+.dgrid-yol{left:2px;text-align:left}
+.dgrid-yemek{right:2px;text-align:right}
+.dgrid-yol span,.dgrid-yemek span{display:block;font-size:clamp(4.5px,1.1vw,6px);color:var(--t3);opacity:.65;text-transform:uppercase;letter-spacing:.02em}
 .dgrid-day:active{background:rgba(255,255,255,.14)}
 .dgrid-day.today{border-color:var(--bb);background:var(--bd)}
 .dgrid-day.wknd{background:var(--rdd);border-color:rgba(255,107,128,.15)}
@@ -397,7 +402,7 @@ body{display:flex;flex-direction:column;position:relative}
     <div class="sec-head" id="mhead"></div>
     <div class="sgrid">
       <div class="scard"><div class="slbl">Mesai Saati</div><div class="sval blue" id="ss1">0s</div><div class="ssub" id="ss1s">—</div></div>
-      <div class="scard"><div class="slbl">Yol + Yemek</div><div class="sval gold" id="ss2">0₺</div><div class="ssub">Ekstra ödemeler</div></div>
+      <div class="scard"><div class="slbl">Yol + Yemek + Prim</div><div class="sval gold" id="ss2">0₺</div><div class="ssub" id="ss2s">Ekstra ödemeler</div></div>
       <div class="scard wide" onclick="goCalendar();setTimeout(()=>openMonthDetail(today.getFullYear(),today.getMonth()),350)" style="cursor:pointer;position:relative">
         <div class="slbl">Bu Ay Toplam (Maaş Dahil)</div>
         <div class="sval green" id="ss3">—</div>
@@ -1092,6 +1097,8 @@ function renderHome(){
   const md=getMonthData(today.getFullYear(),today.getMonth());const primTop=(md.devamPrimi||0)+(md.performansPrimi||0);
   if($('ss1'))$('ss1').textContent=fmtD(Math.abs(mc.mn));if($('ss1s'))$('ss1s').textContent=maskTL(fmtTL(mc.tm))+' mesai ücreti';
   if($('ss2'))$('ss2').textContent=maskTL(fmtTL(mc.yl+mc.yk+primTop));
+  const ss2Parts=[];if(mc.yl>0)ss2Parts.push('Yol '+maskTL(fmtTL(mc.yl)));if(mc.yk>0)ss2Parts.push('Yemek '+maskTL(fmtTL(mc.yk)));if(primTop>0)ss2Parts.push('Prim '+maskTL(fmtTL(primTop)));
+  if($('ss2s'))$('ss2s').innerHTML=ss2Parts.length?ss2Parts.join('<br>'):'Ekstra ödemeler';
   if($('ss3'))$('ss3').textContent=maskTL(fmtTL(netMaas+mc.tm+mc.yl+mc.yk+primTop));
   const subParts=[maskTL(fmtTL(netMaas))+' net maaş'];if(mc.tm!==0)subParts.push(maskTL(fmtTL(mc.tm))+' mesai');if(primTop>0)subParts.push(maskTL(fmtTL(primTop))+' prim');
   if($('ss3s'))$('ss3s').textContent=subParts.join(' + ');
@@ -1134,11 +1141,23 @@ function openMonthDetail(y,m){
   $('yearView').className='cal-sub left';$('monthView').className='cal-sub active';
 }
 function calGoBack(){if($('calTitle'))$('calTitle').textContent='Takvim';$('yearView').className='cal-sub active';$('monthView').className='cal-sub right';detailY=null;detailM=null;}
+function dayCellClass(isToday,isWE,hasEntry,netMin){
+  let cls='dgrid-day';if(isToday)cls+=' today';else if(isWE)cls+=' wknd';
+  if(hasEntry&&netMin>0)cls+=' has-pos';else if(hasEntry&&netMin<0)cls+=' has-neg';
+  return cls;
+}
+function buildDayCellContent(d,c,hasEntry){
+  const minTxt=hasEntry&&c.netMin!==0?fmtD(Math.abs(c.netMin))+(c.netMin<0?' eksik':''):'';
+  const tmTxt=c.tm!==0?maskTL(fmtTL(c.tm)):'';
+  const yolTxt=c.yol>0?maskTL(fmtTL(c.yol)):'';
+  const yemekTxt=c.yemek>0?maskTL(fmtTL(c.yemek)):'';
+  return `${tmTxt?`<div class="dgrid-tm">${tmTxt}</div>`:''}<div class="dgrid-dn">${d}</div>${minTxt?`<div class="dgrid-min">${minTxt}</div>`:''}${yolTxt?`<div class="dgrid-yol"><span>Yol</span>${yolTxt}</div>`:''}${yemekTxt?`<div class="dgrid-yemek"><span>Yemek</span>${yemekTxt}</div>`:''}`;
+}
 function renderMonthDetailGrid(y,m){
   const grid=$('mdetGrid');if(!grid)return;
   const firstDow=new Date(y,m,1).getDay();const offset=(firstDow+6)%7;const daysCount=daysIn(y,m);
   let html='';for(let i=0;i<offset;i++)html+='<div class="dgrid-empty"></div>';
-  for(let d=1;d<=daysCount;d++){const key=dk(y,m,d),dt=new Date(y,m,d),dow=dt.getDay();const isWE=dow===0||dow===6,isToday=key===todayKey;const r=getDay(key),c=calcDay(key);const hasEntry=getMesailer(r).some(b=>b.giris);let cls='dgrid-day';if(isToday)cls+=' today';else if(isWE)cls+=' wknd';if(hasEntry&&c.netMin>0)cls+=' has-pos';else if(hasEntry&&c.netMin<0)cls+=' has-neg';const minTxt=hasEntry&&c.netMin!==0?fmtD(Math.abs(c.netMin))+(c.netMin<0?'-':''):'';html+=`<div class="${cls}" id="dgd-${key}" onclick="openDayDetail('${key}')"><div class="dgrid-dn">${d}</div>${minTxt?`<div class="dgrid-min">${minTxt}</div>`:''}</div>`;}
+  for(let d=1;d<=daysCount;d++){const key=dk(y,m,d),dt=new Date(y,m,d),dow=dt.getDay();const isWE=dow===0||dow===6,isToday=key===todayKey;const r=getDay(key),c=calcDay(key);const hasEntry=getMesailer(r).some(b=>b.giris);const cls=dayCellClass(isToday,isWE,hasEntry,c.netMin);html+=`<div class="${cls}" id="dgd-${key}" onclick="openDayDetail('${key}')">${buildDayCellContent(d,c,hasEntry)}</div>`;}
   grid.innerHTML=html;
 }
 function updateMonthDetailFooter(y,m){
@@ -1207,7 +1226,7 @@ function refreshDayOv(key){
   const r=getDay(key),c=calcDay(key);
   const head=$('dayOvHead');if(head){const[ys,ms,ds]=key.split('-').map(Number),dt=new Date(ys,ms,ds),dow=dt.getDay();head.innerHTML=`<h3>${ds} ${MONTHS[ms]} ${ys} — ${DAYS[dow]}</h3><p>${c.netMin!==0?fmtD(Math.abs(c.netMin))+(c.netMin<0?' eksik':' mesai')+(c.tm?` · ${fmtTL(c.tm)}`:''):'Mesai girilmedi'}</p>`;}
   const tile=$('dgd-'+key);
-  if(tile){const[ys,ms,ds]=key.split('-').map(Number),dt=new Date(ys,ms,ds),dow=dt.getDay();const isWE=dow===0||dow===6,isToday=key===todayKey,hasEntry=getMesailer(r).some(b=>b.giris);let cls='dgrid-day';if(isToday)cls+=' today';else if(isWE)cls+=' wknd';if(hasEntry&&c.netMin>0)cls+=' has-pos';else if(hasEntry&&c.netMin<0)cls+=' has-neg';const minTxt=hasEntry&&c.netMin!==0?fmtD(Math.abs(c.netMin))+(c.netMin<0?' eksik':''):'';tile.className=cls;tile.innerHTML=`<div class="dgrid-dn">${ds}</div>${minTxt?`<div class="dgrid-min">${minTxt}</div>`:''}`;}
+  if(tile){const[ys,ms,ds]=key.split('-').map(Number),dt=new Date(ys,ms,ds),dow=dt.getDay();const isWE=dow===0||dow===6,isToday=key===todayKey,hasEntry=getMesailer(r).some(b=>b.giris);tile.className=dayCellClass(isToday,isWE,hasEntry,c.netMin);tile.innerHTML=buildDayCellContent(ds,c,hasEntry);}
   refreshMonthCard();
 }
 function addMesaiBlokOv(key){ensureMesailer(key);dayData[key].mesailer.push({giris:'',cikis:''});saveLocal();debouncePush();const el=$('mbloks-ov-'+key);if(el)el.innerHTML=buildMesaiBloksHTML(key,dayData[key]);}
