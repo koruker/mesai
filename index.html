@@ -43,6 +43,14 @@ function resetAllData(){
 }
 </script>
 <style>
+.rotate-block{display:none;position:fixed;inset:0;z-index:9999;background:#050810;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px}
+@media(orientation:landscape) and (max-width:1024px){
+  .rotate-block{display:flex}
+}
+.rotate-block .ric{width:64px;height:64px;stroke:#5b9cf6;stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round;margin-bottom:22px;animation:rotHint 1.8s ease-in-out infinite}
+.rotate-block h2{font-size:19px;font-weight:800;color:#eef2ff;letter-spacing:-.3px;margin-bottom:8px}
+.rotate-block p{font-size:13px;color:#8892b0;max-width:260px;line-height:1.5}
+@keyframes rotHint{0%,100%{transform:rotate(0deg)}50%{transform:rotate(-90deg)}}
 :root{
   --c0:#080c18;
   --g1:rgba(255,255,255,0.06);--g2:rgba(255,255,255,0.1);--g3:rgba(255,255,255,0.15);
@@ -74,8 +82,8 @@ function resetAllData(){
 [data-theme="copper"]{--c0:#160b04;--blue:#e08a52;--bd:rgba(224,138,82,.16);--bb:rgba(224,138,82,.34);--gold:#e6a45c;--m1:rgba(180,90,30,.32);--m2:rgba(130,60,15,.28);--m3:rgba(220,130,60,.18)}
 [data-theme="mono"]{--c0:#0c0c0c;--blue:#dddddd;--bd:rgba(255,255,255,.10);--bb:rgba(255,255,255,.24);--gold:#e5e5e5;--m1:rgba(255,255,255,.08);--m2:rgba(255,255,255,.05);--m3:rgba(255,255,255,.03)}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;overflow:hidden;background:#000;color:var(--t1);font-family:'Inter',sans-serif;width:100%;-webkit-font-smoothing:antialiased}
-body{display:flex;align-items:center;justify-content:center;position:relative}
+html,body{height:100%;overflow:hidden;background:var(--c0);color:var(--t1);font-family:'Inter',sans-serif;width:100%;-webkit-font-smoothing:antialiased}
+body{display:flex;flex-direction:column;position:relative}
 .mesh{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
 .m1{position:absolute;width:72vw;height:72vw;border-radius:50%;background:radial-gradient(circle,var(--m1) 0%,transparent 68%);top:-18vw;left:-14vw;animation:m1a 18s ease-in-out infinite alternate}
 .m2{position:absolute;width:62vw;height:62vw;border-radius:50%;background:radial-gradient(circle,var(--m2) 0%,transparent 68%);bottom:-12vw;right:-12vw;animation:m2a 13s ease-in-out infinite alternate}
@@ -324,13 +332,17 @@ body{display:flex;align-items:center;justify-content:center;position:relative}
 .dtbar-r{font-size:24px;font-weight:900;color:var(--green);letter-spacing:-.5px}
 .toast{position:fixed;bottom:calc(88px + var(--sb));left:50%;transform:translateX(-50%) translateY(10px);background:rgba(12,16,30,0.97);backdrop-filter:blur(20px);border:1px solid var(--gb);border-radius:99px;padding:11px 22px;font-size:13px;font-weight:600;color:var(--t1);z-index:400;opacity:0;pointer-events:none;transition:all .25s;white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,.5)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-#app-root{width:390px;height:844px;flex-shrink:0;position:relative;overflow:hidden;background:var(--c0);transform-origin:center center;}
+#app-root{width:100%;height:100%;transform-origin:top left;}
 </style>
 </head>
 <body>
+<div class="rotate-block">
+  <svg class="ric" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+  <h2>Lütfen cihazını dikey çevir</h2>
+  <p>Bu uygulama sadece dikey (portre) modda kullanılabilir.</p>
+</div>
 <div id="app-root">
 <div class="mesh"><div class="m1"></div><div class="m2"></div><div class="m3"></div></div>
-</div>
 
 <div class="screen hidden" id="loginScreen">
 
@@ -675,12 +687,16 @@ body{display:flex;align-items:center;justify-content:center;position:relative}
 
 <script>
 (function(){
-  const BASE_W=390,BASE_H=844;
+  const BASE_W=390;
   function scale(){
     const root=document.getElementById('app-root');if(!root)return;
     const vw=window.innerWidth,vh=window.innerHeight;
-    const factor=Math.min(vw/BASE_W,vh/BASE_H);
-    root.style.transform=`scale(${factor})`;
+    if(vw>=1024){root.style.transform='';root.style.width='';root.style.height='';return;}
+    if(vw>vh)return;
+    const ratio=vw/BASE_W;
+    if(Math.abs(ratio-1)<0.02){root.style.transform='';root.style.width='';root.style.height='';return;}
+    root.style.transform=`scale(${ratio})`;root.style.width=BASE_W+'px';
+    root.style.height=Math.round(vh/ratio)+'px';root.style.transformOrigin='top left';
   }
   window.addEventListener('resize',scale);
   window.addEventListener('orientationchange',()=>setTimeout(scale,100));
