@@ -819,6 +819,14 @@ function calcMonth(y,m){let mn=0,tm=0,yl=0,yk=0;for(let d=1;d<=daysIn(y,m);d++){
 
 function saveLocal(){try{localStorage.setItem(storageKey,JSON.stringify({cfg,salaries,dayData,monthData,profile,backupSettings,ts:Date.now()}));}catch(e){}}
 function loadLocal(){try{const r=localStorage.getItem(storageKey);if(r){const d=JSON.parse(r);cfg=Object.assign(cfg,d.cfg||{});if(cfg.bitis&&!cfg.vardiyaB)cfg.vardiyaB=cfg.bitis;salaries=d.salaries||{};dayData=d.dayData||{};monthData=d.monthData||{};profile=Object.assign({name:'',workName:'',avatar:'',avatarType:'emoji',startDate:''},d.profile||{});backupSettings=Object.assign({period:'weekly',customDay:1,lastBackup:null},d.backupSettings||{});}else{salaries={};dayData={};monthData={};profile={name:'',workName:'',avatar:'',avatarType:'emoji',startDate:''};backupSettings={period:'weekly',customDay:1,lastBackup:null};}}catch(e){}}
+// Varsayılan (yedek) debouncePush — Firebase modülü (internet yoksa) hiç yüklenemese bile
+// veri kaydetme işlemleri hata vermesin diye burada da tanımlı. Modül başarıyla yüklenirse
+// kendi (bulutla senkronize eden) versiyonuyla bunun üzerine yazar.
+function debouncePush(){
+  markPendingSync();
+  clearTimeout(syncTimer);
+  syncTimer=setTimeout(()=>{if(window._fbPush)window._fbPush();},1500);
+}
 
 function updateUser(){
   if(!userInfo)return;
@@ -1109,12 +1117,12 @@ function renderHome(){
   const ss2Parts=[];if(mc.yl>0)ss2Parts.push('Yol '+maskTL(fmtTL(mc.yl)));if(mc.yk>0)ss2Parts.push('Yemek '+maskTL(fmtTL(mc.yk)));if(primTop>0)ss2Parts.push('Prim '+maskTL(fmtTL(primTop)));
   if($('ss2s'))$('ss2s').innerHTML=ss2Parts.length?ss2Parts.join('<br>'):'Ekstra ödemeler';
   if($('ss3'))$('ss3').textContent=maskTL(fmtTL(netMaas+mc.tm+mc.yl+mc.yk+primTop));
-  const subParts=[maskTL(fmtTL(netMaas))+' net maaş'];if(mc.tm!==0)subParts.push(maskTL(fmtTL(mc.tm))+' mesai');if(primTop>0)subParts.push(maskTL(fmtTL(primTop))+' prim');
+  const subParts=[maskTL(fmtTL(netMaas))+' net maaş'];if(mc.tm!==0)subParts.push(maskTL(fmtTL(mc.tm))+' mesai');if(mc.yl>0)subParts.push(maskTL(fmtTL(mc.yl))+' yol');if(mc.yk>0)subParts.push(maskTL(fmtTL(mc.yk))+' yemek');if(primTop>0)subParts.push(maskTL(fmtTL(primTop))+' prim');
   if($('ss3s'))$('ss3s').textContent=subParts.join(' + ');
   if($('tcEarn'))$('tcEarn').textContent=c.top>0?maskTL(fmtTL(c.top)):'';
   applyPrivacyUI();
   const prevEl=$('prevMonths');
-  if(prevEl){let html='';for(let i=1;i<=11;i++){let pm=today.getMonth()-i,py=today.getFullYear();if(pm<0){pm+=12;py--;}const pmc=calcMonth(py,pm),pNet=getSalary(py,pm),pmd=getMonthData(py,pm);const pPrim=(pmd.devamPrimi||0)+(pmd.performansPrimi||0);const pGrand=pNet+pmc.tm+pmc.yl+pmc.yk+pPrim;if(pGrand===0&&pmc.mn===0&&!salaries[mk(py,pm)])continue;html+=`<div class="scard wide" onclick="goCalendar();setTimeout(()=>openMonthDetail(${py},${pm}),350)" style="cursor:pointer;position:relative;margin-bottom:10px"><div class="slbl">${MONTHS[pm]} ${py}</div><div class="sval" style="font-size:20px;color:var(--t1)">${maskTL(fmtTL(pGrand))}</div><div class="ssub">${maskTL(fmtTL(pNet))} net + ${maskTL(fmtTL(pmc.tm))} mesai${pPrim>0?' + '+maskTL(fmtTL(pPrim))+' prim':''}</div>${pmc.mn!==0?`<div class="ssub" style="margin-top:2px">${fmtD(Math.abs(pmc.mn))} mesai saati</div>`:''}<div style="position:absolute;top:12px;right:14px;font-size:10px;font-weight:700;color:var(--t3)">Detay →</div></div>`;}prevEl.innerHTML=html||'<div style="font-size:13px;color:var(--t3);padding:8px 0">Geçmiş ay verisi yok</div>';}
+  if(prevEl){let html='';for(let i=1;i<=11;i++){let pm=today.getMonth()-i,py=today.getFullYear();if(pm<0){pm+=12;py--;}const pmc=calcMonth(py,pm),pNet=getSalary(py,pm),pmd=getMonthData(py,pm);const pPrim=(pmd.devamPrimi||0)+(pmd.performansPrimi||0);const pGrand=pNet+pmc.tm+pmc.yl+pmc.yk+pPrim;if(pGrand===0&&pmc.mn===0&&!salaries[mk(py,pm)])continue;const pParts=[maskTL(fmtTL(pNet))+' net',maskTL(fmtTL(pmc.tm))+' mesai'];if(pmc.yl>0)pParts.push(maskTL(fmtTL(pmc.yl))+' yol');if(pmc.yk>0)pParts.push(maskTL(fmtTL(pmc.yk))+' yemek');if(pPrim>0)pParts.push(maskTL(fmtTL(pPrim))+' prim');html+=`<div class="scard wide" onclick="goCalendar();setTimeout(()=>openMonthDetail(${py},${pm}),350)" style="cursor:pointer;position:relative;margin-bottom:10px"><div class="slbl">${MONTHS[pm]} ${py}</div><div class="sval" style="font-size:20px;color:var(--t1)">${maskTL(fmtTL(pGrand))}</div><div class="ssub">${pParts.join(' + ')}</div>${pmc.mn!==0?`<div class="ssub" style="margin-top:2px">${fmtD(Math.abs(pmc.mn))} mesai saati</div>`:''}<div style="position:absolute;top:12px;right:14px;font-size:10px;font-weight:700;color:var(--t3)">Detay →</div></div>`;}prevEl.innerHTML=html||'<div style="font-size:13px;color:var(--t3);padding:8px 0">Geçmiş ay verisi yok</div>';}
 }
 function openEditToday(){goCalendar();setTimeout(()=>openDayDetail(todayKey),350);}
 
@@ -1172,7 +1180,7 @@ function renderMonthDetailGrid(y,m){
 function updateMonthDetailFooter(y,m){
   const mc=calcMonth(y,m),netMaas=getSalary(y,m),md=getMonthData(y,m);const primTop=(md.devamPrimi||0)+(md.performansPrimi||0);const grand=netMaas+mc.tm+mc.yl+mc.yk+primTop;
   const grandStr=fmtTL(grand);
-  const parts=[fmtTL(netMaas)+' net'];if(mc.mn!==0)parts.push(fmtTL(mc.tm)+(mc.mn<0?' eksik':' mesai'));if(primTop>0)parts.push(fmtTL(primTop)+' prim');
+  const parts=[fmtTL(netMaas)+' net'];if(mc.mn!==0)parts.push(fmtTL(mc.tm)+(mc.mn<0?' eksik':' mesai'));if(mc.yl>0)parts.push(fmtTL(mc.yl)+' yol');if(mc.yk>0)parts.push(fmtTL(mc.yk)+' yemek');if(primTop>0)parts.push(fmtTL(primTop)+' prim');
   const subStr=parts.join(' + ');
   const totalStr=grand>0?fmtTL(grand):'';
   // Raw değerleri sakla
