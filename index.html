@@ -226,6 +226,15 @@ body{display:flex;flex-direction:column;position:relative}
 .mdet-title{font-size:16px;font-weight:800;letter-spacing:-.4px;flex:1}
 .mdet-total{font-size:12px;font-weight:700;color:var(--green);flex-shrink:0}
 .mdet-params{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;padding:6px 10px;border-bottom:1px solid var(--gb);flex-shrink:0}
+.mdet-toggles{display:flex;gap:6px;padding:2px 10px 6px;flex-shrink:0}
+.mtg{flex:1;display:flex;align-items:center;justify-content:space-between;gap:5px;background:rgba(255,255,255,.05);border:1px solid var(--gb);border-radius:10px;padding:6px 8px;cursor:pointer;transition:background .15s}
+.mtg span{font-size:10px;font-weight:700;color:var(--t3)}
+.mtg-sw{width:24px;height:14px;border-radius:7px;background:var(--gb);position:relative;transition:background .2s;flex-shrink:0}
+.mtg-knob{width:10px;height:10px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left .2s}
+.mtg.on{background:rgba(255,255,255,.08)}
+.mtg.on span{color:var(--t1)}
+.mtg.on .mtg-sw{background:var(--blue)}
+.mtg.on .mtg-knob{left:12px}
 .mparam{background:rgba(255,255,255,.04);border:1px solid var(--gb);border-radius:10px;padding:6px 8px}
 .mparam-lbl{font-size:8px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
 .mparam input{width:100%;background:transparent;border:none;color:var(--t1);font-size:13px;font-weight:800;font-family:'Inter',sans-serif;outline:none;padding:0;letter-spacing:-.3px}
@@ -452,6 +461,11 @@ body{display:flex;flex-direction:column;position:relative}
         <div class="back-btn" onclick="calGoBack()"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></div>
         <div class="mdet-title" id="mdetTitle">—</div>
         <div class="mdet-total" id="mdetTotal"></div>
+      </div>
+      <div class="mdet-toggles">
+        <div class="mtg" id="tglMesai" onclick="toggleDayField('tm')"><span>Mesai</span><div class="mtg-sw"><div class="mtg-knob"></div></div></div>
+        <div class="mtg" id="tglYol" onclick="toggleDayField('yol')"><span>Yol</span><div class="mtg-sw"><div class="mtg-knob"></div></div></div>
+        <div class="mtg" id="tglYemek" onclick="toggleDayField('yemek')"><span>Yemek</span><div class="mtg-sw"><div class="mtg-knob"></div></div></div>
       </div>
       <div class="mdet-params">
         <div class="mparam"><div class="mparam-lbl">Net Maaş</div><input type="number" id="mdetMaas" min="0" onchange="onMaasChange(this.value)"></div>
@@ -1155,6 +1169,7 @@ function openMonthDetail(y,m){
   if(perfInp){perfInp._realVal=undefined;perfInp.removeAttribute('readonly');perfInp.value=md.performansPrimi||0;}
   renderMonthDetailGrid(y,m);updateMonthDetailFooter(y,m);
   applyPrivacyUI();
+  applyDayFieldToggleUI();
   $('yearView').className='cal-sub left';$('monthView').className='cal-sub active';
 }
 function calGoBack(){if($('calTitle'))$('calTitle').textContent='Takvim';$('yearView').className='cal-sub active';$('monthView').className='cal-sub right';detailY=null;detailM=null;}
@@ -1163,11 +1178,24 @@ function dayCellClass(isToday,isWE,hasEntry,netMin){
   if(hasEntry&&netMin>0)cls+=' has-pos';else if(hasEntry&&netMin<0)cls+=' has-neg';
   return cls;
 }
+let dayFieldVis={tm:true,yol:true,yemek:true};
+(function loadDayFieldVis(){try{const r=localStorage.getItem('mt_dayfields');if(r)Object.assign(dayFieldVis,JSON.parse(r));}catch(e){}})();
+function saveDayFieldVis(){try{localStorage.setItem('mt_dayfields',JSON.stringify(dayFieldVis));}catch(e){}}
+function applyDayFieldToggleUI(){
+  const map={tm:'tglMesai',yol:'tglYol',yemek:'tglYemek'};
+  Object.keys(map).forEach(k=>{const el=$(map[k]);if(el)el.classList.toggle('on',!!dayFieldVis[k]);});
+}
+function toggleDayField(f){
+  dayFieldVis[f]=!dayFieldVis[f];
+  saveDayFieldVis();
+  applyDayFieldToggleUI();
+  if(detailY!==null)renderMonthDetailGrid(detailY,detailM);
+}
 function buildDayCellContent(d,c,hasEntry){
   const minTxt=hasEntry&&c.netMin!==0?fmtD(Math.abs(c.netMin))+(c.netMin<0?' eksik':''):'';
-  const tmTxt=c.tm!==0?maskTL(fmtTL(c.tm)):'';
-  const yolTxt=c.yol>0?maskTL(fmtTL(c.yol)):'';
-  const yemekTxt=c.yemek>0?maskTL(fmtTL(c.yemek)):'';
+  const tmTxt=dayFieldVis.tm&&c.tm!==0?maskTL(fmtTL(c.tm)):'';
+  const yolTxt=dayFieldVis.yol&&c.yol>0?maskTL(fmtTL(c.yol)):'';
+  const yemekTxt=dayFieldVis.yemek&&c.yemek>0?maskTL(fmtTL(c.yemek)):'';
   return `${tmTxt?`<div class="dgrid-tm">${tmTxt}</div>`:''}<div class="dgrid-dn">${d}</div>${minTxt?`<div class="dgrid-min">${minTxt}</div>`:''}${yolTxt?`<div class="dgrid-yol"><span>Yol</span>${yolTxt}</div>`:''}${yemekTxt?`<div class="dgrid-yemek"><span>Yemek</span>${yemekTxt}</div>`:''}`;
 }
 function renderMonthDetailGrid(y,m){
