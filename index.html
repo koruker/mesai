@@ -141,6 +141,15 @@ body{display:flex;flex-direction:column;position:relative}
 .tc-cv.action.go{color:var(--green)}
 .tc-cv.action.stop{color:var(--red)}
 .tc-bot{padding:12px 18px;border-top:1px solid var(--gb);display:flex;align-items:center;justify-content:space-between}
+.ttg2{display:flex;align-items:center;gap:5px;cursor:pointer}
+.ttg2 span{font-size:9.5px;color:var(--t3);white-space:nowrap;font-weight:500}
+.ttg2-sw{width:28px;height:16px;border-radius:8px;background:var(--gb);position:relative;transition:background .2s;flex-shrink:0}
+.ttg2-knob{width:12px;height:12px;border-radius:50%;background:var(--t2);position:absolute;top:2px;left:2px;transition:transform .2s,background .2s}
+.ttg2.on span{color:var(--t1)}
+.ttg2.on .ttg2-knob{background:#fff;transform:translateX(12px)}
+.ttg2.komple.on .ttg2-sw{background:var(--blue)}
+.ttg2.yok.on .ttg2-sw{background:var(--gold)}
+.ttg2.calisilmadi.on .ttg2-sw{background:var(--red)}
 .tc-det{font-size:12px;color:var(--t3)}
 .tc-earn{font-size:17px;font-weight:800;color:var(--green);letter-spacing:-.3px}
 .acts{padding:0 14px;margin-bottom:14px;display:flex;flex-direction:column;gap:10px;position:relative;z-index:1}
@@ -414,7 +423,13 @@ body{display:flex;flex-direction:column;position:relative}
         <div class="tc-cell" id="tcCCell"><div class="tc-cl">Çıkış</div><div class="tc-cv dim" id="tcC">—</div></div>
         <div class="tc-cell"><div class="tc-cl">Süre</div><div class="tc-cv dim" id="tcS">—</div></div>
       </div>
-      <div class="tc-bot"><span class="tc-det" id="tcDet"></span><span class="tc-earn" id="tcEarn"></span></div>
+      <div class="tc-bot">
+        <div class="ttg2 yok" id="ttgYok" onclick="event.stopPropagation();toggleMesaiYok(todayKey)"><span>Mesai Yok</span><div class="ttg2-sw"><div class="ttg2-knob"></div></div></div>
+        <div class="ttg2 komple" id="ttgKomple" onclick="event.stopPropagation();toggleKompMesai(todayKey)"><span>Komple Mesai</span><div class="ttg2-sw"><div class="ttg2-knob"></div></div></div>
+        <div class="ttg2 calisilmadi" id="ttgCalisilmadi" onclick="event.stopPropagation();toggleCalisilmadi(todayKey)"><span>Çalışılmadı</span><div class="ttg2-sw"><div class="ttg2-knob"></div></div></div>
+      </div>
+      <span class="tc-det" id="tcDet" style="display:none"></span>
+      <span class="tc-earn" id="tcEarn" style="display:none"></span>
     </div>
     <div class="acts" id="acts"></div>
     <div class="sec-head" id="mhead"></div>
@@ -812,7 +827,10 @@ function calcDay(key){
     netMin=-vs;
     hasMesai=false;
   } else if(blocks.length>0){
-    if(r.kompMesai){
+    if(r.mesaiYok){
+      // Mesai Yok modu: gün çalışıldı sayılır (yol/yemek uygulanır) ama mesai tutarı sıfırlanır
+      netMin=0;
+    } else if(r.kompMesai){
       // Komple mesai modu: tüm çalışma süresi mesai
       netMin=totalWork;
     } else {
@@ -858,7 +876,7 @@ function setSyncUI(state,txt){
 function toggleKompMesai(key){
   if(!dayData[key])dayData[key]={};
   dayData[key].kompMesai=!dayData[key].kompMesai;
-  if(dayData[key].kompMesai)dayData[key].calisilmadi=false;
+  if(dayData[key].kompMesai){dayData[key].calisilmadi=false;dayData[key].mesaiYok=false;}
   saveLocal();debouncePush();
   // Overlay'i yeniden oluştur
   const r=getDay(key),c=calcDay(key);
@@ -866,11 +884,12 @@ function toggleKompMesai(key){
   if(head){const[ys,ms,ds]=key.split('-').map(Number),dt=new Date(ys,ms,ds),dow=dt.getDay();head.innerHTML=`<h3>${ds} ${MONTHS[ms]} ${ys} — ${DAYS[dow]}</h3><p>${c.netMin!==0?fmtD(Math.abs(c.netMin))+(c.netMin<0?' eksik':' mesai')+(c.tm?` · ${fmtTL(c.tm)}`:''):'Mesai girilmedi'}</p>`;}
   if(body)body.innerHTML=buildDayDetailHTML(key,r,c);
   refreshDayOv(key);
+  applyTodayToggleUI();
 }
 function toggleCalisilmadi(key){
   if(!dayData[key])dayData[key]={};
   dayData[key].calisilmadi=!dayData[key].calisilmadi;
-  if(dayData[key].calisilmadi)dayData[key].kompMesai=false;
+  if(dayData[key].calisilmadi){dayData[key].kompMesai=false;dayData[key].mesaiYok=false;}
   saveLocal();debouncePush();
   // Overlay'i yeniden oluştur
   const r=getDay(key),c=calcDay(key);
@@ -878,6 +897,23 @@ function toggleCalisilmadi(key){
   if(head){const[ys,ms,ds]=key.split('-').map(Number),dt=new Date(ys,ms,ds),dow=dt.getDay();head.innerHTML=`<h3>${ds} ${MONTHS[ms]} ${ys} — ${DAYS[dow]}</h3><p>${c.netMin!==0?fmtD(Math.abs(c.netMin))+(c.netMin<0?' eksik':' mesai')+(c.tm?` · ${fmtTL(c.tm)}`:''):'Mesai girilmedi'}</p>`;}
   if(body)body.innerHTML=buildDayDetailHTML(key,r,c);
   refreshDayOv(key);
+  applyTodayToggleUI();
+}
+function toggleMesaiYok(key){
+  if(!dayData[key])dayData[key]={};
+  dayData[key].mesaiYok=!dayData[key].mesaiYok;
+  if(dayData[key].mesaiYok){dayData[key].kompMesai=false;dayData[key].calisilmadi=false;}
+  saveLocal();debouncePush();
+  const r=getDay(key),c=calcDay(key);
+  const head=$('dayOvHead'),body=$('dayOvBody');
+  if(head){const[ys,ms,ds]=key.split('-').map(Number),dt=new Date(ys,ms,ds),dow=dt.getDay();head.innerHTML=`<h3>${ds} ${MONTHS[ms]} ${ys} — ${DAYS[dow]}</h3><p>${c.netMin!==0?fmtD(Math.abs(c.netMin))+(c.netMin<0?' eksik':' mesai')+(c.tm?` · ${fmtTL(c.tm)}`:''):'Mesai girilmedi'}</p>`;}
+  if(body)body.innerHTML=buildDayDetailHTML(key,r,c);
+  refreshDayOv(key);
+  applyTodayToggleUI();
+}
+function applyTodayToggleUI(){
+  const r=getDay(todayKey);
+  [['ttgKomple','kompMesai'],['ttgYok','mesaiYok'],['ttgCalisilmadi','calisilmadi']].forEach(([id,field])=>{const el=$(id);if(el)el.classList.toggle('on',!!r[field]);});
 }
 function clearCarpan(key){if(!dayData[key])dayData[key]={};dayData[key].carpanOverride=null;saveLocal();debouncePush();refreshDayOv(key);}
 function setField(key,field,val){if(!dayData[key])dayData[key]={};dayData[key][field]=val;saveLocal();debouncePush();}
@@ -1093,6 +1129,7 @@ function renderHome(){
   if(hd)hd.innerHTML=`${today.getDate()} <em>${MONTHS[today.getMonth()]}</em> ${today.getFullYear()}`;
   if(hday)hday.textContent=DAYS[today.getDay()];
   const r=getDay(todayKey),c=calcDay(todayKey);
+  applyTodayToggleUI();
   const dot=$('stdot'),st=$('sttxt');
   const todayBlks=getMesailer(r);const lastBlk=todayBlks[todayBlks.length-1];
   const hasAny=todayBlks.length>0&&todayBlks[0].giris;const allDone=hasAny&&todayBlks.every(b=>b.giris&&b.cikis);
@@ -1247,9 +1284,13 @@ function buildDayDetailHTML(key,r,c){
   <span style="font-size:10.5px;color:var(--t3)">${r.vardiyaS!=null?'Bu güne özel':'Öncekinden miras'}</span>
 </div>
 <div style="display:flex;gap:8px;margin-bottom:12px">
-  <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;${r.calisilmadi?'opacity:.35;pointer-events:none':''}background:rgba(255,255,255,.05);border:1px solid var(--gb);border-radius:14px;padding:9px 6px;cursor:pointer" onclick="toggleKompMesai('${key}')">
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;${r.calisilmadi||r.mesaiYok?'opacity:.35;pointer-events:none':''}background:rgba(255,255,255,.05);border:1px solid var(--gb);border-radius:14px;padding:9px 6px;cursor:pointer" onclick="toggleKompMesai('${key}')">
     <span style="font-size:10.5px;font-weight:700;color:${r.kompMesai?'var(--blue)':'var(--t2)'};white-space:nowrap">Komple Mesai</span>
     ${toggle(r.kompMesai,'var(--blue)')}
+  </div>
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;${r.calisilmadi?'opacity:.35;pointer-events:none':''}background:rgba(255,255,255,.05);border:1px solid var(--gb);border-radius:14px;padding:9px 6px;cursor:pointer" onclick="toggleMesaiYok('${key}')">
+    <span style="font-size:10.5px;font-weight:700;color:${r.mesaiYok?'var(--gold)':'var(--t2)'};white-space:nowrap">Mesai Yok</span>
+    ${toggle(r.mesaiYok,'var(--gold)')}
   </div>
   <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;background:rgba(255,255,255,.05);border:1px solid var(--gb);border-radius:14px;padding:9px 6px;cursor:pointer" onclick="toggleCalisilmadi('${key}')">
     <span style="font-size:10.5px;font-weight:700;color:${r.calisilmadi?'var(--red)':'var(--t2)'};white-space:nowrap">Çalışılmadı</span>
@@ -1257,7 +1298,7 @@ function buildDayDetailHTML(key,r,c){
   </div>
 </div>
 <div class="frow" style="${r.kompMesai?'opacity:.35;pointer-events:none':''}"><div class="fi"><label>Başlangıç</label><input type="time" value="${r.vardiyaS!=null?r.vardiyaS:fmtT(getVardiya(key).s)}" onchange="setVardiya('${key}','vardiyaS',this.value)"></div><div class="fi"><label>Bitiş</label><input type="time" value="${r.vardiyaB!=null?r.vardiyaB:fmtT(getVardiya(key).b)}" onchange="setVardiya('${key}','vardiyaB',this.value)"></div></div>
-<div style="margin-top:8px;font-size:11px;color:var(--t3)">${r.calisilmadi?'Bu gün çalışılmadı sayılıyor, vardiya süresi mesaiden düşülüyor.':r.kompMesai?'Tüm çalışma süresi mesai sayılıyor.':'Sonraki günler bu vardiyayı otomatik alır.'}</div></div>
+<div style="margin-top:8px;font-size:11px;color:var(--t3)">${r.calisilmadi?'Bu gün çalışılmadı sayılıyor, vardiya süresi mesaiden düşülüyor.':r.mesaiYok?'Gün çalışıldı sayılıyor (yol/yemek uygulanır) ama mesai tutarı sıfırlanıyor.':r.kompMesai?'Tüm çalışma süresi mesai sayılıyor.':'Sonraki günler bu vardiyayı otomatik alır.'}</div></div>
   <div class="det-s"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;${r.calisilmadi?'opacity:.35;pointer-events:none':''}"><div class="det-lbl" style="margin-bottom:0">Mesai Blokları</div><button onclick="addMesaiBlokOv('${key}')" style="display:flex;align-items:center;gap:5px;padding:6px 12px;background:var(--bd);border:1px solid var(--bb);border-radius:8px;color:var(--blue);font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif"><svg style="width:14px;height:14px;stroke:currentColor;stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Ekle</button></div><div id="mbloks-ov-${key}" style="${r.calisilmadi?'opacity:.35;pointer-events:none':''}">${buildMesaiBloksHTML(key,r)}</div>
   <div class="frow3" style="margin-top:10px"><div class="fi"><label>Çarpan <span onclick="clearCarpan('${key}')" style="color:var(--t3);font-size:9px;cursor:pointer;margin-left:2px">[vars.]</span></label><input type="number" step="0.25" min="1" value="${cp}" oninput="setField('${key}','carpanOverride',parseFloat(this.value));refreshDayOv('${key}')"></div><div class="fi"><label>Yol (₺)</label><input type="number" min="0" placeholder="${getYol(key)||0}" value="${r.yolTutar||''}" onchange="setField('${key}','yolTutar',this.value);refreshDayOv('${key}')"></div><div class="fi"><label>Yemek (₺)</label><input type="number" min="0" placeholder="0" value="${r.yemekTutar||''}" onchange="setField('${key}','yemekTutar',this.value);refreshDayOv('${key}')"></div></div>
   ${r.yolTutar==null||r.yolTutar===''?`<div style="margin-top:4px;font-size:10px;color:var(--t3)">Yol için miras: ${getYol(key)}₺</div>`:''}
