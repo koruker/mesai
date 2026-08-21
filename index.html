@@ -140,6 +140,7 @@ body{display:flex;flex-direction:column;position:relative}
 .tc-cv.action svg{width:15px;height:15px;stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
 .tc-cv.action.go{color:var(--green)}
 .tc-cv.action.stop{color:var(--red)}
+.tc-bn{font-size:10px;font-weight:800;color:var(--t3);margin-right:4px;vertical-align:middle}
 .tc-bot{padding:12px 18px;border-top:1px solid var(--gb);display:flex;align-items:center;justify-content:space-between}
 .ttg2{display:flex;align-items:center;gap:5px;cursor:pointer}
 .ttg2 span{font-size:9.5px;color:var(--t3);white-space:nowrap;font-weight:500}
@@ -742,6 +743,7 @@ const today=new Date();
 const todayKey=dk(today.getFullYear(),today.getMonth(),today.getDate());
 let curY=today.getFullYear(),curM=today.getMonth();
 let openDays={},modalKey=null,syncTimer=null,isSyncing=false;
+let homeBlockIdx=0,homeBlockTimer=null;
 let storageKey='mt_local_v1'; // yerel mod ve bulut modu ayrı anahtarlarda tutulur, birbirine karışmaz
 let userInfo=null;
 let cfg={vardiyaS:'15:00',vardiyaB:'23:00',carpan:1.5,aylikSaat:225,brutMaas:0,theme:'default'};
@@ -1124,6 +1126,27 @@ function goCalendar(){
 function goSettings(){showScreen('settingsScreen');}
 function renderAll(){if(curScreen==='homeScreen')renderHome();else if(curScreen==='calScreen')renderCal();}
 
+function renderBlockPair(){
+  const blks=getMesailer(getDay(todayKey));
+  if(!blks.length)return;
+  if(homeBlockIdx>=blks.length)homeBlockIdx=0;
+  const b=blks[homeBlockIdx];
+  const gEl=$('tcG'),cEl=$('tcC'),cCell=$('tcCCell');
+  if(gEl){gEl.className='tc-cv'+(b.giris?'':' dim');gEl.innerHTML=`<span class="tc-bn">${homeBlockIdx+1}</span>${b.giris||'—'}`;}
+  if(b.cikis){
+    if(cEl){cEl.className='tc-cv'+(b.cikis?'':' dim');cEl.innerHTML=`<span class="tc-bn">${homeBlockIdx+1}</span>${b.cikis}`;}
+    if(cCell){cCell.classList.remove('tapme','go','stop');cCell.onclick=null;}
+  }else{
+    if(cEl){cEl.className='tc-cv action stop';cEl.innerHTML=`<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>Bitir`;}
+    if(cCell){cCell.classList.add('tapme','stop');cCell.classList.remove('go');cCell.onclick=(e)=>{e.stopPropagation();openCikisSheet(todayKey);};}
+  }
+}
+function advanceHomeBlock(dir){
+  const blks=getMesailer(getDay(todayKey));
+  if(blks.length<=1)return;
+  homeBlockIdx=(homeBlockIdx+dir+blks.length)%blks.length;
+  renderBlockPair();
+}
 function renderHome(){
   const hd=$('hDate'),hday=$('hDay');
   if(hd)hd.innerHTML=`${today.getDate()} <em>${MONTHS[today.getMonth()]}</em> ${today.getFullYear()}`;
@@ -1135,22 +1158,32 @@ function renderHome(){
   const hasAny=todayBlks.length>0&&todayBlks[0].giris;const allDone=hasAny&&todayBlks.every(b=>b.giris&&b.cikis);
   if(dot&&st){if(allDone){dot.className='stdot done';st.textContent=todayBlks.length>1?todayBlks.length+' mesai tamamlandı':'Tamamlandı';}else if(hasAny){dot.className='stdot live';st.textContent='Devam ediyor…';}else{dot.className='stdot';st.textContent='Mesai girilmedi';}}
   const setC=(id,val)=>{const el=$(id);if(!el)return;el.textContent=val||'—';el.className='tc-cv'+(val?'':' dim');};
-  const dispGiris=todayBlks.length>1?todayBlks.length+' blok':lastBlk?.giris||'';
-  const dispCikis=todayBlks.length>1?'':lastBlk?.cikis||'';
+  const dispGiris=lastBlk?.giris||'';
+  const dispCikis=lastBlk?.cikis||'';
   const gCell=$('tcGCell'),cCell=$('tcCCell'),gEl=$('tcG'),cEl=$('tcC');
+  if(homeBlockTimer){clearInterval(homeBlockTimer);homeBlockTimer=null;}
   if(!hasAny){
     if(gEl){gEl.className='tc-cv action go';gEl.innerHTML=`<svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>Başla`;}
-    if(gCell){gCell.classList.add('tapme','go');gCell.classList.remove('stop');gCell.onclick=(e)=>{e.stopPropagation();openGirisSheet();};}
+    if(gCell){gCell.classList.add('tapme','go');gCell.classList.remove('stop');gCell.onclick=(e)=>{e.stopPropagation();openGirisSheet();};gCell.ontouchstart=null;gCell.ontouchend=null;}
     if(cCell){cCell.classList.remove('tapme','go','stop');cCell.onclick=null;}
     setC('tcC','');
+  }else if(todayBlks.length>1){
+    if(homeBlockIdx>=todayBlks.length)homeBlockIdx=0;
+    if(gCell){
+      gCell.classList.remove('tapme','go','stop');gCell.onclick=null;
+      gCell.ontouchstart=(e)=>{gCell._ty=e.touches[0].clientY;};
+      gCell.ontouchend=(e)=>{if(gCell._ty==null)return;const dy=gCell._ty-e.changedTouches[0].clientY;if(dy>25)advanceHomeBlock(1);gCell._ty=null;};
+    }
+    renderBlockPair();
+    homeBlockTimer=setInterval(()=>advanceHomeBlock(1),3500);
   }else if(hasAny&&!allDone){
     setC('tcG',dispGiris);
-    if(gCell){gCell.classList.remove('tapme','go','stop');gCell.onclick=null;}
+    if(gCell){gCell.classList.remove('tapme','go','stop');gCell.onclick=null;gCell.ontouchstart=null;gCell.ontouchend=null;}
     if(cEl){cEl.className='tc-cv action stop';cEl.innerHTML=`<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>Bitir`;}
     if(cCell){cCell.classList.add('tapme','stop');cCell.classList.remove('go');cCell.onclick=(e)=>{e.stopPropagation();openCikisSheet(todayKey);};}
   }else{
     setC('tcG',dispGiris);setC('tcC',dispCikis);
-    if(gCell){gCell.classList.remove('tapme','go','stop');gCell.onclick=null;}
+    if(gCell){gCell.classList.remove('tapme','go','stop');gCell.onclick=null;gCell.ontouchstart=null;gCell.ontouchend=null;}
     if(cCell){cCell.classList.remove('tapme','go','stop');cCell.onclick=null;}
   }
   const sureVal=c.netMin>0?fmtD(c.netMin):c.netMin<0?fmtD(Math.abs(c.netMin))+' eksik':'';
