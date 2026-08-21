@@ -129,7 +129,8 @@ body{display:flex;flex-direction:column;position:relative}
 .tc-cl{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--t3);margin-bottom:6px}
 .tc-cv{font-size:22px;font-weight:800;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
 .tc-cv.dim{color:var(--t3);font-weight:400;font-size:20px}
-.tc-cell.tapme{cursor:pointer;position:relative;isolation:isolate;border-radius:12px;overflow:hidden}
+.tc-cell.tapme{cursor:pointer;position:relative;isolation:isolate;border-radius:12px;overflow:hidden;touch-action:none}
+.tc-cell.swiping{touch-action:none}
 .tc-cell.tapme:active{background:rgba(255,255,255,.05)}
 .tc-cell.tapme::before{content:'';position:absolute;inset:-60%;z-index:-2;background:conic-gradient(from 0deg,transparent 0deg,currentColor 16deg,transparent 50deg,transparent 310deg,currentColor 344deg,transparent 360deg);animation:tcSpin 2.1s linear infinite}
 .tc-cell.tapme::after{content:'';position:absolute;inset:2px;z-index:-1;border-radius:9px;background:#0b0f1c}
@@ -1170,25 +1171,26 @@ function renderHome(){
   if(homeBlockRevertTimer){clearTimeout(homeBlockRevertTimer);homeBlockRevertTimer=null;}
   if(!hasAny){
     if(gEl){gEl.className='tc-cv action go';gEl.innerHTML=`<svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>Başla`;}
-    if(gCell){gCell.classList.add('tapme','go');gCell.classList.remove('stop');gCell.onclick=(e)=>{e.stopPropagation();openGirisSheet();};gCell.ontouchstart=null;gCell.ontouchend=null;}
+    if(gCell){gCell.classList.add('tapme','go');gCell.classList.remove('stop','swiping');gCell.onclick=(e)=>{e.stopPropagation();openGirisSheet();};gCell.ontouchstart=null;gCell.ontouchend=null;}
     if(cCell){cCell.classList.remove('tapme','go','stop');cCell.onclick=null;}
     setC('tcC','');
   }else if(todayBlks.length>1){
     homeBlockIdx=todayBlks.length-1;
     if(gCell){
-      gCell.classList.remove('tapme','go','stop');gCell.onclick=null;
+      gCell.classList.remove('tapme','go','stop');gCell.classList.add('swiping');gCell.onclick=null;
       gCell.ontouchstart=(e)=>{gCell._ty=e.touches[0].clientY;};
       gCell.ontouchend=(e)=>{if(gCell._ty==null)return;const dy=gCell._ty-e.changedTouches[0].clientY;if(dy>25)advanceHomeBlock(-1);gCell._ty=null;};
+      if(!gCell._swipeBound){gCell._swipeBound=true;gCell.addEventListener('touchmove',(e)=>{if(gCell._ty!=null)e.preventDefault();},{passive:false});}
     }
     renderBlockPair();
   }else if(hasAny&&!allDone){
     setC('tcG',dispGiris);
-    if(gCell){gCell.classList.remove('tapme','go','stop');gCell.onclick=null;gCell.ontouchstart=null;gCell.ontouchend=null;}
+    if(gCell){gCell.classList.remove('tapme','go','stop','swiping');gCell.onclick=null;gCell.ontouchstart=null;gCell.ontouchend=null;}
     if(cEl){cEl.className='tc-cv action stop';cEl.innerHTML=`<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>Bitir`;}
     if(cCell){cCell.classList.add('tapme','stop');cCell.classList.remove('go');cCell.onclick=(e)=>{e.stopPropagation();openCikisSheet(todayKey);};}
   }else{
     setC('tcG',dispGiris);setC('tcC',dispCikis);
-    if(gCell){gCell.classList.remove('tapme','go','stop');gCell.onclick=null;gCell.ontouchstart=null;gCell.ontouchend=null;}
+    if(gCell){gCell.classList.remove('tapme','go','stop','swiping');gCell.onclick=null;gCell.ontouchstart=null;gCell.ontouchend=null;}
     if(cCell){cCell.classList.remove('tapme','go','stop');cCell.onclick=null;}
   }
   const sureVal=c.netMin>0?fmtD(c.netMin):c.netMin<0?fmtD(Math.abs(c.netMin))+' eksik':'';
