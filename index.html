@@ -743,7 +743,7 @@ const today=new Date();
 const todayKey=dk(today.getFullYear(),today.getMonth(),today.getDate());
 let curY=today.getFullYear(),curM=today.getMonth();
 let openDays={},modalKey=null,syncTimer=null,isSyncing=false;
-let homeBlockIdx=0,homeBlockTimer=null;
+let homeBlockIdx=0,homeBlockRevertTimer=null;
 let storageKey='mt_local_v1'; // yerel mod ve bulut modu ayrı anahtarlarda tutulur, birbirine karışmaz
 let userInfo=null;
 let cfg={vardiyaS:'15:00',vardiyaB:'23:00',carpan:1.5,aylikSaat:225,brutMaas:0,theme:'default'};
@@ -1146,6 +1146,12 @@ function advanceHomeBlock(dir){
   if(blks.length<=1)return;
   homeBlockIdx=(homeBlockIdx+dir+blks.length)%blks.length;
   renderBlockPair();
+  if(homeBlockRevertTimer)clearTimeout(homeBlockRevertTimer);
+  homeBlockRevertTimer=setTimeout(()=>{
+    const blks2=getMesailer(getDay(todayKey));
+    if(blks2.length){homeBlockIdx=blks2.length-1;renderBlockPair();}
+    homeBlockRevertTimer=null;
+  },5000);
 }
 function renderHome(){
   const hd=$('hDate'),hday=$('hDay');
@@ -1161,21 +1167,20 @@ function renderHome(){
   const dispGiris=lastBlk?.giris||'';
   const dispCikis=lastBlk?.cikis||'';
   const gCell=$('tcGCell'),cCell=$('tcCCell'),gEl=$('tcG'),cEl=$('tcC');
-  if(homeBlockTimer){clearInterval(homeBlockTimer);homeBlockTimer=null;}
+  if(homeBlockRevertTimer){clearTimeout(homeBlockRevertTimer);homeBlockRevertTimer=null;}
   if(!hasAny){
     if(gEl){gEl.className='tc-cv action go';gEl.innerHTML=`<svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>Başla`;}
     if(gCell){gCell.classList.add('tapme','go');gCell.classList.remove('stop');gCell.onclick=(e)=>{e.stopPropagation();openGirisSheet();};gCell.ontouchstart=null;gCell.ontouchend=null;}
     if(cCell){cCell.classList.remove('tapme','go','stop');cCell.onclick=null;}
     setC('tcC','');
   }else if(todayBlks.length>1){
-    if(homeBlockIdx>=todayBlks.length)homeBlockIdx=0;
+    homeBlockIdx=todayBlks.length-1;
     if(gCell){
       gCell.classList.remove('tapme','go','stop');gCell.onclick=null;
       gCell.ontouchstart=(e)=>{gCell._ty=e.touches[0].clientY;};
-      gCell.ontouchend=(e)=>{if(gCell._ty==null)return;const dy=gCell._ty-e.changedTouches[0].clientY;if(dy>25)advanceHomeBlock(1);gCell._ty=null;};
+      gCell.ontouchend=(e)=>{if(gCell._ty==null)return;const dy=gCell._ty-e.changedTouches[0].clientY;if(dy>25)advanceHomeBlock(-1);gCell._ty=null;};
     }
     renderBlockPair();
-    homeBlockTimer=setInterval(()=>advanceHomeBlock(1),3500);
   }else if(hasAny&&!allDone){
     setC('tcG',dispGiris);
     if(gCell){gCell.classList.remove('tapme','go','stop');gCell.onclick=null;gCell.ontouchstart=null;gCell.ontouchend=null;}
