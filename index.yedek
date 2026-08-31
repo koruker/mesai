@@ -43,9 +43,14 @@ function resetAllData(){
 }
 </script>
 <style>
+.rotate-block{display:none;position:fixed;inset:0;z-index:9999;background:#050810;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px}
 @media(orientation:landscape) and (max-width:1024px){
-  #app-root{transform:rotate(-90deg);transform-origin:left top;width:100vh;height:100vw;position:fixed;top:100%;left:0;}
+  .rotate-block{display:flex}
 }
+.rotate-block .ric{width:64px;height:64px;stroke:#5b9cf6;stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round;margin-bottom:22px;animation:rotHint 1.8s ease-in-out infinite}
+.rotate-block h2{font-size:19px;font-weight:800;color:#eef2ff;letter-spacing:-.3px;margin-bottom:8px}
+.rotate-block p{font-size:13px;color:#8892b0;max-width:260px;line-height:1.5}
+@keyframes rotHint{0%,100%{transform:rotate(0deg)}50%{transform:rotate(-90deg)}}
 :root{
   --c0:#080c18;
   --g1:rgba(255,255,255,0.06);--g2:rgba(255,255,255,0.1);--g3:rgba(255,255,255,0.15);
@@ -124,7 +129,8 @@ body{display:flex;flex-direction:column;position:relative}
 .tc-cl{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--t3);margin-bottom:6px}
 .tc-cv{font-size:22px;font-weight:800;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
 .tc-cv.dim{color:var(--t3);font-weight:400;font-size:20px}
-.tc-cell.tapme{cursor:pointer;position:relative;isolation:isolate;border-radius:12px;overflow:hidden}
+.tc-cell.tapme{cursor:pointer;position:relative;isolation:isolate;border-radius:12px;overflow:hidden;touch-action:none}
+.tc-cell.swiping{touch-action:none}
 .tc-cell.tapme:active{background:rgba(255,255,255,.05)}
 .tc-cell.tapme::before{content:'';position:absolute;inset:-60%;z-index:-2;background:conic-gradient(from 0deg,transparent 0deg,currentColor 16deg,transparent 50deg,transparent 310deg,currentColor 344deg,transparent 360deg);animation:tcSpin 2.1s linear infinite}
 .tc-cell.tapme::after{content:'';position:absolute;inset:2px;z-index:-1;border-radius:9px;background:#0b0f1c}
@@ -135,7 +141,17 @@ body{display:flex;flex-direction:column;position:relative}
 .tc-cv.action svg{width:15px;height:15px;stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
 .tc-cv.action.go{color:var(--green)}
 .tc-cv.action.stop{color:var(--red)}
+.tc-bn{font-size:10px;font-weight:800;color:var(--t3);margin-right:4px;vertical-align:middle}
 .tc-bot{padding:12px 18px;border-top:1px solid var(--gb);display:flex;align-items:center;justify-content:space-between}
+.ttg2{display:flex;align-items:center;gap:5px;cursor:pointer}
+.ttg2 span{font-size:9.5px;color:var(--t3);white-space:nowrap;font-weight:500}
+.ttg2-sw{width:28px;height:16px;border-radius:8px;background:var(--gb);position:relative;transition:background .2s;flex-shrink:0}
+.ttg2-knob{width:12px;height:12px;border-radius:50%;background:var(--t2);position:absolute;top:2px;left:2px;transition:transform .2s,background .2s}
+.ttg2.on span{color:var(--t1)}
+.ttg2.on .ttg2-knob{background:#fff;transform:translateX(12px)}
+.ttg2.komple.on .ttg2-sw{background:var(--blue)}
+.ttg2.yok.on .ttg2-sw{background:var(--gold)}
+.ttg2.calisilmadi.on .ttg2-sw{background:var(--red)}
 .tc-det{font-size:12px;color:var(--t3)}
 .tc-earn{font-size:17px;font-weight:800;color:var(--green);letter-spacing:-.3px}
 .acts{padding:0 14px;margin-bottom:14px;display:flex;flex-direction:column;gap:10px;position:relative;z-index:1}
@@ -175,7 +191,7 @@ body{display:flex;flex-direction:column;position:relative}
 .sval.blue{color:var(--blue)}
 .sval.green{color:var(--green)}
 .sval.gold{color:var(--gold)}
-.ssub{font-size:11px;color:var(--t3);margin-top:5px;font-weight:500}
+.ssub{font-size:11px;color:var(--t3);margin-top:5px;font-weight:500;line-height:1.55}
 .nav{flex-shrink:0;background:rgba(6,9,20,0.9);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-top:1px solid var(--gb);padding:8px 0 calc(8px + var(--sb));display:flex;position:relative;z-index:5}
 .nbtn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;cursor:pointer;border:none;background:none;font-family:'Inter',sans-serif;color:var(--t3);transition:color .2s}
 .nbtn.on{color:var(--blue)}
@@ -221,6 +237,15 @@ body{display:flex;flex-direction:column;position:relative}
 .mdet-title{font-size:16px;font-weight:800;letter-spacing:-.4px;flex:1}
 .mdet-total{font-size:12px;font-weight:700;color:var(--green);flex-shrink:0}
 .mdet-params{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;padding:6px 10px;border-bottom:1px solid var(--gb);flex-shrink:0}
+.mdet-toggles{display:flex;gap:6px;padding:2px 10px 6px;flex-shrink:0}
+.mtg{flex:1;display:flex;align-items:center;justify-content:space-between;gap:5px;background:rgba(255,255,255,.05);border:1px solid var(--gb);border-radius:10px;padding:6px 8px;cursor:pointer;transition:background .15s}
+.mtg span{font-size:10px;font-weight:700;color:var(--t3)}
+.mtg-sw{width:24px;height:14px;border-radius:7px;background:var(--gb);position:relative;transition:background .2s;flex-shrink:0}
+.mtg-knob{width:10px;height:10px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left .2s}
+.mtg.on{background:rgba(255,255,255,.08)}
+.mtg.on span{color:var(--t1)}
+.mtg.on .mtg-sw{background:var(--blue)}
+.mtg.on .mtg-knob{left:12px}
 .mparam{background:rgba(255,255,255,.04);border:1px solid var(--gb);border-radius:10px;padding:6px 8px}
 .mparam-lbl{font-size:8px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
 .mparam input{width:100%;background:transparent;border:none;color:var(--t1);font-size:13px;font-weight:800;font-family:'Inter',sans-serif;outline:none;padding:0;letter-spacing:-.3px}
@@ -230,7 +255,12 @@ body{display:flex;flex-direction:column;position:relative}
 .det-dow{text-align:center;font-size:9px;font-weight:700;color:var(--t3)}
 .mdet-daygrid{flex:1;display:grid;grid-template-columns:repeat(7,1fr);grid-template-rows:repeat(6,1fr);gap:3px;min-height:0}
 .dgrid-empty{}
-.dgrid-day{border-radius:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:background .15s;overflow:hidden}
+.dgrid-day{position:relative;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:background .15s;overflow:hidden}
+.dgrid-tm{position:absolute;top:2px;left:50%;transform:translateX(-50%);font-size:clamp(5.5px,1.5vw,8.5px);font-weight:800;color:var(--gold);white-space:nowrap;line-height:1;max-width:94%;overflow:hidden;text-overflow:ellipsis}
+.dgrid-yol,.dgrid-yemek{position:absolute;bottom:2px;font-size:clamp(5px,1.2vw,7px);font-weight:700;color:var(--t3);line-height:1.2;max-width:46%;overflow:hidden}
+.dgrid-yol{left:2px;text-align:left}
+.dgrid-yemek{right:2px;text-align:right}
+.dgrid-yol span,.dgrid-yemek span{display:block;font-size:clamp(4.5px,1.1vw,6px);color:var(--t3);opacity:.65;text-transform:uppercase;letter-spacing:.02em}
 .dgrid-day:active{background:rgba(255,255,255,.14)}
 .dgrid-day.today{border-color:var(--bb);background:var(--bd)}
 .dgrid-day.wknd{background:var(--rdd);border-color:rgba(255,107,128,.15)}
@@ -326,9 +356,13 @@ body{display:flex;flex-direction:column;position:relative}
 </style>
 </head>
 <body>
+<div class="rotate-block">
+  <svg class="ric" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+  <h2>Lütfen cihazını dikey çevir</h2>
+  <p>Bu uygulama sadece dikey (portre) modda kullanılabilir.</p>
+</div>
 <div id="app-root">
 <div class="mesh"><div class="m1"></div><div class="m2"></div><div class="m3"></div></div>
-</div>
 
 <div class="screen hidden" id="loginScreen">
 
@@ -391,13 +425,19 @@ body{display:flex;flex-direction:column;position:relative}
         <div class="tc-cell" id="tcCCell"><div class="tc-cl">Çıkış</div><div class="tc-cv dim" id="tcC">—</div></div>
         <div class="tc-cell"><div class="tc-cl">Süre</div><div class="tc-cv dim" id="tcS">—</div></div>
       </div>
-      <div class="tc-bot"><span class="tc-det" id="tcDet"></span><span class="tc-earn" id="tcEarn"></span></div>
+      <div class="tc-bot">
+        <div class="ttg2 yok" id="ttgYok" onclick="event.stopPropagation();toggleMesaiYok(todayKey)"><span>Mesai Yok</span><div class="ttg2-sw"><div class="ttg2-knob"></div></div></div>
+        <div class="ttg2 komple" id="ttgKomple" onclick="event.stopPropagation();toggleKompMesai(todayKey)"><span>Komple Mesai</span><div class="ttg2-sw"><div class="ttg2-knob"></div></div></div>
+        <div class="ttg2 calisilmadi" id="ttgCalisilmadi" onclick="event.stopPropagation();toggleCalisilmadi(todayKey)"><span>Çalışılmadı</span><div class="ttg2-sw"><div class="ttg2-knob"></div></div></div>
+      </div>
+      <span class="tc-det" id="tcDet" style="display:none"></span>
+      <span class="tc-earn" id="tcEarn" style="display:none"></span>
     </div>
     <div class="acts" id="acts"></div>
     <div class="sec-head" id="mhead"></div>
     <div class="sgrid">
       <div class="scard"><div class="slbl">Mesai Saati</div><div class="sval blue" id="ss1">0s</div><div class="ssub" id="ss1s">—</div></div>
-      <div class="scard"><div class="slbl">Yol + Yemek</div><div class="sval gold" id="ss2">0₺</div><div class="ssub">Ekstra ödemeler</div></div>
+      <div class="scard"><div class="slbl">Yol + Yemek + Prim</div><div class="sval gold" id="ss2">0₺</div><div class="ssub" id="ss2s">Ekstra ödemeler</div></div>
       <div class="scard wide" onclick="goCalendar();setTimeout(()=>openMonthDetail(today.getFullYear(),today.getMonth()),350)" style="cursor:pointer;position:relative">
         <div class="slbl">Bu Ay Toplam (Maaş Dahil)</div>
         <div class="sval green" id="ss3">—</div>
@@ -438,6 +478,11 @@ body{display:flex;flex-direction:column;position:relative}
         <div class="back-btn" onclick="calGoBack()"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></div>
         <div class="mdet-title" id="mdetTitle">—</div>
         <div class="mdet-total" id="mdetTotal"></div>
+      </div>
+      <div class="mdet-toggles">
+        <div class="mtg" id="tglMesai" onclick="toggleDayField('tm')"><span>Mesai</span><div class="mtg-sw"><div class="mtg-knob"></div></div></div>
+        <div class="mtg" id="tglYol" onclick="toggleDayField('yol')"><span>Yol</span><div class="mtg-sw"><div class="mtg-knob"></div></div></div>
+        <div class="mtg" id="tglYemek" onclick="toggleDayField('yemek')"><span>Yemek</span><div class="mtg-sw"><div class="mtg-knob"></div></div></div>
       </div>
       <div class="mdet-params">
         <div class="mparam"><div class="mparam-lbl">Net Maaş</div><input type="number" id="mdetMaas" min="0" onchange="onMaasChange(this.value)"></div>
@@ -699,6 +744,7 @@ const today=new Date();
 const todayKey=dk(today.getFullYear(),today.getMonth(),today.getDate());
 let curY=today.getFullYear(),curM=today.getMonth();
 let openDays={},modalKey=null,syncTimer=null,isSyncing=false;
+let homeBlockIdx=0,homeBlockRevertTimer=null;
 let storageKey='mt_local_v1'; // yerel mod ve bulut modu ayrı anahtarlarda tutulur, birbirine karışmaz
 let userInfo=null;
 let cfg={vardiyaS:'15:00',vardiyaB:'23:00',carpan:1.5,aylikSaat:225,brutMaas:0,theme:'default'};
@@ -784,7 +830,10 @@ function calcDay(key){
     netMin=-vs;
     hasMesai=false;
   } else if(blocks.length>0){
-    if(r.kompMesai){
+    if(r.mesaiYok){
+      // Mesai Yok modu: gün çalışıldı sayılır (yol/yemek uygulanır) ama mesai tutarı sıfırlanır
+      netMin=0;
+    } else if(r.kompMesai){
       // Komple mesai modu: tüm çalışma süresi mesai
       netMin=totalWork;
     } else {
@@ -805,6 +854,14 @@ function calcMonth(y,m){let mn=0,tm=0,yl=0,yk=0;for(let d=1;d<=daysIn(y,m);d++){
 
 function saveLocal(){try{localStorage.setItem(storageKey,JSON.stringify({cfg,salaries,dayData,monthData,profile,backupSettings,ts:Date.now()}));}catch(e){}}
 function loadLocal(){try{const r=localStorage.getItem(storageKey);if(r){const d=JSON.parse(r);cfg=Object.assign(cfg,d.cfg||{});if(cfg.bitis&&!cfg.vardiyaB)cfg.vardiyaB=cfg.bitis;salaries=d.salaries||{};dayData=d.dayData||{};monthData=d.monthData||{};profile=Object.assign({name:'',workName:'',avatar:'',avatarType:'emoji',startDate:''},d.profile||{});backupSettings=Object.assign({period:'weekly',customDay:1,lastBackup:null},d.backupSettings||{});}else{salaries={};dayData={};monthData={};profile={name:'',workName:'',avatar:'',avatarType:'emoji',startDate:''};backupSettings={period:'weekly',customDay:1,lastBackup:null};}}catch(e){}}
+// Varsayılan (yedek) debouncePush — Firebase modülü (internet yoksa) hiç yüklenemese bile
+// veri kaydetme işlemleri hata vermesin diye burada da tanımlı. Modül başarıyla yüklenirse
+// kendi (bulutla senkronize eden) versiyonuyla bunun üzerine yazar.
+function debouncePush(){
+  markPendingSync();
+  clearTimeout(syncTimer);
+  syncTimer=setTimeout(()=>{if(window._fbPush)window._fbPush();},1500);
+}
 
 function updateUser(){
   if(!userInfo)return;
@@ -822,7 +879,7 @@ function setSyncUI(state,txt){
 function toggleKompMesai(key){
   if(!dayData[key])dayData[key]={};
   dayData[key].kompMesai=!dayData[key].kompMesai;
-  if(dayData[key].kompMesai)dayData[key].calisilmadi=false;
+  if(dayData[key].kompMesai){dayData[key].calisilmadi=false;dayData[key].mesaiYok=false;}
   saveLocal();debouncePush();
   // Overlay'i yeniden oluştur
   const r=getDay(key),c=calcDay(key);
@@ -830,11 +887,12 @@ function toggleKompMesai(key){
   if(head){const[ys,ms,ds]=key.split('-').map(Number),dt=new Date(ys,ms,ds),dow=dt.getDay();head.innerHTML=`<h3>${ds} ${MONTHS[ms]} ${ys} — ${DAYS[dow]}</h3><p>${c.netMin!==0?fmtD(Math.abs(c.netMin))+(c.netMin<0?' eksik':' mesai')+(c.tm?` · ${fmtTL(c.tm)}`:''):'Mesai girilmedi'}</p>`;}
   if(body)body.innerHTML=buildDayDetailHTML(key,r,c);
   refreshDayOv(key);
+  applyTodayToggleUI();
 }
 function toggleCalisilmadi(key){
   if(!dayData[key])dayData[key]={};
   dayData[key].calisilmadi=!dayData[key].calisilmadi;
-  if(dayData[key].calisilmadi)dayData[key].kompMesai=false;
+  if(dayData[key].calisilmadi){dayData[key].kompMesai=false;dayData[key].mesaiYok=false;}
   saveLocal();debouncePush();
   // Overlay'i yeniden oluştur
   const r=getDay(key),c=calcDay(key);
@@ -842,6 +900,23 @@ function toggleCalisilmadi(key){
   if(head){const[ys,ms,ds]=key.split('-').map(Number),dt=new Date(ys,ms,ds),dow=dt.getDay();head.innerHTML=`<h3>${ds} ${MONTHS[ms]} ${ys} — ${DAYS[dow]}</h3><p>${c.netMin!==0?fmtD(Math.abs(c.netMin))+(c.netMin<0?' eksik':' mesai')+(c.tm?` · ${fmtTL(c.tm)}`:''):'Mesai girilmedi'}</p>`;}
   if(body)body.innerHTML=buildDayDetailHTML(key,r,c);
   refreshDayOv(key);
+  applyTodayToggleUI();
+}
+function toggleMesaiYok(key){
+  if(!dayData[key])dayData[key]={};
+  dayData[key].mesaiYok=!dayData[key].mesaiYok;
+  if(dayData[key].mesaiYok){dayData[key].kompMesai=false;dayData[key].calisilmadi=false;}
+  saveLocal();debouncePush();
+  const r=getDay(key),c=calcDay(key);
+  const head=$('dayOvHead'),body=$('dayOvBody');
+  if(head){const[ys,ms,ds]=key.split('-').map(Number),dt=new Date(ys,ms,ds),dow=dt.getDay();head.innerHTML=`<h3>${ds} ${MONTHS[ms]} ${ys} — ${DAYS[dow]}</h3><p>${c.netMin!==0?fmtD(Math.abs(c.netMin))+(c.netMin<0?' eksik':' mesai')+(c.tm?` · ${fmtTL(c.tm)}`:''):'Mesai girilmedi'}</p>`;}
+  if(body)body.innerHTML=buildDayDetailHTML(key,r,c);
+  refreshDayOv(key);
+  applyTodayToggleUI();
+}
+function applyTodayToggleUI(){
+  const r=getDay(todayKey);
+  [['ttgKomple','kompMesai'],['ttgYok','mesaiYok'],['ttgCalisilmadi','calisilmadi']].forEach(([id,field])=>{const el=$(id);if(el)el.classList.toggle('on',!!r[field]);});
 }
 function clearCarpan(key){if(!dayData[key])dayData[key]={};dayData[key].carpanOverride=null;saveLocal();debouncePush();refreshDayOv(key);}
 function setField(key,field,val){if(!dayData[key])dayData[key]={};dayData[key][field]=val;saveLocal();debouncePush();}
@@ -1052,32 +1127,70 @@ function goCalendar(){
 function goSettings(){showScreen('settingsScreen');}
 function renderAll(){if(curScreen==='homeScreen')renderHome();else if(curScreen==='calScreen')renderCal();}
 
+function renderBlockPair(){
+  const blks=getMesailer(getDay(todayKey));
+  if(!blks.length)return;
+  if(homeBlockIdx>=blks.length)homeBlockIdx=0;
+  const b=blks[homeBlockIdx];
+  const gEl=$('tcG'),cEl=$('tcC'),cCell=$('tcCCell');
+  if(gEl){gEl.className='tc-cv'+(b.giris?'':' dim');gEl.innerHTML=`<span class="tc-bn">${homeBlockIdx+1}</span>${b.giris||'—'}`;}
+  if(b.cikis){
+    if(cEl){cEl.className='tc-cv'+(b.cikis?'':' dim');cEl.innerHTML=`<span class="tc-bn">${homeBlockIdx+1}</span>${b.cikis}`;}
+    if(cCell){cCell.classList.remove('tapme','go','stop');cCell.onclick=null;}
+  }else{
+    if(cEl){cEl.className='tc-cv action stop';cEl.innerHTML=`<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>Bitir`;}
+    if(cCell){cCell.classList.add('tapme','stop');cCell.classList.remove('go');cCell.onclick=(e)=>{e.stopPropagation();openCikisSheet(todayKey);};}
+  }
+}
+function advanceHomeBlock(dir){
+  const blks=getMesailer(getDay(todayKey));
+  if(blks.length<=1)return;
+  homeBlockIdx=(homeBlockIdx+dir+blks.length)%blks.length;
+  renderBlockPair();
+  if(homeBlockRevertTimer)clearTimeout(homeBlockRevertTimer);
+  homeBlockRevertTimer=setTimeout(()=>{
+    const blks2=getMesailer(getDay(todayKey));
+    if(blks2.length){homeBlockIdx=blks2.length-1;renderBlockPair();}
+    homeBlockRevertTimer=null;
+  },5000);
+}
 function renderHome(){
   const hd=$('hDate'),hday=$('hDay');
   if(hd)hd.innerHTML=`${today.getDate()} <em>${MONTHS[today.getMonth()]}</em> ${today.getFullYear()}`;
   if(hday)hday.textContent=DAYS[today.getDay()];
   const r=getDay(todayKey),c=calcDay(todayKey);
+  applyTodayToggleUI();
   const dot=$('stdot'),st=$('sttxt');
   const todayBlks=getMesailer(r);const lastBlk=todayBlks[todayBlks.length-1];
   const hasAny=todayBlks.length>0&&todayBlks[0].giris;const allDone=hasAny&&todayBlks.every(b=>b.giris&&b.cikis);
   if(dot&&st){if(allDone){dot.className='stdot done';st.textContent=todayBlks.length>1?todayBlks.length+' mesai tamamlandı':'Tamamlandı';}else if(hasAny){dot.className='stdot live';st.textContent='Devam ediyor…';}else{dot.className='stdot';st.textContent='Mesai girilmedi';}}
   const setC=(id,val)=>{const el=$(id);if(!el)return;el.textContent=val||'—';el.className='tc-cv'+(val?'':' dim');};
-  const dispGiris=todayBlks.length>1?todayBlks.length+' blok':lastBlk?.giris||'';
-  const dispCikis=todayBlks.length>1?'':lastBlk?.cikis||'';
+  const dispGiris=lastBlk?.giris||'';
+  const dispCikis=lastBlk?.cikis||'';
   const gCell=$('tcGCell'),cCell=$('tcCCell'),gEl=$('tcG'),cEl=$('tcC');
+  if(homeBlockRevertTimer){clearTimeout(homeBlockRevertTimer);homeBlockRevertTimer=null;}
   if(!hasAny){
     if(gEl){gEl.className='tc-cv action go';gEl.innerHTML=`<svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>Başla`;}
-    if(gCell){gCell.classList.add('tapme','go');gCell.classList.remove('stop');gCell.onclick=(e)=>{e.stopPropagation();openGirisSheet();};}
+    if(gCell){gCell.classList.add('tapme','go');gCell.classList.remove('stop','swiping');gCell.onclick=(e)=>{e.stopPropagation();openGirisSheet();};gCell.ontouchstart=null;gCell.ontouchend=null;}
     if(cCell){cCell.classList.remove('tapme','go','stop');cCell.onclick=null;}
     setC('tcC','');
+  }else if(todayBlks.length>1){
+    homeBlockIdx=todayBlks.length-1;
+    if(gCell){
+      gCell.classList.remove('tapme','go','stop');gCell.classList.add('swiping');gCell.onclick=null;
+      gCell.ontouchstart=(e)=>{gCell._ty=e.touches[0].clientY;};
+      gCell.ontouchend=(e)=>{if(gCell._ty==null)return;const dy=gCell._ty-e.changedTouches[0].clientY;if(dy>25)advanceHomeBlock(-1);gCell._ty=null;};
+      if(!gCell._swipeBound){gCell._swipeBound=true;gCell.addEventListener('touchmove',(e)=>{if(gCell._ty!=null)e.preventDefault();},{passive:false});}
+    }
+    renderBlockPair();
   }else if(hasAny&&!allDone){
     setC('tcG',dispGiris);
-    if(gCell){gCell.classList.remove('tapme','go','stop');gCell.onclick=null;}
+    if(gCell){gCell.classList.remove('tapme','go','stop','swiping');gCell.onclick=null;gCell.ontouchstart=null;gCell.ontouchend=null;}
     if(cEl){cEl.className='tc-cv action stop';cEl.innerHTML=`<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>Bitir`;}
     if(cCell){cCell.classList.add('tapme','stop');cCell.classList.remove('go');cCell.onclick=(e)=>{e.stopPropagation();openCikisSheet(todayKey);};}
   }else{
     setC('tcG',dispGiris);setC('tcC',dispCikis);
-    if(gCell){gCell.classList.remove('tapme','go','stop');gCell.onclick=null;}
+    if(gCell){gCell.classList.remove('tapme','go','stop','swiping');gCell.onclick=null;gCell.ontouchstart=null;gCell.ontouchend=null;}
     if(cCell){cCell.classList.remove('tapme','go','stop');cCell.onclick=null;}
   }
   const sureVal=c.netMin>0?fmtD(c.netMin):c.netMin<0?fmtD(Math.abs(c.netMin))+' eksik':'';
@@ -1092,13 +1205,15 @@ function renderHome(){
   const md=getMonthData(today.getFullYear(),today.getMonth());const primTop=(md.devamPrimi||0)+(md.performansPrimi||0);
   if($('ss1'))$('ss1').textContent=fmtD(Math.abs(mc.mn));if($('ss1s'))$('ss1s').textContent=maskTL(fmtTL(mc.tm))+' mesai ücreti';
   if($('ss2'))$('ss2').textContent=maskTL(fmtTL(mc.yl+mc.yk+primTop));
+  const ss2Parts=[];if(mc.yl>0)ss2Parts.push('Yol '+maskTL(fmtTL(mc.yl)));if(mc.yk>0)ss2Parts.push('Yemek '+maskTL(fmtTL(mc.yk)));if(primTop>0)ss2Parts.push('Prim '+maskTL(fmtTL(primTop)));
+  if($('ss2s'))$('ss2s').innerHTML=ss2Parts.length?ss2Parts.join('<br>'):'Ekstra ödemeler';
   if($('ss3'))$('ss3').textContent=maskTL(fmtTL(netMaas+mc.tm+mc.yl+mc.yk+primTop));
-  const subParts=[maskTL(fmtTL(netMaas))+' net maaş'];if(mc.tm!==0)subParts.push(maskTL(fmtTL(mc.tm))+' mesai');if(primTop>0)subParts.push(maskTL(fmtTL(primTop))+' prim');
+  const subParts=[maskTL(fmtTL(netMaas))+' net maaş'];if(mc.tm!==0)subParts.push(maskTL(fmtTL(mc.tm))+' mesai');if(mc.yl>0)subParts.push(maskTL(fmtTL(mc.yl))+' yol');if(mc.yk>0)subParts.push(maskTL(fmtTL(mc.yk))+' yemek');if(primTop>0)subParts.push(maskTL(fmtTL(primTop))+' prim');
   if($('ss3s'))$('ss3s').textContent=subParts.join(' + ');
   if($('tcEarn'))$('tcEarn').textContent=c.top>0?maskTL(fmtTL(c.top)):'';
   applyPrivacyUI();
   const prevEl=$('prevMonths');
-  if(prevEl){let html='';for(let i=1;i<=11;i++){let pm=today.getMonth()-i,py=today.getFullYear();if(pm<0){pm+=12;py--;}const pmc=calcMonth(py,pm),pNet=getSalary(py,pm),pmd=getMonthData(py,pm);const pPrim=(pmd.devamPrimi||0)+(pmd.performansPrimi||0);const pGrand=pNet+pmc.tm+pmc.yl+pmc.yk+pPrim;if(pGrand===0&&pmc.mn===0&&!salaries[mk(py,pm)])continue;html+=`<div class="scard wide" onclick="goCalendar();setTimeout(()=>openMonthDetail(${py},${pm}),350)" style="cursor:pointer;position:relative;margin-bottom:10px"><div class="slbl">${MONTHS[pm]} ${py}</div><div class="sval" style="font-size:20px;color:var(--t1)">${maskTL(fmtTL(pGrand))}</div><div class="ssub">${maskTL(fmtTL(pNet))} net + ${maskTL(fmtTL(pmc.tm))} mesai${pPrim>0?' + '+maskTL(fmtTL(pPrim))+' prim':''}</div>${pmc.mn!==0?`<div class="ssub" style="margin-top:2px">${fmtD(Math.abs(pmc.mn))} mesai saati</div>`:''}<div style="position:absolute;top:12px;right:14px;font-size:10px;font-weight:700;color:var(--t3)">Detay →</div></div>`;}prevEl.innerHTML=html||'<div style="font-size:13px;color:var(--t3);padding:8px 0">Geçmiş ay verisi yok</div>';}
+  if(prevEl){let html='';for(let i=1;i<=11;i++){let pm=today.getMonth()-i,py=today.getFullYear();if(pm<0){pm+=12;py--;}const pmc=calcMonth(py,pm),pNet=getSalary(py,pm),pmd=getMonthData(py,pm);const pPrim=(pmd.devamPrimi||0)+(pmd.performansPrimi||0);const pGrand=pNet+pmc.tm+pmc.yl+pmc.yk+pPrim;if(pGrand===0&&pmc.mn===0&&!salaries[mk(py,pm)])continue;const pParts=[maskTL(fmtTL(pNet))+' net',maskTL(fmtTL(pmc.tm))+' mesai'];if(pmc.yl>0)pParts.push(maskTL(fmtTL(pmc.yl))+' yol');if(pmc.yk>0)pParts.push(maskTL(fmtTL(pmc.yk))+' yemek');if(pPrim>0)pParts.push(maskTL(fmtTL(pPrim))+' prim');html+=`<div class="scard wide" onclick="goCalendar();setTimeout(()=>openMonthDetail(${py},${pm}),350)" style="cursor:pointer;position:relative;margin-bottom:10px"><div class="slbl">${MONTHS[pm]} ${py}</div><div class="sval" style="font-size:20px;color:var(--t1)">${maskTL(fmtTL(pGrand))}</div><div class="ssub">${pParts.join(' + ')}</div>${pmc.mn!==0?`<div class="ssub" style="margin-top:2px">${fmtD(Math.abs(pmc.mn))} mesai saati</div>`:''}<div style="position:absolute;top:12px;right:14px;font-size:10px;font-weight:700;color:var(--t3)">Detay →</div></div>`;}prevEl.innerHTML=html||'<div style="font-size:13px;color:var(--t3);padding:8px 0">Geçmiş ay verisi yok</div>';}
 }
 function openEditToday(){goCalendar();setTimeout(()=>openDayDetail(todayKey),350);}
 
@@ -1131,20 +1246,46 @@ function openMonthDetail(y,m){
   if(perfInp){perfInp._realVal=undefined;perfInp.removeAttribute('readonly');perfInp.value=md.performansPrimi||0;}
   renderMonthDetailGrid(y,m);updateMonthDetailFooter(y,m);
   applyPrivacyUI();
+  applyDayFieldToggleUI();
   $('yearView').className='cal-sub left';$('monthView').className='cal-sub active';
 }
 function calGoBack(){if($('calTitle'))$('calTitle').textContent='Takvim';$('yearView').className='cal-sub active';$('monthView').className='cal-sub right';detailY=null;detailM=null;}
+function dayCellClass(isToday,isWE,hasEntry,netMin){
+  let cls='dgrid-day';if(isToday)cls+=' today';else if(isWE)cls+=' wknd';
+  if(hasEntry&&netMin>0)cls+=' has-pos';else if(hasEntry&&netMin<0)cls+=' has-neg';
+  return cls;
+}
+let dayFieldVis={tm:true,yol:true,yemek:true};
+(function loadDayFieldVis(){try{const r=localStorage.getItem('mt_dayfields');if(r)Object.assign(dayFieldVis,JSON.parse(r));}catch(e){}})();
+function saveDayFieldVis(){try{localStorage.setItem('mt_dayfields',JSON.stringify(dayFieldVis));}catch(e){}}
+function applyDayFieldToggleUI(){
+  const map={tm:'tglMesai',yol:'tglYol',yemek:'tglYemek'};
+  Object.keys(map).forEach(k=>{const el=$(map[k]);if(el)el.classList.toggle('on',!!dayFieldVis[k]);});
+}
+function toggleDayField(f){
+  dayFieldVis[f]=!dayFieldVis[f];
+  saveDayFieldVis();
+  applyDayFieldToggleUI();
+  if(detailY!==null)renderMonthDetailGrid(detailY,detailM);
+}
+function buildDayCellContent(d,c,hasEntry){
+  const minTxt=hasEntry&&c.netMin!==0?fmtD(Math.abs(c.netMin))+(c.netMin<0?' eksik':''):'';
+  const tmTxt=dayFieldVis.tm&&c.tm!==0?maskTL(fmtTL(c.tm)):'';
+  const yolTxt=dayFieldVis.yol&&c.yol>0?maskTL(fmtTL(c.yol)):'';
+  const yemekTxt=dayFieldVis.yemek&&c.yemek>0?maskTL(fmtTL(c.yemek)):'';
+  return `${tmTxt?`<div class="dgrid-tm">${tmTxt}</div>`:''}<div class="dgrid-dn">${d}</div>${minTxt?`<div class="dgrid-min">${minTxt}</div>`:''}${yolTxt?`<div class="dgrid-yol"><span>Yol</span>${yolTxt}</div>`:''}${yemekTxt?`<div class="dgrid-yemek"><span>Yemek</span>${yemekTxt}</div>`:''}`;
+}
 function renderMonthDetailGrid(y,m){
   const grid=$('mdetGrid');if(!grid)return;
   const firstDow=new Date(y,m,1).getDay();const offset=(firstDow+6)%7;const daysCount=daysIn(y,m);
   let html='';for(let i=0;i<offset;i++)html+='<div class="dgrid-empty"></div>';
-  for(let d=1;d<=daysCount;d++){const key=dk(y,m,d),dt=new Date(y,m,d),dow=dt.getDay();const isWE=dow===0||dow===6,isToday=key===todayKey;const r=getDay(key),c=calcDay(key);const hasEntry=getMesailer(r).some(b=>b.giris);let cls='dgrid-day';if(isToday)cls+=' today';else if(isWE)cls+=' wknd';if(hasEntry&&c.netMin>0)cls+=' has-pos';else if(hasEntry&&c.netMin<0)cls+=' has-neg';const minTxt=hasEntry&&c.netMin!==0?fmtD(Math.abs(c.netMin))+(c.netMin<0?'-':''):'';html+=`<div class="${cls}" id="dgd-${key}" onclick="openDayDetail('${key}')"><div class="dgrid-dn">${d}</div>${minTxt?`<div class="dgrid-min">${minTxt}</div>`:''}</div>`;}
+  for(let d=1;d<=daysCount;d++){const key=dk(y,m,d),dt=new Date(y,m,d),dow=dt.getDay();const isWE=dow===0||dow===6,isToday=key===todayKey;const r=getDay(key),c=calcDay(key);const hasEntry=getMesailer(r).some(b=>b.giris);const cls=dayCellClass(isToday,isWE,hasEntry,c.netMin);html+=`<div class="${cls}" id="dgd-${key}" onclick="openDayDetail('${key}')">${buildDayCellContent(d,c,hasEntry)}</div>`;}
   grid.innerHTML=html;
 }
 function updateMonthDetailFooter(y,m){
   const mc=calcMonth(y,m),netMaas=getSalary(y,m),md=getMonthData(y,m);const primTop=(md.devamPrimi||0)+(md.performansPrimi||0);const grand=netMaas+mc.tm+mc.yl+mc.yk+primTop;
   const grandStr=fmtTL(grand);
-  const parts=[fmtTL(netMaas)+' net'];if(mc.mn!==0)parts.push(fmtTL(mc.tm)+(mc.mn<0?' eksik':' mesai'));if(primTop>0)parts.push(fmtTL(primTop)+' prim');
+  const parts=[fmtTL(netMaas)+' net'];if(mc.mn!==0)parts.push(fmtTL(mc.tm)+(mc.mn<0?' eksik':' mesai'));if(mc.yl>0)parts.push(fmtTL(mc.yl)+' yol');if(mc.yk>0)parts.push(fmtTL(mc.yk)+' yemek');if(primTop>0)parts.push(fmtTL(primTop)+' prim');
   const subStr=parts.join(' + ');
   const totalStr=grand>0?fmtTL(grand):'';
   // Raw değerleri sakla
@@ -1183,9 +1324,13 @@ function buildDayDetailHTML(key,r,c){
   <span style="font-size:10.5px;color:var(--t3)">${r.vardiyaS!=null?'Bu güne özel':'Öncekinden miras'}</span>
 </div>
 <div style="display:flex;gap:8px;margin-bottom:12px">
-  <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;${r.calisilmadi?'opacity:.35;pointer-events:none':''}background:rgba(255,255,255,.05);border:1px solid var(--gb);border-radius:14px;padding:9px 6px;cursor:pointer" onclick="toggleKompMesai('${key}')">
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;${r.calisilmadi||r.mesaiYok?'opacity:.35;pointer-events:none':''}background:rgba(255,255,255,.05);border:1px solid var(--gb);border-radius:14px;padding:9px 6px;cursor:pointer" onclick="toggleKompMesai('${key}')">
     <span style="font-size:10.5px;font-weight:700;color:${r.kompMesai?'var(--blue)':'var(--t2)'};white-space:nowrap">Komple Mesai</span>
     ${toggle(r.kompMesai,'var(--blue)')}
+  </div>
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;${r.calisilmadi?'opacity:.35;pointer-events:none':''}background:rgba(255,255,255,.05);border:1px solid var(--gb);border-radius:14px;padding:9px 6px;cursor:pointer" onclick="toggleMesaiYok('${key}')">
+    <span style="font-size:10.5px;font-weight:700;color:${r.mesaiYok?'var(--gold)':'var(--t2)'};white-space:nowrap">Mesai Yok</span>
+    ${toggle(r.mesaiYok,'var(--gold)')}
   </div>
   <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;background:rgba(255,255,255,.05);border:1px solid var(--gb);border-radius:14px;padding:9px 6px;cursor:pointer" onclick="toggleCalisilmadi('${key}')">
     <span style="font-size:10.5px;font-weight:700;color:${r.calisilmadi?'var(--red)':'var(--t2)'};white-space:nowrap">Çalışılmadı</span>
@@ -1193,7 +1338,7 @@ function buildDayDetailHTML(key,r,c){
   </div>
 </div>
 <div class="frow" style="${r.kompMesai?'opacity:.35;pointer-events:none':''}"><div class="fi"><label>Başlangıç</label><input type="time" value="${r.vardiyaS!=null?r.vardiyaS:fmtT(getVardiya(key).s)}" onchange="setVardiya('${key}','vardiyaS',this.value)"></div><div class="fi"><label>Bitiş</label><input type="time" value="${r.vardiyaB!=null?r.vardiyaB:fmtT(getVardiya(key).b)}" onchange="setVardiya('${key}','vardiyaB',this.value)"></div></div>
-<div style="margin-top:8px;font-size:11px;color:var(--t3)">${r.calisilmadi?'Bu gün çalışılmadı sayılıyor, vardiya süresi mesaiden düşülüyor.':r.kompMesai?'Tüm çalışma süresi mesai sayılıyor.':'Sonraki günler bu vardiyayı otomatik alır.'}</div></div>
+<div style="margin-top:8px;font-size:11px;color:var(--t3)">${r.calisilmadi?'Bu gün çalışılmadı sayılıyor, vardiya süresi mesaiden düşülüyor.':r.mesaiYok?'Gün çalışıldı sayılıyor (yol/yemek uygulanır) ama mesai tutarı sıfırlanıyor.':r.kompMesai?'Tüm çalışma süresi mesai sayılıyor.':'Sonraki günler bu vardiyayı otomatik alır.'}</div></div>
   <div class="det-s"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;${r.calisilmadi?'opacity:.35;pointer-events:none':''}"><div class="det-lbl" style="margin-bottom:0">Mesai Blokları</div><button onclick="addMesaiBlokOv('${key}')" style="display:flex;align-items:center;gap:5px;padding:6px 12px;background:var(--bd);border:1px solid var(--bb);border-radius:8px;color:var(--blue);font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif"><svg style="width:14px;height:14px;stroke:currentColor;stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Ekle</button></div><div id="mbloks-ov-${key}" style="${r.calisilmadi?'opacity:.35;pointer-events:none':''}">${buildMesaiBloksHTML(key,r)}</div>
   <div class="frow3" style="margin-top:10px"><div class="fi"><label>Çarpan <span onclick="clearCarpan('${key}')" style="color:var(--t3);font-size:9px;cursor:pointer;margin-left:2px">[vars.]</span></label><input type="number" step="0.25" min="1" value="${cp}" oninput="setField('${key}','carpanOverride',parseFloat(this.value));refreshDayOv('${key}')"></div><div class="fi"><label>Yol (₺)</label><input type="number" min="0" placeholder="${getYol(key)||0}" value="${r.yolTutar||''}" onchange="setField('${key}','yolTutar',this.value);refreshDayOv('${key}')"></div><div class="fi"><label>Yemek (₺)</label><input type="number" min="0" placeholder="0" value="${r.yemekTutar||''}" onchange="setField('${key}','yemekTutar',this.value);refreshDayOv('${key}')"></div></div>
   ${r.yolTutar==null||r.yolTutar===''?`<div style="margin-top:4px;font-size:10px;color:var(--t3)">Yol için miras: ${getYol(key)}₺</div>`:''}
@@ -1207,7 +1352,7 @@ function refreshDayOv(key){
   const r=getDay(key),c=calcDay(key);
   const head=$('dayOvHead');if(head){const[ys,ms,ds]=key.split('-').map(Number),dt=new Date(ys,ms,ds),dow=dt.getDay();head.innerHTML=`<h3>${ds} ${MONTHS[ms]} ${ys} — ${DAYS[dow]}</h3><p>${c.netMin!==0?fmtD(Math.abs(c.netMin))+(c.netMin<0?' eksik':' mesai')+(c.tm?` · ${fmtTL(c.tm)}`:''):'Mesai girilmedi'}</p>`;}
   const tile=$('dgd-'+key);
-  if(tile){const[ys,ms,ds]=key.split('-').map(Number),dt=new Date(ys,ms,ds),dow=dt.getDay();const isWE=dow===0||dow===6,isToday=key===todayKey,hasEntry=getMesailer(r).some(b=>b.giris);let cls='dgrid-day';if(isToday)cls+=' today';else if(isWE)cls+=' wknd';if(hasEntry&&c.netMin>0)cls+=' has-pos';else if(hasEntry&&c.netMin<0)cls+=' has-neg';const minTxt=hasEntry&&c.netMin!==0?fmtD(Math.abs(c.netMin))+(c.netMin<0?' eksik':''):'';tile.className=cls;tile.innerHTML=`<div class="dgrid-dn">${ds}</div>${minTxt?`<div class="dgrid-min">${minTxt}</div>`:''}`;}
+  if(tile){const[ys,ms,ds]=key.split('-').map(Number),dt=new Date(ys,ms,ds),dow=dt.getDay();const isWE=dow===0||dow===6,isToday=key===todayKey,hasEntry=getMesailer(r).some(b=>b.giris);tile.className=dayCellClass(isToday,isWE,hasEntry,c.netMin);tile.innerHTML=buildDayCellContent(ds,c,hasEntry);}
   refreshMonthCard();
 }
 function addMesaiBlokOv(key){ensureMesailer(key);dayData[key].mesailer.push({giris:'',cikis:''});saveLocal();debouncePush();const el=$('mbloks-ov-'+key);if(el)el.innerHTML=buildMesaiBloksHTML(key,dayData[key]);}
