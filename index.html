@@ -20,22 +20,29 @@
 // - İkisi de yoksa -> loginScreen (kullanıcı seçim yapar)
 function continueLocal(){
   localStorage.setItem('mt_local_mode','1');
-  storageKey='mt_local_v1';
+  baseStorageKey='mt_local_v1';
+  const firstTime=loadWorkplacesMeta();
   loadLocal();
   document.documentElement.setAttribute('data-theme',cfg.theme||'default');
   applySettings();
   showScreen('homeScreen');renderHome();
   setSyncUI('ok','Yerel mod');
   checkBackupReminder();
+  if(firstTime)setTimeout(()=>openWpRename('default'),500);
 }
 function resetAllData(){
   if(confirm('Tüm veriler (bulut dahil) silinecek. Emin misiniz?')){
-    localStorage.removeItem(storageKey);
-    localStorage.removeItem('mt_local_v1');
+    try{
+      const prefix=baseStorageKey;
+      for(let i=localStorage.length-1;i>=0;i--){
+        const k=localStorage.key(i);
+        if(k&&k.indexOf(prefix)===0)localStorage.removeItem(k);
+      }
+    }catch(e){}
     localStorage.removeItem('mt_v4'); // eski (tek anahtarlı) sürümden kalan varsa
     localStorage.removeItem('mt_local_mode');
     localStorage.removeItem('mt_last_uid');
-    dayData={};salaries={};monthData={};
+    dayData={};salaries={};monthData={};workplaces=[];activeWorkplaceId='default';
     cfg={vardiyaS:'15:00',vardiyaB:'23:00',carpan:1.5,aylikSaat:225,brutMaas:0,theme:'default'};
     if(window._fbSignOut)window._fbSignOut();
     location.reload();
@@ -109,6 +116,7 @@ body{display:flex;flex-direction:column;position:relative}
 .hero-date{font-size:30px;font-weight:800;letter-spacing:-1px;line-height:1.1}
 .hero-date em{color:var(--blue);font-style:normal}
 .hero-day{font-size:13px;color:var(--t2);margin-top:4px}
+.hero-wp{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;color:var(--blue);background:var(--bd);border:1px solid var(--bb);border-radius:20px;padding:4px 11px;margin-top:9px;cursor:pointer}
 .sync-row{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--t3);margin-top:6px}
 .sdot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;transition:background .3s}
 .avbtn{width:44px;height:44px;border-radius:50%;border:2px solid var(--gb);background:var(--bd);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;overflow:hidden}
@@ -313,6 +321,16 @@ body{display:flex;flex-direction:column;position:relative}
 .av-emoji-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:14px;max-height:180px;overflow-y:auto}
 .av-emoji{font-size:23px;text-align:center;padding:8px 0;border-radius:10px;background:rgba(255,255,255,.05);cursor:pointer}
 .av-emoji:active{background:rgba(255,255,255,.12)}
+.wp-item{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.05);border:1px solid var(--gb);border-radius:var(--r);padding:4px}
+.wp-item.active{border-color:var(--bb);background:var(--bd)}
+.wp-tap{flex:1;display:flex;align-items:center;gap:12px;padding:10px 8px;cursor:pointer;min-width:0}
+.wp-dot{width:36px;height:36px;border-radius:50%;background:var(--bd);color:var(--blue);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;flex-shrink:0}
+.wp-name{flex:1;font-size:14px;font-weight:700;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wp-check{width:18px;height:18px;stroke:var(--blue);stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.wp-actions{display:flex;gap:4px;padding-right:6px;flex-shrink:0}
+.wp-act{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.06);border:none;color:var(--t3);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.wp-act svg{width:14px;height:14px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.wp-act.del{color:var(--red)}
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s;backdrop-filter:blur(6px)}
 .ov.show{opacity:1;pointer-events:all}
 .sh{background:rgba(8,12,24,0.97);backdrop-filter:blur(32px);-webkit-backdrop-filter:blur(32px);border-radius:24px 24px 0 0;border-top:1px solid var(--gb);padding:0 0 calc(24px + var(--sb));width:100%;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1)}
@@ -390,8 +408,9 @@ body{display:flex;flex-direction:column;position:relative}
           <div class="hero-greet">Hoş Geldin</div>
           <div class="hero-date" id="hDate">—</div>
           <div class="hero-day" id="hDay"></div>
+          <div class="hero-wp" id="activeWpLabel" onclick="openWorkplacePicker()">İşyerim</div>
         </div>
-        <div class="avbtn" id="avbtn" onclick="goSettings()">
+        <div class="avbtn" id="avbtn" onclick="openWorkplacePicker()">
           <span id="avEmoji" style="font-size:20px;display:none"></span>
           <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           <img id="avImg" alt="">
@@ -537,6 +556,20 @@ body{display:flex;flex-direction:column;position:relative}
       </div>
       <div style="flex:1"><div class="uname" id="uName">Kullanıcı</div><div class="uemail" id="uEmail">İşyeri belirtilmedi</div><div id="uTenure" style="font-size:11.5px;color:var(--blue);font-weight:600;margin-top:3px"></div></div>
       <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:var(--t3);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>
+    <div class="sg">
+      <div class="sg-lbl">İşyeri Profilleri</div>
+      <div class="slist">
+        <div class="si" onclick="openWorkplacePicker()" style="cursor:pointer">
+          <div class="si-ic blue"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg></div>
+          <div class="si-t"><div class="n">Aktif İşyeri</div><div class="s" id="stWpLabel">İşyerim</div></div>
+          <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--t3);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </div>
+      <button class="sact blue" onclick="openWpCreate()" style="margin-top:10px">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Yeni İşyeri Profili Oluştur
+      </button>
     </div>
     <div class="sg">
       <div class="sg-lbl">Görünüm</div>
@@ -713,6 +746,32 @@ body{display:flex;flex-direction:column;position:relative}
   </div>
 </div>
 
+<div class="ov" id="wpOv" onclick="ovClick(event,'wpOv')">
+  <div class="sh"><div class="sh-drag"></div>
+    <div class="sh-head"><h3>İşyeri Profilleri</h3><p>Aralarında geçiş yap veya yeni ekle</p></div>
+    <div class="sh-body">
+      <div id="wpList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
+      <button class="sh-cancel" onclick="openWpCreate()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px">
+        <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Yeni İşyeri Profili Ekle
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="ov" id="wpFormOv" style="z-index:260" onclick="ovClick(event,'wpFormOv')">
+  <div class="sh"><div class="sh-drag"></div>
+    <div class="sh-head"><h3 id="wpFormTitle">Yeni İşyeri Profili</h3><p>İşyeri adını gir</p></div>
+    <div class="sh-body">
+      <input type="text" id="wpFormInp" placeholder="Örn: Esa Teknoloji" style="width:100%;padding:14px;background:rgba(255,255,255,.08);border:1px solid var(--gb);border-radius:var(--r);color:var(--t1);font-size:15px;font-family:'Inter',sans-serif;outline:none;margin-bottom:16px">
+      <div class="sh-btns">
+        <button class="sh-cancel" onclick="closeOv('wpFormOv')">Vazgeç</button>
+        <button class="sh-ok" onclick="confirmWpForm()">Kaydet ✓</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 </div>
 
@@ -746,6 +805,9 @@ let curY=today.getFullYear(),curM=today.getMonth();
 let openDays={},modalKey=null,syncTimer=null,isSyncing=false;
 let homeBlockIdx=0,homeBlockRevertTimer=null;
 let storageKey='mt_local_v1'; // yerel mod ve bulut modu ayrı anahtarlarda tutulur, birbirine karışmaz
+let baseStorageKey='mt_local_v1'; // hesap seviyesi anahtar (işyeri eki olmadan)
+let workplaces=[]; // [{id,name}] - işyeri profilleri listesi
+let activeWorkplaceId='default';
 let userInfo=null;
 let cfg={vardiyaS:'15:00',vardiyaB:'23:00',carpan:1.5,aylikSaat:225,brutMaas:0,theme:'default'};
 let salaries={},dayData={},monthData={};
@@ -854,6 +916,101 @@ function calcMonth(y,m){let mn=0,tm=0,yl=0,yk=0;for(let d=1;d<=daysIn(y,m);d++){
 
 function saveLocal(){try{localStorage.setItem(storageKey,JSON.stringify({cfg,salaries,dayData,monthData,profile,backupSettings,ts:Date.now()}));}catch(e){}}
 function loadLocal(){try{const r=localStorage.getItem(storageKey);if(r){const d=JSON.parse(r);cfg=Object.assign(cfg,d.cfg||{});if(cfg.bitis&&!cfg.vardiyaB)cfg.vardiyaB=cfg.bitis;salaries=d.salaries||{};dayData=d.dayData||{};monthData=d.monthData||{};profile=Object.assign({name:'',workName:'',avatar:'',avatarType:'emoji',startDate:''},d.profile||{});backupSettings=Object.assign({period:'weekly',customDay:1,lastBackup:null},d.backupSettings||{});}else{salaries={};dayData={};monthData={};profile={name:'',workName:'',avatar:'',avatarType:'emoji',startDate:''};backupSettings={period:'weekly',customDay:1,lastBackup:null};}}catch(e){}}
+// ---- İşyeri Profilleri ----
+function computeStorageKey(){return(activeWorkplaceId&&activeWorkplaceId!=='default')?(baseStorageKey+'__wp_'+activeWorkplaceId):baseStorageKey;}
+function workplacesMetaKey(){return baseStorageKey+'_workplaces';}
+function loadWorkplacesMeta(){
+  let firstTime=false;
+  workplaces=null;
+  try{
+    const r=localStorage.getItem(workplacesMetaKey());
+    if(r){const d=JSON.parse(r);workplaces=(Array.isArray(d.list)&&d.list.length)?d.list:null;activeWorkplaceId=d.activeId||'default';}
+  }catch(e){}
+  if(!workplaces||!workplaces.length){
+    workplaces=[{id:'default',name:'İşyerim'}];
+    activeWorkplaceId='default';
+    firstTime=true;
+    try{localStorage.setItem(workplacesMetaKey(),JSON.stringify({list:workplaces,activeId:activeWorkplaceId}));}catch(e){}
+  }
+  storageKey=computeStorageKey();
+  applyActiveWorkplaceLabel();
+  return firstTime;
+}
+function saveWorkplacesMeta(){
+  try{localStorage.setItem(workplacesMetaKey(),JSON.stringify({list:workplaces,activeId:activeWorkplaceId}));}catch(e){}
+  if(window._fbPushWorkplaces)window._fbPushWorkplaces();
+}
+function switchWorkplace(id){
+  closeOv('wpOv');
+  if(id===activeWorkplaceId)return;
+  activeWorkplaceId=id;
+  saveWorkplacesMeta();
+  storageKey=computeStorageKey();
+  loadLocal();
+  document.documentElement.setAttribute('data-theme',cfg.theme||'default');
+  applySettings();
+  renderAll();
+  checkBackupReminder();
+  applyActiveWorkplaceLabel();
+  toast('İşyeri profili değiştirildi ✓');
+  if(window._fbSwitchWorkplace)window._fbSwitchWorkplace();
+}
+function createWorkplace(name){
+  name=(name||'').trim();if(!name){toast('İşyeri adı gerekli');return;}
+  const id='wp_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+  workplaces.push({id,name});
+  switchWorkplace(id);
+}
+function renameWorkplace(id,name){
+  name=(name||'').trim();if(!name)return;
+  const w=workplaces.find(x=>x.id===id);if(w){w.name=name;saveWorkplacesMeta();applyActiveWorkplaceLabel();renderWorkplacePicker();}
+}
+function deleteWorkplace(id){
+  if(workplaces.length<=1){toast('En az bir işyeri profili kalmalı');return;}
+  if(!confirm('Bu işyeri profilinin tüm verileri silinecek. Emin misiniz?'))return;
+  const key=(id&&id!=='default')?(baseStorageKey+'__wp_'+id):baseStorageKey;
+  try{localStorage.removeItem(key);}catch(e){}
+  workplaces=workplaces.filter(x=>x.id!==id);
+  if(activeWorkplaceId===id){
+    activeWorkplaceId=workplaces[0].id;
+    storageKey=computeStorageKey();
+    loadLocal();document.documentElement.setAttribute('data-theme',cfg.theme||'default');applySettings();renderAll();checkBackupReminder();
+    if(window._fbSwitchWorkplace)window._fbSwitchWorkplace();
+  }
+  saveWorkplacesMeta();
+  applyActiveWorkplaceLabel();renderWorkplacePicker();
+  toast('İşyeri profili silindi');
+}
+function applyActiveWorkplaceLabel(){
+  const w=workplaces&&workplaces.find(x=>x.id===activeWorkplaceId);
+  const name=w?w.name:'İşyerim';
+  const el=$('activeWpLabel');if(el)el.textContent=name;
+  const el2=$('stWpLabel');if(el2)el2.textContent=name;
+}
+function openWorkplacePicker(){renderWorkplacePicker();openOv('wpOv');}
+function renderWorkplacePicker(){
+  const el=$('wpList');if(!el)return;
+  el.innerHTML=workplaces.map(w=>`<div class="wp-item${w.id===activeWorkplaceId?' active':''}">
+    <div class="wp-tap" onclick="switchWorkplace('${w.id}')">
+      <div class="wp-dot">${(w.name||'?').charAt(0).toUpperCase()}</div>
+      <div class="wp-name">${w.name}</div>
+      ${w.id===activeWorkplaceId?'<svg viewBox="0 0 24 24" class="wp-check"><polyline points="20 6 9 17 4 12"/></svg>':''}
+    </div>
+    <div class="wp-actions">
+      <button class="wp-act" onclick="event.stopPropagation();openWpRename('${w.id}')"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+      ${workplaces.length>1?`<button class="wp-act del" onclick="event.stopPropagation();deleteWorkplace('${w.id}')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`:''}
+    </div>
+  </div>`).join('');
+}
+let wpFormMode='create',wpFormEditId=null;
+function openWpCreate(){wpFormMode='create';wpFormEditId=null;closeOv('wpOv');$('wpFormTitle').textContent='Yeni İşyeri Profili';$('wpFormInp').value='';openOv('wpFormOv');}
+function openWpRename(id){const w=workplaces.find(x=>x.id===id);if(!w)return;wpFormMode='rename';wpFormEditId=id;$('wpFormTitle').textContent='İşyeri Adını Düzenle';$('wpFormInp').value=w.name;closeOv('wpOv');openOv('wpFormOv');}
+function confirmWpForm(){
+  const val=$('wpFormInp').value.trim();if(!val){toast('İsim gerekli');return;}
+  closeOv('wpFormOv');
+  if(wpFormMode==='create')createWorkplace(val);
+  else renameWorkplace(wpFormEditId,val);
+}
 // Varsayılan (yedek) debouncePush — Firebase modülü (internet yoksa) hiç yüklenemese bile
 // veri kaydetme işlemleri hata vermesin diye burada da tanımlı. Modül başarıyla yüklenirse
 // kendi (bulutla senkronize eden) versiyonuyla bunun üzerine yazar.
@@ -938,6 +1095,7 @@ function applySettings(){
   renderThemeGrid();
   applyProfileUI();
   applyBackupUI();
+  applyActiveWorkplaceLabel();
 }
 function saveSettings(){
   const bm=$('stBrutMaas');
@@ -1475,7 +1633,8 @@ window.onerror=function(msg,src,line){toast('Hata: '+msg+' ('+line+')');return f
 (function instantReveal(){
   const lastUid=localStorage.getItem('mt_last_uid');
   if(lastUid){
-    storageKey='mt_cloud_'+lastUid;
+    baseStorageKey='mt_cloud_'+lastUid;
+    loadWorkplacesMeta();
     loadLocal();
     document.documentElement.setAttribute('data-theme',cfg.theme||'default');
     applySettings();
@@ -1505,7 +1664,37 @@ const FB={apiKey:'AIzaSyDPJQV3IC0y9w5cHOCm9Cf-fWmCCyc7-hQ',authDomain:'koruker-m
 const fbApp=initializeApp(FB);
 const fbAuth=getAuth(fbApp);
 const fbDb=getDatabase(fbApp);
-let fbUid=null,fbYear=null,dbListener=null;
+let fbUid=null,fbYear=null,dbListener=null,dbListenerPath=null;
+function wpSeg(){return(typeof activeWorkplaceId!=='undefined'&&activeWorkplaceId&&activeWorkplaceId!=='default')?('wp_'+activeWorkplaceId):'default';}
+
+async function fbPushWorkplaces(){
+  if(!fbUid)return;
+  try{await update(ref(fbDb),{[`users/${fbUid}/workplaces_meta`]:{list:workplaces,activeId:activeWorkplaceId}});}catch(e){}
+}
+async function fbPullWorkplaces(){
+  if(!fbUid)return;
+  try{
+    const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error('zaman aşımı')),8000));
+    const snap=await Promise.race([get(ref(fbDb,`users/${fbUid}/workplaces_meta`)),timeout]);
+    if(snap.exists()){
+      const d=snap.val();
+      if(Array.isArray(d.list)&&d.list.length)workplaces=d.list;
+      if(d.activeId)activeWorkplaceId=d.activeId;
+      try{localStorage.setItem(workplacesMetaKey(),JSON.stringify({list:workplaces,activeId:activeWorkplaceId}));}catch(e){}
+      storageKey=computeStorageKey();
+      applyActiveWorkplaceLabel();
+    }
+  }catch(e){}
+}
+async function fbSwitchWorkplace(){
+  if(!fbUid)return;
+  if(dbListener&&dbListenerPath){off(ref(fbDb,dbListenerPath));dbListener=null;}
+  await fbPull();
+  renderAll();
+  startRealtimeSync();
+}
+window._fbPushWorkplaces=fbPushWorkplaces;
+window._fbSwitchWorkplace=fbSwitchWorkplace;
 
 async function fbPush(){
   if(!fbUid||isSyncing)return;
@@ -1516,13 +1705,14 @@ async function fbPush(){
   }
   isSyncing=true;setSyncUI('syncing','Kaydediliyor…');
   try{
+    const seg=wpSeg();
     const updates={};
-    updates[`users/${fbUid}/${fbYear}/cfg`]=cfg;
-    updates[`users/${fbUid}/${fbYear}/salaries`]=salaries;
-    updates[`users/${fbUid}/${fbYear}/monthData`]=monthData;
-    updates[`users/${fbUid}/${fbYear}/profile`]=profile;
-    updates[`users/${fbUid}/${fbYear}/backupSettings`]=backupSettings;
-    for(const[k,v]of Object.entries(dayData)) updates[`users/${fbUid}/${fbYear}/days/${k}`]=v;
+    updates[`users/${fbUid}/${seg}/${fbYear}/cfg`]=cfg;
+    updates[`users/${fbUid}/${seg}/${fbYear}/salaries`]=salaries;
+    updates[`users/${fbUid}/${seg}/${fbYear}/monthData`]=monthData;
+    updates[`users/${fbUid}/${seg}/${fbYear}/profile`]=profile;
+    updates[`users/${fbUid}/${seg}/${fbYear}/backupSettings`]=backupSettings;
+    for(const[k,v]of Object.entries(dayData)) updates[`users/${fbUid}/${seg}/${fbYear}/days/${k}`]=v;
     const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error('zaman aşımı')),8000));
     await Promise.race([update(ref(fbDb),updates),timeout]);
     clearPendingSync();
@@ -1550,7 +1740,7 @@ async function fbPull(){
   setSyncUI('syncing','Çekiliyor…');
   try{
     const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error('zaman aşımı')),8000));
-    const snap=await Promise.race([get(ref(fbDb,`users/${fbUid}/${fbYear}`)),timeout]);
+    const snap=await Promise.race([get(ref(fbDb,`users/${fbUid}/${wpSeg()}/${fbYear}`)),timeout]);
     if(snap.exists()){
       const d=snap.val();
       if(d.cfg)cfg=Object.assign(cfg,d.cfg);
@@ -1565,8 +1755,10 @@ async function fbPull(){
 }
 
 function startRealtimeSync(){
-  if(dbListener){off(ref(fbDb,`users/${fbUid}/${fbYear}`));dbListener=null;}
-  dbListener=onValue(ref(fbDb,`users/${fbUid}/${fbYear}`),(snap)=>{
+  if(dbListener&&dbListenerPath){off(ref(fbDb,dbListenerPath));dbListener=null;}
+  const path=`users/${fbUid}/${wpSeg()}/${fbYear}`;
+  dbListenerPath=path;
+  dbListener=onValue(ref(fbDb,path),(snap)=>{
     if(isSyncing||hasPendingSync())return; // henüz buluta gönderilmemiş yerel değişiklik var - üzerine yazma
     if(!snap.exists())return;
     const d=snap.val();
@@ -1598,11 +1790,13 @@ async function signIn(){
 }
 
 function signOut(){
-  if(dbListener){off(ref(fbDb,`users/${fbUid}/${fbYear}`));dbListener=null;}
+  if(dbListener&&dbListenerPath){off(ref(fbDb,dbListenerPath));dbListener=null;dbListenerPath=null;}
   try{fbSignOut(fbAuth);}catch(e){}
   localStorage.removeItem('mt_local_mode');
   localStorage.removeItem('mt_last_uid');
   fbUid=null;userInfo=null;
+  baseStorageKey='mt_local_v1';
+  workplaces=[];activeWorkplaceId='default';
   storageKey='mt_local_v1';
   dayData={};salaries={};monthData={};
   showScreen('loginScreen');
@@ -1615,18 +1809,22 @@ setPersistence(fbAuth,browserLocalPersistence).then(()=>{
       localStorage.setItem('mt_last_uid',user.uid);
       fbUid=user.uid;
       fbYear=new Date().getFullYear();
-      storageKey='mt_cloud_'+fbUid;
+      baseStorageKey='mt_cloud_'+fbUid;
+      const firstTime=loadWorkplacesMeta();
       userInfo={name:user.displayName,email:user.email,picture:user.photoURL};
       loadLocal();
       document.documentElement.setAttribute('data-theme',cfg.theme||'default');
       applySettings();
       showScreen('homeScreen');renderHome();
       if(hasPendingSync())await fbPush(); // çevrimdışıyken kaydedilmiş bekleyen değişiklik varsa önce onu gönder
+      await fbPullWorkplaces();
+      loadLocal();applySettings();renderHome();
       await fbPull();
       renderAll();
       checkBackupReminder();
       updateOfflineBanner();
       startRealtimeSync();
+      if(firstTime&&workplaces.length===1&&workplaces[0].id==='default'&&workplaces[0].name==='İşyerim')setTimeout(()=>openWpRename('default'),800);
     } else if(localStorage.getItem('mt_local_mode')==='1'){
       localStorage.removeItem('mt_last_uid');
       continueLocal();
